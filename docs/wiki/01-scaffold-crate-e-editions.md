@@ -36,8 +36,3 @@ mesmo build. Decidimos sempre usar a **mais recente** (`2024`).
 Para **bibliotecas**, o convencional é **não** commitar o `Cargo.lock` (quem consome é que
 fixa as versões); para **binários**, sim. Quando o app Tauri entrar, o lock dele é que vale.
 Por isso o `Cargo.lock` ficou fora do git, e `target/` (artefatos de build) está no `.gitignore`.
-
-## Por que isolar do OneDrive
-
-O `target/` gera milhares de arquivos e a sincronização do OneDrive briga com builds e com
-o `.git`. Manter o repositório fora de pastas sincronizadas evita corrupção e lentidão.
