@@ -10,5 +10,6 @@ Uma página por task da fatia em andamento. Para a **arquitetura de design**, ve
 - [02 — Enums e `derive` (e o truque do `Ord`)](02-enums-e-derive.md)
 - [03 — Grid, Cell: arrays fixos e borrow checker](03-grid-cell-arrays-e-borrow.md)
 - [04 — Parsing: Result, enum de erro e pattern matching](04-parsing-result-e-pattern-matching.md)
+- [05 — Regras do Sudoku: índice→coordenada, `if let` e `Vec`](05-regras-do-sudoku-if-let-e-vec.md)
 
 > Cada nova task ganha uma página aqui.
