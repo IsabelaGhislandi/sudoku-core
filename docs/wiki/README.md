@@ -4,7 +4,13 @@ Anotações de aprendizado conforme o Sudoku é implementado, vindo de um backgr
 Uma página por task da fatia em andamento. Para a **arquitetura de design**, veja
 [`../architecture.md`](../architecture.md).
 
-## Índice
+## Fundamentos consolidados
+
+Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 5 tarefas**:
+
+- [Fundamentos de Rust — Tarefas 1 a 5](fundamentos/rust-base-tarefas-01-a-05.md)
+
+## Índice por task
 
 - [01 — Scaffold, crate e editions](01-scaffold-crate-e-editions.md)
 - [02 — Enums e `derive` (e o truque do `Ord`)](02-enums-e-derive.md)
