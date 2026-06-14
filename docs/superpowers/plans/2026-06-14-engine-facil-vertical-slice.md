@@ -6,7 +6,7 @@
 
 **Architecture:** Biblioteca Rust pura, sem dependência de Tauri/UI/IO. Técnicas de resolução são "estratégias" intercambiáveis via trait `Technique` (pattern Strategy). O solver lógico aplica técnicas em ordem; um solver por backtracking garante unicidade; o gerador cava células mantendo solução única e solubilidade lógica (o que mantém o nível em Fácil).
 
-**Tech Stack:** Rust (edition 2021), crate único `sudoku-core`, dependência única `rand` (RNG com seed). Testes com `cargo test`.
+**Tech Stack:** Rust (edition 2024), crate único `sudoku-core`, dependência única `rand` 0.10 (RNG com seed). Testes com `cargo test`.
 
 **Spec de referência:** `docs/superpowers/specs/2026-06-14-sudoku-engine-design.md`
 
@@ -35,10 +35,10 @@ Substitua o conteúdo de `sudoku-core/Cargo.toml` por:
 [package]
 name = "sudoku-core"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-rand = "0.8"
+rand = "0.10"
 ```
 
 - [ ] **Step 3: Escrever um teste-fumaça em `src/lib.rs`**
