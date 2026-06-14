@@ -16,7 +16,7 @@ o ciclo `spec → plano → implementação` com **TDD**.
 | # | Módulo | Responsabilidade | Status |
 |---|--------|------------------|--------|
 | 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **em implementação** |
-| 2 | Game/Sessão | Estado de uma partida: jogadas, anotações, erros, timer, dicas. | futuro |
+| 2 | Game/Sessão | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. | futuro |
 | 3 | Frontend/UI | Tabuleiro, input, seleção de dificuldade, telas (Svelte). | futuro |
 | 4 | Tauri/Empacotamento | Ponte Rust↔Svelte e build do APK. | futuro |
 | 5 | Online | Partida por código com outro player. | futuro distante |
@@ -151,5 +151,13 @@ Artefatos de processo do Engine:
 - Fatias seguintes adicionam técnicas Médio → Difícil → Muito Difícil (rating fica mais preciso).
 - `Deduction` evolui para também representar **eliminação de candidatos** (não só colocar valor).
 - Módulo Game consumirá `validate` e `next_hint`.
+- **Módulo Game — timer + histórico de partidas:** cronometrar quanto o usuário leva para
+  resolver e manter um histórico de partidas concluídas, ex.:
+  - `Jogo Médio — 10 min — 13/06/2026`
+  - `Jogo Muito Difícil — 17 min — 13/06/2026`
+
+  O engine permanece **puro** (sem relógio nem IO): tempo, data e persistência são
+  responsabilidade do módulo Game, que já recebe a `Difficulty` e o `seed` do `Puzzle`.
+  Entra na **spec do módulo Game** quando ela for escrita.
 - Seed pública habilita "compartilhar puzzle por código" (base do futuro multiplayer).
 - Promoção a workspace multi-crate só se houver necessidade real.
