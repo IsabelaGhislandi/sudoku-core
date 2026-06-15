@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "agile-roadmap": {
+      "source": "djalmajr/skills",
+      "sourceType": "github",
+      "skillPath": "skills/agile-roadmap/SKILL.md",
+      "computedHash": "77eea438542bec4e93bcc522f21167df60d433ccd4e70847000e43f1d8beebdd"
+    },
+    "agile-tdd": {
+      "source": "djalmajr/skills",
+      "sourceType": "github",
+      "skillPath": "skills/agile-tdd/SKILL.md",
+      "computedHash": "54bc61a593949e3358cc07874b3979f2dafd7aa0ea9b7deff6e64e56db3f3f1d"
+    },
+    "improve-codebase-architecture": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+      "computedHash": "5d9444ffe5c240f2d20081c42c547112e1b8c372375a14e4c98df4d94bde11e1"
+    }
+  }
+}

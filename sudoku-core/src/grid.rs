@@ -33,6 +33,63 @@ pub enum ParseError {
     InvalidChar(char),
 }
 
+pub fn row_of(index: usize) -> usize {
+    index / 9
+}
+
+pub fn col_of(index: usize) -> usize {
+    index % 9
+}
+
+pub fn box_of(index: usize) -> usize {
+    (row_of(index) / 3) * 3 + col_of(index) / 3
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Conflict {
+    pub a: usize,
+    pub b: usize,
+}
+
+impl Grid {
+    /// True se colocar `value` em `index` não viola linha/coluna/box.
+    pub fn can_place(&self, index: usize, value: u8) -> bool {
+        let (r, c, b) = (row_of(index), col_of(index), box_of(index));
+        for i in 0..81 {
+            if i == index {
+                continue;
+            }
+            if let Cell::Filled(v) = self.cells[i] {
+                if v == value && (row_of(i) == r || col_of(i) == c || box_of(i) == b) {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+}
+
+/// Lista pares de células preenchidas que conflitam (mesmo valor na linha/coluna/box).
+pub fn validate(grid: &Grid) -> Vec<Conflict> {
+    let mut out = Vec::new();
+    for i in 0..81 {
+        if let Cell::Filled(vi) = grid.get(i) {
+            for j in (i + 1)..81 {
+                if let Cell::Filled(vj) = grid.get(j) {
+                    if vi == vj
+                        && (row_of(i) == row_of(j)
+                            || col_of(i) == col_of(j)
+                            || box_of(i) == box_of(j))
+                    {
+                        out.push(Conflict { a: i, b: j });
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
 impl Grid {
     pub fn from_line(line: &str) -> Result<Grid, ParseError> {
         let chars: Vec<char> = line.chars().collect();
@@ -124,5 +181,42 @@ mod tests {
         line.push_str(&".".repeat(72));
         let grid = Grid::from_line(&line).unwrap();
         assert_eq!(grid.to_line(), line);
+    }
+
+    #[test]
+    fn helpers_de_linha_coluna_box() {
+        assert_eq!((row_of(0), col_of(0), box_of(0)), (0, 0, 0));
+        assert_eq!((row_of(80), col_of(80), box_of(80)), (8, 8, 8));
+        assert_eq!((row_of(40), col_of(40), box_of(40)), (4, 4, 4));
+        // index 3 = linha 0, coluna 3 => box 1
+        assert_eq!(box_of(3), 1);
+    }
+
+    #[test]
+    fn can_place_respeita_linha_coluna_box() {
+        let mut grid = Grid::empty();
+        grid.set(0, Cell::Filled(5)); // linha 0, coluna 0, box 0
+        assert!(!grid.can_place(1, 5)); // mesma linha
+        assert!(!grid.can_place(9, 5)); // mesma coluna
+        assert!(!grid.can_place(10, 5)); // mesmo box
+        assert!(grid.can_place(80, 5)); // longe: ok
+        assert!(grid.can_place(1, 6)); // outro valor: ok
+    }
+
+    #[test]
+    fn validate_detecta_conflito() {
+        let mut grid = Grid::empty();
+        grid.set(0, Cell::Filled(5));
+        grid.set(1, Cell::Filled(5)); // mesma linha => conflito
+        let conflitos = validate(&grid);
+        assert_eq!(conflitos, vec![Conflict { a: 0, b: 1 }]);
+    }
+
+    #[test]
+    fn validate_sem_conflito_retorna_vazio() {
+        let mut grid = Grid::empty();
+        grid.set(0, Cell::Filled(5));
+        grid.set(1, Cell::Filled(6));
+        assert!(validate(&grid).is_empty());
     }
 }
