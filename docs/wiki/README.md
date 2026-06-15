@@ -17,5 +17,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [03 — Grid, Cell: arrays fixos e borrow checker](03-grid-cell-arrays-e-borrow.md)
 - [04 — Parsing: Result, enum de erro e pattern matching](04-parsing-result-e-pattern-matching.md)
 - [05 — Regras do Sudoku: índice→coordenada, `if let` e `Vec`](05-regras-do-sudoku-if-let-e-vec.md)
+- [06 — Candidatos: bitmask `u16` e operações de bit](06-candidatos-bitmask-e-operacoes-de-bit.md)
 
 > Cada nova task ganha uma página aqui.
