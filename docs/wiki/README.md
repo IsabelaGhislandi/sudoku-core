@@ -20,5 +20,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [06 — Candidatos: bitmask `u16` e operações de bit](06-candidatos-bitmask-e-operacoes-de-bit.md)
 - [07 — Traits, o pattern Strategy e módulos em pasta](07-traits-strategy-e-modulos.md)
 - [08 — Closures, `impl Fn` e `Option` como acumulador](08-closures-e-impl-trait.md)
+- [09 — Trait objects, `Box<dyn Trait>` e dispatch dinâmico](09-trait-objects-e-dispatch-dinamico.md)
 
 > Cada nova task ganha uma página aqui.
