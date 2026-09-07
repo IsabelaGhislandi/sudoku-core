@@ -21,5 +21,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [07 — Traits, o pattern Strategy e módulos em pasta](07-traits-strategy-e-modulos.md)
 - [08 — Closures, `impl Fn` e `Option` como acumulador](08-closures-e-impl-trait.md)
 - [09 — Trait objects, `Box<dyn Trait>` e dispatch dinâmico](09-trait-objects-e-dispatch-dinamico.md)
+- [10 — Recursão, backtracking e referências `&mut`](10-recursao-backtracking-e-mut-refs.md)
 
 > Cada nova task ganha uma página aqui.
