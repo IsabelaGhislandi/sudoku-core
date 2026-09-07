@@ -15,6 +15,8 @@ pub trait Technique {
     fn apply(&self, grid: &Grid) -> Option<Deduction>;
 }
 
+mod hidden_single;
 mod naked_single;
 
+pub use hidden_single::HiddenSingle;
 pub use naked_single::NakedSingle;
