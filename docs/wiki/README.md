@@ -9,6 +9,7 @@ Uma página por task da fatia em andamento. Para a **arquitetura de design**, ve
 Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 5 tarefas**:
 
 - [Fundamentos de Rust — Tarefas 1 a 5](fundamentos/rust-base-tarefas-01-a-05.md)
+- [Fundamentos de Rust — Tarefas 6 a 10](fundamentos/rust-base-tarefas-06-a-10.md)
 
 ## Índice por task
 
