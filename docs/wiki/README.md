@@ -19,5 +19,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [05 — Regras do Sudoku: índice→coordenada, `if let` e `Vec`](05-regras-do-sudoku-if-let-e-vec.md)
 - [06 — Candidatos: bitmask `u16` e operações de bit](06-candidatos-bitmask-e-operacoes-de-bit.md)
 - [07 — Traits, o pattern Strategy e módulos em pasta](07-traits-strategy-e-modulos.md)
+- [08 — Closures, `impl Fn` e `Option` como acumulador](08-closures-e-impl-trait.md)
 
 > Cada nova task ganha uma página aqui.
