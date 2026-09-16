@@ -1,3 +1,4 @@
+use crate::candidates::candidates_for;
 use crate::grid::{Cell, Grid};
 
 /// Conta soluções até o limite `limit`. Use limit=2 para testar unicidade (== 1).
@@ -12,20 +13,21 @@ fn solve_recursive(grid: &mut Grid, limit: usize, count: &mut usize) {
     if *count >= limit {
         return;
     }
-    let next = (0..81).find(|&i| matches!(grid.get(i), Cell::Empty));
+    // MRV: ramifica na célula vazia com menos candidatos, o que poda a busca cedo.
+    let next = (0..81)
+        .filter(|&i| matches!(grid.get(i), Cell::Empty))
+        .min_by_key(|&i| candidates_for(grid, i).count());
     match next {
         None => {
             *count += 1; // grade completa encontrada
         }
         Some(index) => {
-            for value in 1..=9u8 {
-                if grid.can_place(index, value) {
-                    grid.set(index, Cell::Filled(value));
-                    solve_recursive(grid, limit, count);
-                    grid.set(index, Cell::Empty);
-                    if *count >= limit {
-                        return;
-                    }
+            for value in candidates_for(grid, index).values() {
+                grid.set(index, Cell::Filled(value));
+                solve_recursive(grid, limit, count);
+                grid.set(index, Cell::Empty);
+                if *count >= limit {
+                    return;
                 }
             }
         }
@@ -58,5 +60,15 @@ mod tests {
     fn grade_vazia_tem_muitas_solucoes() {
         // limite 2: para assim que encontra a segunda
         assert_eq!(count_solutions(&Grid::empty(), 2), 2);
+    }
+
+    #[test]
+    fn puzzle_de_17_pistas_eh_unico() {
+        // 17 pistas é o mínimo para solução única: pior caso para a busca.
+        let grid = Grid::from_line(
+            "000000010400000000020000000000050407008000300001090000300400200050100000000806000",
+        )
+        .unwrap();
+        assert_eq!(count_solutions(&grid, 2), 1);
     }
 }
