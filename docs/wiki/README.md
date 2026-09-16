@@ -24,5 +24,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [09 — Trait objects, `Box<dyn Trait>` e dispatch dinâmico](09-trait-objects-e-dispatch-dinamico.md)
 - [10 — Recursão, backtracking e referências `&mut`](10-recursao-backtracking-e-mut-refs.md)
 - [11 — Rating: cadeias de iteradores, `max` e `Option`](11-rating-iteradores-e-option.md)
+- [12 — Gerador: RNG com seed, traits em escopo e MRV](12-gerador-rng-com-seed-e-traits-em-escopo.md)
 
 > Cada nova task ganha uma página aqui.
