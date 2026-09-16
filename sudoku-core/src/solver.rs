@@ -57,6 +57,12 @@ impl Default for LogicalSolver {
     }
 }
 
+/// Próxima jogada logicamente dedutível — reutiliza as técnicas do solver.
+/// Alimenta a feature de dica do módulo Game (futuro).
+pub fn next_hint(grid: &Grid) -> Option<Deduction> {
+    LogicalSolver::new().next_step(grid)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
