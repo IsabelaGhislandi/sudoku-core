@@ -4,7 +4,7 @@ use rand::SeedableRng;
 
 use crate::backtracking::count_solutions;
 use crate::difficulty::Difficulty;
-use crate::grid::{validate, Cell, Grid};
+use crate::grid::{Cell, Grid};
 use crate::solver::LogicalSolver;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -86,6 +86,7 @@ fn dig_facil(solution: &Grid, rng: &mut StdRng) -> Grid {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::grid::validate;
 
     #[test]
     fn gera_puzzle_facil_valido_e_unico() {
