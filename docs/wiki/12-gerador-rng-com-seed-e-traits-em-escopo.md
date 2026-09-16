@@ -156,8 +156,8 @@ Dois pontos de Rust nesse trecho:
   `min_by_key` antes do `match`: o empréstimo imutável termina ali. O borrow checker olha
   **até onde** cada empréstimo é usado, não o escopo léxico inteiro.
 
-> **Lição geral:** medir antes de otimizar. O palpite "o solver lógico é caro, roda 81 vezes"
-> estava errado. O custo real estava num lugar que parecia inocente.
+> **Lição geral:** medir antes de otimizar. As duas verificações rodam 81 vezes por puzzle,
+> e só a medição mostrou que uma delas custava ~500× mais que a outra.
 
 ## Por que isso importa
 

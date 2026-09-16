@@ -25,5 +25,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [10 — Recursão, backtracking e referências `&mut`](10-recursao-backtracking-e-mut-refs.md)
 - [11 — Rating: cadeias de iteradores, `max` e `Option`](11-rating-iteradores-e-option.md)
 - [12 — Gerador: RNG com seed, traits em escopo e MRV](12-gerador-rng-com-seed-e-traits-em-escopo.md)
+- [13 — API pública: visibilidade, `pub use` e testes de integração](13-api-publica-visibilidade-e-testes-de-integracao.md)
 
 > Cada nova task ganha uma página aqui.

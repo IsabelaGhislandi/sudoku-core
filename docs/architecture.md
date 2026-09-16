@@ -15,7 +15,7 @@ o ciclo `spec → plano → implementação` com **TDD**.
 
 | # | Módulo | Responsabilidade | Status |
 |---|--------|------------------|--------|
-| 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **em implementação** |
+| 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **fatia Fácil concluída** |
 | 2 | Game/Sessão | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. | futuro |
 | 3 | Frontend/UI | Tabuleiro, input, seleção de dificuldade, telas (Svelte). | futuro |
 | 4 | Tauri/Empacotamento | Ponte Rust↔Svelte e build do APK. | futuro |
@@ -70,7 +70,8 @@ Responsabilidades:
   (célula resolvida + nome da técnica + nível). Adicionar técnica nova **não toca no solver**.
 - **`solver`** — `LogicalSolver` aplica as técnicas em ordem e produz a **lista de passos**
   (serve tanto para o rating quanto para a dica). `next_hint` reusa a primeira dedução.
-- **`backtracking`** — `count_solutions` resolve por força bruta e conta soluções até um
+- **`backtracking`** — `count_solutions` resolve por força bruta (ramificando na célula com
+  menos candidatos — heurística MRV) e conta soluções até um
   limite (limite 2 ⇒ testa unicidade).
 - **`rating`** — roda o solver lógico e mapeia a técnica mais avançada usada → `Difficulty`;
   cai para `MuitoDificil` quando só o backtracking resolve.
@@ -89,7 +90,7 @@ mais avançada necessária** para resolvê-lo.
 | **Difícil** | + Naked/Hidden Triples, Box-Line Reduction, X-Wing |
 | **Muito Difícil** | + Swordfish, XY-Wing — e/ou backtracking quando a lógica não basta |
 
-> A fatia em implementação cobre **apenas o nível Fácil** (Naked/Hidden Single). Puzzles
+> A fatia concluída cobre **apenas o nível Fácil** (Naked/Hidden Single). Puzzles
 > que exigem técnicas mais avançadas aparecem temporariamente como `MuitoDificil` até as
 > fatias seguintes adicionarem as técnicas intermediárias.
 
