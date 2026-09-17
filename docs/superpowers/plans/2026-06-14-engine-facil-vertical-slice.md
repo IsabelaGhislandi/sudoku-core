@@ -64,7 +64,7 @@ Expected: compila, baixa `rand`, e `test tests::smoke ... ok`.
 
 ```bash
 git add sudoku-core/Cargo.toml sudoku-core/src/lib.rs
-git commit -m "chore: scaffold do crate sudoku-core"
+git commit -m "chore: scaffold sudoku-core crate"
 ```
 
 ---
@@ -124,7 +124,7 @@ Expected: PASS (`ordena_do_facil_ao_muito_dificil` e `max_pega_o_nivel_mais_alto
 
 ```bash
 git add sudoku-core/src/difficulty.rs sudoku-core/src/lib.rs
-git commit -m "feat: enum Difficulty ordenável"
+git commit -m "feat: add orderable Difficulty enum"
 ```
 
 ---
@@ -225,7 +225,7 @@ Expected: PASS (3 testes).
 
 ```bash
 git add sudoku-core/src/grid.rs sudoku-core/src/lib.rs
-git commit -m "feat: Grid e Cell com empty/get/set/is_complete"
+git commit -m "feat: add Grid and Cell with empty/get/set/is_complete"
 ```
 
 ---
@@ -332,7 +332,7 @@ Expected: PASS (todos os testes de grid).
 
 ```bash
 git add sudoku-core/src/grid.rs
-git commit -m "feat: parsing/serialização do Grid (from_line/to_line)"
+git commit -m "feat: add Grid parsing/serialization (from_line/to_line)"
 ```
 
 ---
@@ -462,7 +462,7 @@ Expected: PASS (todos os testes de grid).
 
 ```bash
 git add sudoku-core/src/grid.rs
-git commit -m "feat: helpers de unidade, can_place e validate"
+git commit -m "feat: add unit helpers, can_place and validate"
 ```
 
 ---
@@ -570,7 +570,7 @@ Expected: PASS (2 testes).
 
 ```bash
 git add sudoku-core/src/candidates.rs sudoku-core/src/lib.rs
-git commit -m "feat: CandidateSet e candidates_for"
+git commit -m "feat: add CandidateSet and candidates_for"
 ```
 
 ---
@@ -691,7 +691,7 @@ Expected: PASS (2 testes).
 
 ```bash
 git add sudoku-core/src/techniques/ sudoku-core/src/lib.rs
-git commit -m "feat: trait Technique, Deduction e NakedSingle"
+git commit -m "feat: add Technique trait, Deduction and NakedSingle"
 ```
 
 ---
@@ -826,7 +826,7 @@ Expected: PASS (2 testes).
 
 ```bash
 git add sudoku-core/src/techniques/
-git commit -m "feat: técnica Hidden Single"
+git commit -m "feat: add HiddenSingle technique"
 ```
 
 ---
@@ -964,7 +964,7 @@ Expected: PASS (3 testes).
 
 ```bash
 git add sudoku-core/src/solver.rs sudoku-core/src/lib.rs
-git commit -m "feat: LogicalSolver com solve e next_step"
+git commit -m "feat: add LogicalSolver with solve and next_step"
 ```
 
 ---
@@ -1070,7 +1070,7 @@ Expected: PASS (3 testes).
 
 ```bash
 git add sudoku-core/src/backtracking.rs sudoku-core/src/lib.rs
-git commit -m "feat: count_solutions por backtracking (unicidade)"
+git commit -m "feat: add count_solutions via backtracking for uniqueness"
 ```
 
 ---
@@ -1165,7 +1165,7 @@ Expected: PASS (2 testes).
 
 ```bash
 git add sudoku-core/src/rating.rs sudoku-core/src/lib.rs
-git commit -m "feat: rate (classificação por técnicas)"
+git commit -m "feat: add rate to classify difficulty by required techniques"
 ```
 
 ---
@@ -1338,7 +1338,7 @@ Expected: PASS (4 testes).
 
 ```bash
 git add sudoku-core/src/generator.rs sudoku-core/src/lib.rs
-git commit -m "feat: gerador determinístico de puzzles Fácil"
+git commit -m "feat: add deterministic Easy puzzle generator"
 ```
 
 ---
@@ -1431,7 +1431,7 @@ Expected: compila. O clippy pode sugerir melhorias idiomáticas (ex.: trocar `fo
 
 ```bash
 git add sudoku-core/src/lib.rs sudoku-core/src/solver.rs sudoku-core/tests/api.rs
-git commit -m "feat: superfície pública do crate + next_hint + teste de integração"
+git commit -m "feat: expose public API with next_hint and integration test"
 ```
 
 ---
