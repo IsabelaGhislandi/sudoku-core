@@ -1,6 +1,6 @@
-use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
 use rand::SeedableRng;
+use rand_chacha::ChaCha12Rng;
 
 use crate::backtracking::count_solutions;
 use crate::difficulty::Difficulty;
@@ -21,11 +21,16 @@ pub enum GenError {
 }
 
 /// Gera um puzzle determinístico no nível pedido. Nesta fatia, só Fácil.
+///
+/// Contrato: mesma seed + mesmo nível => sempre o mesmo puzzle, inclusive entre
+/// versões da lib. Por isso o RNG é o `ChaCha12Rng` (algoritmo fixo) e não o
+/// `StdRng`, cujo algoritmo o `rand` se reserva o direito de trocar. A seed é
+/// pública e vai virar código de puzzle compartilhável.
 pub fn generate(difficulty: Difficulty, seed: u64) -> Result<Puzzle, GenError> {
     if difficulty != Difficulty::Facil {
         return Err(GenError::Unsupported(difficulty));
     }
-    let mut rng = StdRng::seed_from_u64(seed);
+    let mut rng = ChaCha12Rng::seed_from_u64(seed);
     let solution = full_solution(&mut rng);
     let givens = dig_facil(&solution, &mut rng);
     Ok(Puzzle {
@@ -37,13 +42,13 @@ pub fn generate(difficulty: Difficulty, seed: u64) -> Result<Puzzle, GenError> {
 }
 
 /// Constrói uma grade completa e válida via backtracking randomizado.
-fn full_solution(rng: &mut StdRng) -> Grid {
+fn full_solution(rng: &mut ChaCha12Rng) -> Grid {
     let mut grid = Grid::empty();
     fill(&mut grid, rng);
     grid
 }
 
-fn fill(grid: &mut Grid, rng: &mut StdRng) -> bool {
+fn fill(grid: &mut Grid, rng: &mut ChaCha12Rng) -> bool {
     let next = (0..81).find(|&i| matches!(grid.get(i), Cell::Empty));
     match next {
         None => true,
@@ -66,7 +71,7 @@ fn fill(grid: &mut Grid, rng: &mut StdRng) -> bool {
 
 /// Remove células enquanto (a) a solução continua única e (b) o solver lógico
 /// "Fácil" ainda resolve por completo — o que mantém a dificuldade em Fácil.
-fn dig_facil(solution: &Grid, rng: &mut StdRng) -> Grid {
+fn dig_facil(solution: &Grid, rng: &mut ChaCha12Rng) -> Grid {
     let mut puzzle = solution.clone();
     let mut order: Vec<usize> = (0..81).collect();
     order.shuffle(rng);
@@ -102,6 +107,18 @@ mod tests {
         // o enunciado removeu pelo menos algumas células
         let vazias = (0..81).filter(|&i| puzzle.givens.get(i) == Cell::Empty).count();
         assert!(vazias > 0);
+    }
+
+    #[test]
+    fn puzzle_da_seed_42_e_reproduzivel() {
+        // Golden test: trava a saída da seed 42 para que trocar de RNG (ou de versão
+        // da lib de RNG) não passe despercebido. A seed é contrato público — o plano
+        // prevê compartilhar puzzle por código.
+        let puzzle = generate(Difficulty::Facil, 42).unwrap();
+        assert_eq!(
+            puzzle.givens.to_line(),
+            "94.35...12....7....6..8.2......3...4.....5...6......3.5..1.9.....26..9...1.....68"
+        );
     }
 
     #[test]
