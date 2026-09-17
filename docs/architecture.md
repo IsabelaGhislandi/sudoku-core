@@ -34,7 +34,7 @@ Isso a torna testável isoladamente com `cargo test` e reaproveitável por todos
 | Critério de dificuldade | Técnicas de resolução (solver "humano") | Mais justo que contar pistas |
 | Muito Difícil | Pode exigir backtracking | Quando a lógica pura não basta |
 | Organização | Crate único `sudoku-core` | Simples, testável, fácil de evoluir (YAGNI sobre workspace) |
-| Dependências | Apenas `rand` | Mínimo necessário; nada de Tauri/IO/UI |
+| Dependências | `rand` + `rand_chacha` | Mínimo necessário; nada de Tauri/IO/UI |
 
 **Padrão espinha-dorsal:** *Strategy* via trait `Technique` organiza as técnicas de
 resolução; `enum` + `match` modelam os dados; `Result`/`Option` modelam falha e ausência.
@@ -45,7 +45,7 @@ Submódulos isolados, cada um com propósito único e testável de forma indepen
 
 ```
 sudoku-core/
-├── Cargo.toml          edition 2024, dep: rand 0.10
+├── Cargo.toml          edition 2024, deps: rand 0.10, rand_chacha 0.10
 └── src/
     ├── lib.rs          declara os módulos e re-exporta a API pública
     ├── difficulty.rs   enum Difficulty (Facil < Medio < Dificil < MuitoDificil)
@@ -122,11 +122,15 @@ seed → RNG → grade resolvida completa
            → bate o nível alvo? sim → Puzzle | não → tenta outro padrão / GenError
 ```
 
-Determinismo é contrato: **mesma seed + mesmo nível → puzzle idêntico, sempre.**
+Determinismo é contrato: **mesma seed + mesmo nível → puzzle idêntico, sempre** — inclusive
+entre versões da lib, porque o RNG é o `ChaCha12Rng` (algoritmo fixo) e não o `StdRng`, cujo
+algoritmo o `rand` pode trocar. Um *golden test* trava a saída da seed 42 para flagrar
+qualquer mudança acidental.
 
 ## 8. Stack e convenções
 
-- **Rust** edition **2024**, crate único `sudoku-core`. Dependência única: **`rand` 0.10** (RNG com seed).
+- **Rust** edition **2024**, crate único `sudoku-core`. Dependências: **`rand` 0.10** e
+  **`rand_chacha` 0.10** (`ChaCha12Rng`, de algoritmo fixo, para o determinismo da seed).
 - Testes unitários **inline** em cada módulo (`#[cfg(test)] mod tests`); teste de
   integração da API pública em `sudoku-core/tests/`.
 - Comandos rodam da raiz do repo via `--manifest-path sudoku-core/Cargo.toml`.

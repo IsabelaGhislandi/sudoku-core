@@ -66,11 +66,10 @@ estado interno**, então é uma mutação. Passar o mesmo `rng` adiante (em vez 
 garante uma única sequência determinística para a geração inteira. A ordem das chamadas faz
 parte do contrato: embaralhar algo a mais no meio mudaria todos os puzzles.
 
-> ⚠️ **Cuidado para o futuro (puzzle por código):** a documentação do `rand` avisa que o
-> algoritmo por trás do `StdRng` pode mudar entre versões da biblioteca. Mesma seed + mesma
-> versão = mesmo puzzle; após um upgrade do `rand`, não há garantia. Quando a seed virar algo
-> que o usuário compartilha, vale trocar para um RNG de algoritmo fixo (ex.: `ChaCha12Rng` do
-> crate `rand_chacha`).
+> ℹ️ A primeira versão desta task usava o `StdRng`, e isso foi corrigido logo em seguida —
+> veja a [página 14](14-rng-reproduzivel-e-golden-tests.md). Resumo: o `rand` se reserva o
+> direito de trocar o algoritmo do `StdRng` entre versões, então o determinismo não
+> sobreviveria a um upgrade da lib. O gerador usa hoje o `ChaCha12Rng`, de algoritmo fixo.
 
 ## Traits precisam estar em escopo
 
