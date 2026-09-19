@@ -27,10 +27,10 @@ pub fn candidates_for(grid: &Grid, index: usize) -> CandidateSet {
     let (r, c, b) = (row_of(index), col_of(index), box_of(index));
     let mut used: u16 = 0;
     for i in 0..81 {
-        if let Cell::Filled(v) = grid.get(i) {
-            if row_of(i) == r || col_of(i) == c || box_of(i) == b {
-                used |= 1 << v;
-            }
+        if let Cell::Filled(v) = grid.get(i)
+            && (row_of(i) == r || col_of(i) == c || box_of(i) == b)
+        {
+            used |= 1 << v;
         }
     }
     let all: u16 = 0b11_1111_1110; // bits 1..=9

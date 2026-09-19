@@ -59,10 +59,11 @@ impl Grid {
             if i == index {
                 continue;
             }
-            if let Cell::Filled(v) = self.cells[i] {
-                if v == value && (row_of(i) == r || col_of(i) == c || box_of(i) == b) {
-                    return false;
-                }
+            if let Cell::Filled(v) = self.cells[i]
+                && v == value
+                && (row_of(i) == r || col_of(i) == c || box_of(i) == b)
+            {
+                return false;
             }
         }
         true
@@ -75,14 +76,13 @@ pub fn validate(grid: &Grid) -> Vec<Conflict> {
     for i in 0..81 {
         if let Cell::Filled(vi) = grid.get(i) {
             for j in (i + 1)..81 {
-                if let Cell::Filled(vj) = grid.get(j) {
-                    if vi == vj
-                        && (row_of(i) == row_of(j)
-                            || col_of(i) == col_of(j)
-                            || box_of(i) == box_of(j))
-                    {
-                        out.push(Conflict { a: i, b: j });
-                    }
+                if let Cell::Filled(vj) = grid.get(j)
+                    && vi == vj
+                    && (row_of(i) == row_of(j)
+                        || col_of(i) == col_of(j)
+                        || box_of(i) == box_of(j))
+                {
+                    out.push(Conflict { a: i, b: j });
                 }
             }
         }

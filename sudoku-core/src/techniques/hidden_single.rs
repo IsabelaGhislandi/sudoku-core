@@ -41,13 +41,13 @@ fn sole_spot(grid: &Grid, value: u8, in_unit: impl Fn(usize) -> bool) -> Option<
         if !in_unit(i) {
             continue;
         }
-        if let Cell::Empty = grid.get(i) {
-            if candidates_for(grid, i).contains(value) {
-                if found.is_some() {
-                    return None; // mais de um lugar possível
-                }
-                found = Some(i);
+        if let Cell::Empty = grid.get(i)
+            && candidates_for(grid, i).contains(value)
+        {
+            if found.is_some() {
+                return None; // mais de um lugar possível
             }
+            found = Some(i);
         }
     }
     found
