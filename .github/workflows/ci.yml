@@ -1,0 +1,50 @@
+# CI do sudoku-core: formatação, lint, build e testes em Linux, Windows e macOS.
+# Garante automaticamente as regras do CLAUDE.md antes de qualquer merge no master.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# Um push novo no mesmo PR/branch cancela a execução anterior, que já ficou obsoleta.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # Qualquer warning do compilador vira erro: "build sem warnings" deixa de ser combinado.
+  RUSTFLAGS: -D warnings
+
+jobs:
+  fmt:
+    name: Formatação
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --manifest-path sudoku-core/Cargo.toml --check
+
+  test:
+    name: Testes (${{ matrix.os }})
+    strategy:
+      # Uma falha num SO não cancela os outros: queremos ver o quadro completo.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: sudoku-core
+      # --locked falha se o Cargo.lock estiver desatualizado em relação ao Cargo.toml.
+      - run: cargo clippy --manifest-path sudoku-core/Cargo.toml --all-targets --locked -- -D warnings
+      - run: cargo build --manifest-path sudoku-core/Cargo.toml --locked
+      - run: cargo test --manifest-path sudoku-core/Cargo.toml --locked
