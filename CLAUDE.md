@@ -43,8 +43,13 @@ cargo test  --manifest-path sudoku-core/Cargo.toml          # tudo
 cargo test  --manifest-path sudoku-core/Cargo.toml rating   # um módulo
 cargo test  --manifest-path sudoku-core/Cargo.toml --test api
 cargo build --manifest-path sudoku-core/Cargo.toml          # deve ficar sem warnings
-cargo clippy --manifest-path sudoku-core/Cargo.toml
+cargo clippy --manifest-path sudoku-core/Cargo.toml --all-targets -- -D warnings
+cargo fmt    --manifest-path sudoku-core/Cargo.toml          # antes de cada commit
 ```
+
+O CI (`.github/workflows/ci.yml`) roda fmt, clippy, build e testes em Linux, Windows e macOS
+a cada PR, com warnings tratados como erro e `--locked`. Se passou local com os comandos
+acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`](docs/wiki/15-ci-cd-com-github-actions.md).
 
 ## Código
 

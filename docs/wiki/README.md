@@ -27,5 +27,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [12 — Gerador: RNG com seed, traits em escopo e MRV](12-gerador-rng-com-seed-e-traits-em-escopo.md)
 - [13 — API pública: visibilidade, `pub use` e testes de integração](13-api-publica-visibilidade-e-testes-de-integracao.md)
 - [14 — RNG reproduzível entre versões e golden tests](14-rng-reproduzivel-e-golden-tests.md)
+- [15 — CI/CD com GitHub Actions](15-ci-cd-com-github-actions.md)
 
 > Cada nova task ganha uma página aqui.

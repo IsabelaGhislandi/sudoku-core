@@ -135,6 +135,11 @@ qualquer mudança acidental.
   integração da API pública em `sudoku-core/tests/`.
 - Comandos rodam da raiz do repo via `--manifest-path sudoku-core/Cargo.toml`.
 - Commits em **inglês**, padrão Conventional Commits.
+- Código formatado com `rustfmt` (configuração padrão); finais de linha LF via `.gitattributes`.
+- **CI** (GitHub Actions, `.github/workflows/ci.yml`): fmt, clippy, build e testes em
+  Ubuntu/Windows/macOS a cada PR, com `-D warnings` e `--locked`. **CD** fica para o módulo
+  Tauri: build do APK a cada tag `v*`, anexado a uma GitHub Release.
+  Spec: `docs/superpowers/specs/2026-09-19-ci-design.md`.
 
 ## 9. Processo e skills
 
