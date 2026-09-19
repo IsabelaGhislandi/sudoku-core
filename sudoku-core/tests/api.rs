@@ -1,5 +1,5 @@
 use sudoku_core::{
-    candidates_for, count_solutions, generate, next_hint, rate, validate, Cell, Difficulty,
+    Cell, Difficulty, candidates_for, count_solutions, generate, next_hint, rate, validate,
 };
 
 #[test]
@@ -16,6 +16,8 @@ fn fluxo_completo_facil() {
     assert_eq!(puzzle.solution.get(hint.index), Cell::Filled(hint.value));
 
     // candidates_for é acessível pela API pública
-    let alguma_vazia = (0..81).find(|&i| puzzle.givens.get(i) == Cell::Empty).unwrap();
+    let alguma_vazia = (0..81)
+        .find(|&i| puzzle.givens.get(i) == Cell::Empty)
+        .unwrap();
     assert!(candidates_for(&puzzle.givens, alguma_vazia).count() >= 1);
 }

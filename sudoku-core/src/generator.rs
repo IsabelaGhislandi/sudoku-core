@@ -1,5 +1,5 @@
-use rand::seq::SliceRandom;
 use rand::SeedableRng;
+use rand::seq::SliceRandom;
 use rand_chacha::ChaCha12Rng;
 
 use crate::backtracking::count_solutions;
@@ -105,7 +105,9 @@ mod tests {
         assert_eq!(count_solutions(&puzzle.givens, 2), 1);
         assert_eq!(crate::rating::rate(&puzzle.givens), Some(Difficulty::Facil));
         // o enunciado removeu pelo menos algumas células
-        let vazias = (0..81).filter(|&i| puzzle.givens.get(i) == Cell::Empty).count();
+        let vazias = (0..81)
+            .filter(|&i| puzzle.givens.get(i) == Cell::Empty)
+            .count();
         assert!(vazias > 0);
     }
 

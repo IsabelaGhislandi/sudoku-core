@@ -36,7 +36,11 @@ impl LogicalSolver {
         let mut steps = Vec::new();
         loop {
             if work.is_complete() {
-                return SolveResult { grid: work, steps, solved: true };
+                return SolveResult {
+                    grid: work,
+                    steps,
+                    solved: true,
+                };
             }
             match self.next_step(&work) {
                 Some(d) => {
@@ -44,7 +48,11 @@ impl LogicalSolver {
                     steps.push(d);
                 }
                 None => {
-                    return SolveResult { grid: work, steps, solved: false };
+                    return SolveResult {
+                        grid: work,
+                        steps,
+                        solved: false,
+                    };
                 }
             }
         }

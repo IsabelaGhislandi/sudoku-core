@@ -1,4 +1,4 @@
-use crate::grid::{box_of, col_of, row_of, Cell, Grid};
+use crate::grid::{Cell, Grid, box_of, col_of, row_of};
 
 /// Bitmask dos dígitos candidatos 1..=9 (bit n ligado => dígito n é candidato).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

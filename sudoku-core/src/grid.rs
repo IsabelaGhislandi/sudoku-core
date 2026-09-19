@@ -11,7 +11,9 @@ pub struct Grid {
 
 impl Grid {
     pub fn empty() -> Self {
-        Grid { cells: [Cell::Empty; 81] }
+        Grid {
+            cells: [Cell::Empty; 81],
+        }
     }
 
     pub fn get(&self, index: usize) -> Cell {
@@ -78,9 +80,7 @@ pub fn validate(grid: &Grid) -> Vec<Conflict> {
             for j in (i + 1)..81 {
                 if let Cell::Filled(vj) = grid.get(j)
                     && vi == vj
-                    && (row_of(i) == row_of(j)
-                        || col_of(i) == col_of(j)
-                        || box_of(i) == box_of(j))
+                    && (row_of(i) == row_of(j) || col_of(i) == col_of(j) || box_of(i) == box_of(j))
                 {
                     out.push(Conflict { a: i, b: j });
                 }

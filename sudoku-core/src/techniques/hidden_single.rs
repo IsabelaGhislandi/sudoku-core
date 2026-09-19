@@ -1,7 +1,7 @@
 use super::{Deduction, Technique};
 use crate::candidates::candidates_for;
 use crate::difficulty::Difficulty;
-use crate::grid::{box_of, col_of, row_of, Cell, Grid};
+use crate::grid::{Cell, Grid, box_of, col_of, row_of};
 
 pub struct HiddenSingle;
 
