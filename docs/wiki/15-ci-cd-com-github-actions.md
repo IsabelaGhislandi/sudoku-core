@@ -181,14 +181,60 @@ poderiam discordar entre sistemas.
 ## Proteção do `master` (passo manual)
 
 O CI só **informa**; quem **impede** o merge de código vermelho é a proteção de branch. Não dá
-para versionar isso no repositório — é configuração do GitHub:
+para versionar isso no repositório — é configuração do site, em **Settings → Rules → Rulesets →
+New ruleset → New branch ruleset**. (O modelo antigo, *Branch protection rules*, ainda existe
+como legado; os rulesets são a forma atual.)
 
-1. No repositório: **Settings → Branches → Add branch ruleset** (ou *Add rule*).
-2. Alvo: `master`.
-3. Marque **Require status checks to pass** e adicione os checks:
-   `Formatação`, `Testes (ubuntu-latest)`, `Testes (windows-latest)`, `Testes (macos-latest)`.
-   (Eles só aparecem na busca depois que o workflow rodou ao menos uma vez.)
-4. Opcional: **Require a pull request before merging** — ninguém faz push direto no `master`.
+A configuração deste repositório, no ruleset `protect master`:
+
+| Campo | Valor | Por quê |
+|-------|-------|---------|
+| Enforcement status | `Active` | `Evaluate` é modo seco: registra o que teria bloqueado, sem bloquear |
+| Bypass list | **vazia** | Em ruleset, ninguém burla a menos que seja listado — inclusive quem é admin |
+| Target branches | *Include default branch* | Segue o `master` mesmo se a branch padrão for renomeada |
+| Restrict deletions | ✔ | Ninguém apaga o `master` |
+| Block force pushes | ✔ | Sem reescrever história já publicada |
+| Require a pull request before merging | ✔, **0 aprovações** | Todo código entra por PR |
+| Require status checks to pass | ✔ `Formatação`, `Testes (ubuntu-latest)`, `Testes (windows-latest)`, `Testes (macos-latest)` | O item principal |
+| Require branches to be up to date | ✔ (*strict mode*) | Verde medido contra o `master` atual, não contra um que já mudou |
+
+Os checks só aparecem na busca depois que o workflow rodou **ao menos uma vez** — o GitHub
+lista os nomes que viu recentemente, não os que leu do `ci.yml`. Por isso a ordem é: mergear o
+workflow, deixar rodar, e só então criar o ruleset.
+
+### Três armadilhas
+
+**Bypass vazio vale para você.** Diferente do modelo antigo, onde quem era admin passava por
+cima por padrão, aqui a lista vazia significa que a regra prende a dona do repositório também:
+`git push` direto no `master` passa a ser recusado com `GH006: Protected branch update failed`.
+Num projeto de estudo isso é o ponto — é o que faz sentir a regra. Se um dia precisar de
+escape, mude o *Enforcement status* para `Disabled` por um minuto, em vez de abrir um bypass
+permanente.
+
+**`Required approvals` precisa ser 0 em repositório de uma pessoa só.** O GitHub não deixa
+ninguém aprovar o próprio PR. Exigir 1 aprovação sozinha no repo te tranca fora do `master`
+sem ninguém para destrancar.
+
+**Nome de job exigido é string fixa.** O ruleset guarda `Formatação`, não "o primeiro job do
+`ci.yml`". Renomeou o job no workflow — ou acrescentou um `paths:` que faz o workflow não rodar
+em certos PRs — e o check exigido nunca mais é reportado: o PR fica preso para sempre em
+*"Expected — Waiting for status to be reported"*, sem nada vermelho para explicar o porquê.
+Renomeou job? Atualize o ruleset no mesmo commit.
+
+### Provando que o portão fecha
+
+Um CI que fica verde não prova nada: prova quando fica **vermelho** na hora certa. O teste foi
+uma branch descartável com espaços a mais numa linha do `lib.rs` — erro que só o `rustfmt`
+enxerga, invisível para o compilador:
+
+```rust
+pub   use    rating::rate;
+```
+
+Resultado do PR: `Formatação` ❌ e os três `Testes` ✅. Exatamente um job vermelho, o certo, e
+o botão de merge bloqueado com *"Required statuses must pass before merging"* — a parte que o
+ruleset acrescentou. Antes dele, o vermelho era só informação e dava para mergear por cima.
+Depois de observado, branch e PR foram apagados.
 
 ## Quando o CI fica vermelho
 
