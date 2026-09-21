@@ -1,0 +1,3 @@
+# Normaliza finais de linha: LF no repositório e na cópia de trabalho,
+# em qualquer sistema. Evita diffs fantasmas entre Windows e Linux/macOS.
+* text=auto eol=lf

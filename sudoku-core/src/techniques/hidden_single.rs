@@ -1,7 +1,7 @@
 use super::{Deduction, Technique};
 use crate::candidates::candidates_for;
 use crate::difficulty::Difficulty;
-use crate::grid::{box_of, col_of, row_of, Cell, Grid};
+use crate::grid::{Cell, Grid, box_of, col_of, row_of};
 
 pub struct HiddenSingle;
 
@@ -41,13 +41,13 @@ fn sole_spot(grid: &Grid, value: u8, in_unit: impl Fn(usize) -> bool) -> Option<
         if !in_unit(i) {
             continue;
         }
-        if let Cell::Empty = grid.get(i) {
-            if candidates_for(grid, i).contains(value) {
-                if found.is_some() {
-                    return None; // mais de um lugar possível
-                }
-                found = Some(i);
+        if let Cell::Empty = grid.get(i)
+            && candidates_for(grid, i).contains(value)
+        {
+            if found.is_some() {
+                return None; // mais de um lugar possível
             }
+            found = Some(i);
         }
     }
     found

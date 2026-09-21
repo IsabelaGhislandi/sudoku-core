@@ -1,0 +1,5 @@
+# Commits só de formatação, ignorados pelo `git blame` e pela interface do GitHub.
+# Uso local: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# chore: format codebase with rustfmt
+c447965f242f8328bddb33b0f280673cf8f59840
