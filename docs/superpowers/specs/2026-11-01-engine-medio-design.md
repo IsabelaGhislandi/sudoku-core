@@ -121,7 +121,8 @@ LogicalSolver::up_to(level)   // só as técnicas com nível <= level
 ```
 
 - `dig_facil` passa a usar `up_to(Difficulty::Facil)`. É isso que protege a meta 4.
-- `rate` usa `new()`.
+- `rate` usa `new()` e devolve `None` de imediato se `validate` apontar conflitos, para não gastar uma
+  busca longa em uma grade quase vazia que não pode ter solução.
 - `solve` mantém um `CandidateGrid` e aplica cada `Action`. Quando nenhuma técnica se aplica, empaca.
 - `SolveResult.grid` e `.solved` mantêm o significado atual; `.steps` passa a incluir eliminações.
 
