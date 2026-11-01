@@ -1,7 +1,9 @@
 use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
-use crate::techniques::{Action, Deduction, HiddenSingle, NakedPair, NakedSingle, Technique};
+use crate::techniques::{
+    Action, Deduction, HiddenPair, HiddenSingle, NakedPair, NakedSingle, Technique,
+};
 
 pub struct LogicalSolver {
     techniques: Vec<Box<dyn Technique>>,
@@ -22,6 +24,7 @@ fn all_techniques() -> Vec<Box<dyn Technique>> {
         Box::new(NakedSingle),
         Box::new(HiddenSingle),
         Box::new(NakedPair),
+        Box::new(HiddenPair),
     ]
 }
 
