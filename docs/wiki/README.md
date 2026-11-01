@@ -30,5 +30,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [14 — RNG reproduzível entre versões e golden tests](14-rng-reproduzivel-e-golden-tests.md)
 - [15 — CI/CD com GitHub Actions](15-ci-cd-com-github-actions.md)
 - [16 — `CandidateGrid`: quando um valor calculado vira estado](16-candidategrid-e-estado-mutavel.md)
+- [17 — Enums com dados e o solver limitado por nível](17-enums-com-dados-e-api-por-nivel.md)
 
 > Cada nova task ganha uma página aqui.
