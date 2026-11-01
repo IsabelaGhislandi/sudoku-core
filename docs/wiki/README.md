@@ -32,5 +32,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [16 — `CandidateGrid`: quando um valor calculado vira estado](16-candidategrid-e-estado-mutavel.md)
 - [17 — Enums com dados e o solver limitado por nível](17-enums-com-dados-e-api-por-nivel.md)
 - [18 — Naked Pair e a iteração por unidades](18-naked-pair-e-iteracao-por-unidades.md)
+- [19 — Hidden Pair e máscaras de posição](19-hidden-pair-e-mascaras.md)
 
 > Cada nova task ganha uma página aqui.
