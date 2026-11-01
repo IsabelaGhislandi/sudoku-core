@@ -11,6 +11,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 1 a 5](fundamentos/rust-base-tarefas-01-a-05.md)
 - [Fundamentos de Rust — Tarefas 6 a 10](fundamentos/rust-base-tarefas-06-a-10.md)
 - [Fundamentos de Rust — Tarefas 11 a 15](fundamentos/rust-base-tarefas-11-a-15.md)
+- [Fundamentos de Rust — Tarefas 16 a 20](fundamentos/rust-base-tarefas-16-a-20.md)
 
 ## Índice por task
 
@@ -33,5 +34,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [17 — Enums com dados e o solver limitado por nível](17-enums-com-dados-e-api-por-nivel.md)
 - [18 — Naked Pair e a iteração por unidades](18-naked-pair-e-iteracao-por-unidades.md)
 - [19 — Hidden Pair e máscaras de posição](19-hidden-pair-e-mascaras.md)
+- [20 — Pointing Pair e funções como parâmetro](20-pointing-pair.md)
 
 > Cada nova task ganha uma página aqui.
