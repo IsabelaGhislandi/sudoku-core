@@ -1,6 +1,6 @@
 use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
-use crate::grid::Grid;
+use crate::grid::{Grid, box_of, col_of, row_of};
 
 /// O que uma dedução muda: coloca um valor ou remove candidatos.
 ///
@@ -32,8 +32,23 @@ pub trait Technique {
     fn apply(&self, grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction>;
 }
 
+/// As 27 unidades do tabuleiro: linhas, depois colunas, depois boxes, com as células
+/// em ordem crescente. A ordem é fixa porque o determinismo do gerador depende dela.
+pub(crate) fn units() -> [[usize; 9]; 27] {
+    std::array::from_fn(|u| {
+        let mut cells = (0..81).filter(|&i| match u {
+            0..=8 => row_of(i) == u,
+            9..=17 => col_of(i) == u - 9,
+            _ => box_of(i) == u - 18,
+        });
+        std::array::from_fn(|_| cells.next().expect("toda unidade tem 9 células"))
+    })
+}
+
 mod hidden_single;
+mod naked_pair;
 mod naked_single;
 
 pub use hidden_single::HiddenSingle;
+pub use naked_pair::NakedPair;
 pub use naked_single::NakedSingle;

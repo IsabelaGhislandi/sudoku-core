@@ -1,7 +1,7 @@
 use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
-use crate::techniques::{Action, Deduction, HiddenSingle, NakedSingle, Technique};
+use crate::techniques::{Action, Deduction, HiddenSingle, NakedPair, NakedSingle, Technique};
 
 pub struct LogicalSolver {
     techniques: Vec<Box<dyn Technique>>,
@@ -18,7 +18,11 @@ pub struct SolveResult {
 /// do início da lista, então só recorre a uma técnica difícil quando as simples
 /// empacam. É isso que faz o nível do puzzle refletir o que ele realmente exige.
 fn all_techniques() -> Vec<Box<dyn Technique>> {
-    vec![Box::new(NakedSingle), Box::new(HiddenSingle)]
+    vec![
+        Box::new(NakedSingle),
+        Box::new(HiddenSingle),
+        Box::new(NakedPair),
+    ]
 }
 
 impl LogicalSolver {
@@ -154,6 +158,24 @@ mod tests {
         let mut grid = Grid::from_line(solucao()).unwrap();
         grid.set(40, Cell::Empty);
         assert!(LogicalSolver::up_to(Difficulty::Facil).solve(&grid).solved);
+    }
+
+    #[test]
+    fn up_to_facil_nao_usa_tecnica_de_medio() {
+        // Sem singles disponíveis: só o Naked Pair das células 0 e 1 se aplica.
+        let grid = Grid::empty();
+        let mut candidatos = CandidateGrid::from_grid(&grid);
+        for celula in [0, 1] {
+            for v in 3..=9 {
+                candidatos.eliminate(celula, v);
+            }
+        }
+        assert_eq!(
+            LogicalSolver::up_to(Difficulty::Facil).next_step(&grid, &candidatos),
+            None
+        );
+        let d = LogicalSolver::new().next_step(&grid, &candidatos).unwrap();
+        assert_eq!(d.technique, "Naked Pair");
     }
 
     #[test]
