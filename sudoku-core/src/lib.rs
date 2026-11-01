@@ -11,7 +11,7 @@ mod solver;
 mod techniques;
 
 pub use backtracking::count_solutions;
-pub use candidates::{CandidateSet, candidates_for};
+pub use candidates::{CandidateGrid, CandidateSet, candidates_for};
 pub use difficulty::Difficulty;
 pub use generator::{GenError, Puzzle, generate};
 pub use grid::{Cell, Conflict, Grid, ParseError, validate};
