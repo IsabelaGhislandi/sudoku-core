@@ -16,5 +16,5 @@ pub use difficulty::Difficulty;
 pub use generator::{GenError, Puzzle, generate};
 pub use grid::{Cell, Conflict, Grid, ParseError, validate};
 pub use rating::rate;
-pub use solver::{LogicalSolver, SolveResult, next_hint};
-pub use techniques::{Deduction, HiddenSingle, NakedSingle, Technique};
+pub use solver::{LogicalSolver, SolveResult};
+pub use techniques::{Action, Deduction, HiddenSingle, NakedSingle, Technique};

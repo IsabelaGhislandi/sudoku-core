@@ -75,7 +75,7 @@ fn dig_facil(solution: &Grid, rng: &mut ChaCha12Rng) -> Grid {
     let mut puzzle = solution.clone();
     let mut order: Vec<usize> = (0..81).collect();
     order.shuffle(rng);
-    let solver = LogicalSolver::new();
+    let solver = LogicalSolver::up_to(Difficulty::Facil);
     for index in order {
         let removed = puzzle.get(index);
         puzzle.set(index, Cell::Empty);

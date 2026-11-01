@@ -1,6 +1,6 @@
 use crate::backtracking::count_solutions;
 use crate::difficulty::Difficulty;
-use crate::grid::Grid;
+use crate::grid::{Grid, validate};
 use crate::solver::LogicalSolver;
 
 /// Classifica um puzzle pela técnica mais avançada que sua resolução lógica exige.
@@ -11,7 +11,9 @@ use crate::solver::LogicalSolver;
 /// exigem técnicas intermediárias aparecem como MuitoDificil. Planos futuros
 /// (Médio/Difícil) refinam essa classificação ao adicionar mais técnicas.
 pub fn rate(grid: &Grid) -> Option<Difficulty> {
-    if count_solutions(grid, 2) != 1 {
+    // Provar por busca que uma grade quase vazia com conflito não tem solução pode
+    // demorar demais; o conflito já responde.
+    if !validate(grid).is_empty() || count_solutions(grid, 2) != 1 {
         return None;
     }
     let result = LogicalSolver::new().solve(grid);

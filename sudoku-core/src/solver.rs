@@ -1,5 +1,7 @@
+use crate::candidates::CandidateGrid;
+use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
-use crate::techniques::{Deduction, HiddenSingle, NakedSingle, Technique};
+use crate::techniques::{Action, Deduction, HiddenSingle, NakedSingle, Technique};
 
 pub struct LogicalSolver {
     techniques: Vec<Box<dyn Technique>>,
@@ -12,18 +14,36 @@ pub struct SolveResult {
     pub solved: bool,
 }
 
+/// Todas as técnicas, da mais simples para a mais difícil. O solver sempre tenta
+/// do início da lista, então só recorre a uma técnica difícil quando as simples
+/// empacam. É isso que faz o nível do puzzle refletir o que ele realmente exige.
+fn all_techniques() -> Vec<Box<dyn Technique>> {
+    vec![Box::new(NakedSingle), Box::new(HiddenSingle)]
+}
+
 impl LogicalSolver {
-    /// Solver com as técnicas disponíveis na fatia "Fácil".
+    /// Solver com todas as técnicas implementadas.
     pub fn new() -> Self {
         LogicalSolver {
-            techniques: vec![Box::new(NakedSingle), Box::new(HiddenSingle)],
+            techniques: all_techniques(),
         }
     }
 
-    /// Primeira jogada logicamente dedutível, ou None se empacar.
-    pub fn next_step(&self, grid: &Grid) -> Option<Deduction> {
+    /// Solver só com as técnicas até `level`. O gerador de Fácil depende disso: se
+    /// técnicas de Médio entrassem nele, todos os puzzles Fáceis mudariam.
+    pub fn up_to(level: Difficulty) -> Self {
+        LogicalSolver {
+            techniques: all_techniques()
+                .into_iter()
+                .filter(|t| t.level() <= level)
+                .collect(),
+        }
+    }
+
+    /// Primeira dedução lógica disponível, ou None se empacar.
+    pub fn next_step(&self, grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction> {
         for technique in &self.techniques {
-            if let Some(d) = technique.apply(grid) {
+            if let Some(d) = technique.apply(grid, candidates) {
                 return Some(d);
             }
         }
@@ -33,6 +53,7 @@ impl LogicalSolver {
     /// Aplica técnicas repetidamente até resolver ou empacar.
     pub fn solve(&self, grid: &Grid) -> SolveResult {
         let mut work = grid.clone();
+        let mut candidates = CandidateGrid::from_grid(&work);
         let mut steps = Vec::new();
         loop {
             if work.is_complete() {
@@ -42,9 +63,19 @@ impl LogicalSolver {
                     solved: true,
                 };
             }
-            match self.next_step(&work) {
+            match self.next_step(&work, &candidates) {
                 Some(d) => {
-                    work.set(d.index, Cell::Filled(d.value));
+                    match &d.action {
+                        Action::Place { index, value } => {
+                            work.set(*index, Cell::Filled(*value));
+                            candidates.place(*index, *value);
+                        }
+                        Action::Eliminate(pairs) => {
+                            for &(index, value) in pairs {
+                                candidates.eliminate(index, value);
+                            }
+                        }
+                    }
                     steps.push(d);
                 }
                 None => {
@@ -63,12 +94,6 @@ impl Default for LogicalSolver {
     fn default() -> Self {
         Self::new()
     }
-}
-
-/// Próxima jogada logicamente dedutível — reutiliza as técnicas do solver.
-/// Alimenta a feature de dica do módulo Game (futuro).
-pub fn next_hint(grid: &Grid) -> Option<Deduction> {
-    LogicalSolver::new().next_step(grid)
 }
 
 #[cfg(test)]
@@ -99,10 +124,50 @@ mod tests {
     }
 
     #[test]
+    fn solve_termina_em_grade_com_conflito() {
+        let mut grid = Grid::empty();
+        grid.set(0, Cell::Filled(5));
+        grid.set(1, Cell::Filled(5));
+        let _ = LogicalSolver::new().solve(&grid); // não pode dar panic nem travar
+        assert_eq!(crate::rating::rate(&grid), None);
+    }
+
+    #[test]
+    fn empaca_em_celula_sem_candidatos() {
+        // Linha 0 com 1 a 8 e um 9 mais abaixo na coluna 0: a célula 0 fica sem candidatos.
+        let mut grid = Grid::from_line(&format!(".12345678{}", ".".repeat(72))).unwrap();
+        grid.set(27, Cell::Filled(9));
+        assert!(!LogicalSolver::new().solve(&grid).solved);
+    }
+
+    #[test]
+    fn grade_completa_nao_tem_passos() {
+        let grid = Grid::from_line(solucao()).unwrap();
+        let result = LogicalSolver::new().solve(&grid);
+        assert!(result.solved);
+        assert!(result.steps.is_empty());
+        assert_eq!(crate::rating::rate(&grid), Some(Difficulty::Facil));
+    }
+
+    #[test]
+    fn up_to_facil_resolve_puzzle_de_singles() {
+        let mut grid = Grid::from_line(solucao()).unwrap();
+        grid.set(40, Cell::Empty);
+        assert!(LogicalSolver::up_to(Difficulty::Facil).solve(&grid).solved);
+    }
+
+    #[test]
     fn next_step_devolve_primeira_deducao() {
         let mut grid = Grid::from_line(solucao()).unwrap();
         grid.set(40, Cell::Empty);
-        let step = LogicalSolver::new().next_step(&grid).unwrap();
-        assert_eq!(step.index, 40);
+        let candidatos = CandidateGrid::from_grid(&grid);
+        let step = LogicalSolver::new().next_step(&grid, &candidatos).unwrap();
+        assert_eq!(
+            step.action,
+            Action::Place {
+                index: 40,
+                value: 5
+            }
+        );
     }
 }

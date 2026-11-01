@@ -1,6 +1,4 @@
-use sudoku_core::{
-    Cell, Difficulty, candidates_for, count_solutions, generate, next_hint, rate, validate,
-};
+use sudoku_core::{Cell, Difficulty, candidates_for, count_solutions, generate, rate, validate};
 
 #[test]
 fn fluxo_completo_facil() {
@@ -10,10 +8,6 @@ fn fluxo_completo_facil() {
     assert_eq!(count_solutions(&puzzle.givens, 2), 1);
     assert_eq!(rate(&puzzle.givens), Some(Difficulty::Facil));
     assert!(validate(&puzzle.givens).is_empty());
-
-    // a dica aponta uma jogada que bate com a solução
-    let hint = next_hint(&puzzle.givens).expect("deve haver uma dica");
-    assert_eq!(puzzle.solution.get(hint.index), Cell::Filled(hint.value));
 
     // candidates_for é acessível pela API pública
     let alguma_vazia = (0..81)

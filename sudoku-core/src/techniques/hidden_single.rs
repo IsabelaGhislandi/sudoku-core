@@ -1,21 +1,25 @@
-use super::{Deduction, Technique};
-use crate::candidates::candidates_for;
+use super::{Action, Deduction, Technique};
+use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid, box_of, col_of, row_of};
 
 pub struct HiddenSingle;
 
 impl Technique for HiddenSingle {
-    fn apply(&self, grid: &Grid) -> Option<Deduction> {
+    fn level(&self) -> Difficulty {
+        Difficulty::Facil
+    }
+
+    fn apply(&self, grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction> {
         for value in 1..=9u8 {
             for unit in 0..9 {
-                if let Some(index) = sole_spot(grid, value, |i| row_of(i) == unit) {
+                if let Some(index) = sole_spot(grid, candidates, value, |i| row_of(i) == unit) {
                     return Some(deduction(index, value));
                 }
-                if let Some(index) = sole_spot(grid, value, |i| col_of(i) == unit) {
+                if let Some(index) = sole_spot(grid, candidates, value, |i| col_of(i) == unit) {
                     return Some(deduction(index, value));
                 }
-                if let Some(index) = sole_spot(grid, value, |i| box_of(i) == unit) {
+                if let Some(index) = sole_spot(grid, candidates, value, |i| box_of(i) == unit) {
                     return Some(deduction(index, value));
                 }
             }
@@ -26,8 +30,7 @@ impl Technique for HiddenSingle {
 
 fn deduction(index: usize, value: u8) -> Deduction {
     Deduction {
-        index,
-        value,
+        action: Action::Place { index, value },
         technique: "Hidden Single",
         level: Difficulty::Facil,
     }
@@ -35,14 +38,19 @@ fn deduction(index: usize, value: u8) -> Deduction {
 
 /// Retorna a única célula vazia da unidade que pode receber `value`, se existir
 /// exatamente uma.
-fn sole_spot(grid: &Grid, value: u8, in_unit: impl Fn(usize) -> bool) -> Option<usize> {
+fn sole_spot(
+    grid: &Grid,
+    candidates: &CandidateGrid,
+    value: u8,
+    in_unit: impl Fn(usize) -> bool,
+) -> Option<usize> {
     let mut found: Option<usize> = None;
     for i in 0..81 {
         if !in_unit(i) {
             continue;
         }
         if let Cell::Empty = grid.get(i)
-            && candidates_for(grid, i).contains(value)
+            && candidates.get(i).contains(value)
         {
             if found.is_some() {
                 return None; // mais de um lugar possível
@@ -56,8 +64,9 @@ fn sole_spot(grid: &Grid, value: u8, in_unit: impl Fn(usize) -> bool) -> Option<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::candidates::candidates_for;
+    use crate::candidates::{CandidateGrid, candidates_for};
     use crate::grid::Grid;
+    use crate::techniques::Action;
 
     #[test]
     fn deduz_unico_lugar_do_digito_na_linha() {
@@ -71,15 +80,16 @@ mod tests {
         // confirma que é "hidden" e não "naked": índice 0 tem >1 candidato
         assert!(candidates_for(&grid, 0).count() > 1);
 
-        let d = HiddenSingle.apply(&grid).unwrap();
-        assert_eq!(d.index, 0);
-        assert_eq!(d.value, 5);
+        let candidatos = CandidateGrid::from_grid(&grid);
+        let d = HiddenSingle.apply(&grid, &candidatos).unwrap();
+        assert_eq!(d.action, Action::Place { index: 0, value: 5 });
         assert_eq!(d.level, Difficulty::Facil);
     }
 
     #[test]
     fn retorna_none_quando_nao_aplica() {
         let grid = Grid::empty();
-        assert_eq!(HiddenSingle.apply(&grid), None);
+        let candidatos = CandidateGrid::from_grid(&grid);
+        assert_eq!(HiddenSingle.apply(&grid, &candidatos), None);
     }
 }
