@@ -36,5 +36,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [19 — Hidden Pair e máscaras de posição](19-hidden-pair-e-mascaras.md)
 - [20 — Pointing Pair e funções como parâmetro](20-pointing-pair.md)
 - [21 — Gerador de Médio: tentativas, medição e uma checagem redundante](21-gerador-medio-e-tentativas.md)
+- [22 — Box/Line Reduction: fatias, `copied` e o primeiro nível Difícil](22-box-line-reduction.md)
 
 > Cada nova task ganha uma página aqui.
