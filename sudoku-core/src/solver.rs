@@ -3,7 +3,7 @@ use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
 use crate::techniques::{
     Action, BoxLineReduction, Deduction, HiddenPair, HiddenSingle, NakedPair, NakedSingle,
-    PointingPair, Technique,
+    NakedTriple, PointingPair, Technique,
 };
 
 pub struct LogicalSolver {
@@ -28,6 +28,7 @@ fn all_techniques() -> Vec<Box<dyn Technique>> {
         Box::new(HiddenPair),
         Box::new(PointingPair),
         Box::new(BoxLineReduction),
+        Box::new(NakedTriple),
     ]
 }
 

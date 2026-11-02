@@ -20,6 +20,11 @@ impl CandidateSet {
     pub fn remove(&mut self, value: u8) {
         self.0 &= !(1 << value);
     }
+
+    /// Dígitos que estão em pelo menos um dos dois conjuntos.
+    pub fn union(self, other: CandidateSet) -> CandidateSet {
+        CandidateSet(self.0 | other.0)
+    }
 }
 
 /// Candidatos de todas as células, guardados durante uma resolução.
@@ -83,6 +88,13 @@ pub fn candidates_for(grid: &Grid, index: usize) -> CandidateSet {
 mod tests {
     use super::*;
     use crate::grid::Grid;
+
+    #[test]
+    fn uniao_junta_os_candidatos() {
+        let a = CandidateSet((1 << 1) | (1 << 2));
+        let b = CandidateSet((1 << 2) | (1 << 3));
+        assert_eq!(a.union(b).values(), vec![1, 2, 3]);
+    }
 
     #[test]
     fn candidatos_de_celula_vazia() {

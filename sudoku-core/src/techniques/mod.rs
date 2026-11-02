@@ -50,6 +50,7 @@ mod hidden_pair;
 mod hidden_single;
 mod naked_pair;
 mod naked_single;
+mod naked_triple;
 mod pointing_pair;
 
 pub use box_line_reduction::BoxLineReduction;
@@ -57,4 +58,5 @@ pub use hidden_pair::HiddenPair;
 pub use hidden_single::HiddenSingle;
 pub use naked_pair::NakedPair;
 pub use naked_single::NakedSingle;
+pub use naked_triple::NakedTriple;
 pub use pointing_pair::PointingPair;
