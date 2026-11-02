@@ -19,5 +19,5 @@ pub use rating::rate;
 pub use solver::{LogicalSolver, SolveResult};
 pub use techniques::{
     Action, BoxLineReduction, Deduction, HiddenPair, HiddenSingle, HiddenTriple, NakedPair,
-    NakedSingle, NakedTriple, PointingPair, Technique,
+    NakedSingle, NakedTriple, PointingPair, Technique, XWing,
 };
