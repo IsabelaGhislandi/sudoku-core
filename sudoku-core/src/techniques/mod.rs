@@ -48,6 +48,7 @@ pub(crate) fn units() -> [[usize; 9]; 27] {
 mod box_line_reduction;
 mod hidden_pair;
 mod hidden_single;
+mod hidden_triple;
 mod naked_pair;
 mod naked_single;
 mod naked_triple;
@@ -56,6 +57,7 @@ mod pointing_pair;
 pub use box_line_reduction::BoxLineReduction;
 pub use hidden_pair::HiddenPair;
 pub use hidden_single::HiddenSingle;
+pub use hidden_triple::HiddenTriple;
 pub use naked_pair::NakedPair;
 pub use naked_single::NakedSingle;
 pub use naked_triple::NakedTriple;
