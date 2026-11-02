@@ -161,6 +161,10 @@ generate(Medio, seed):
 - `dig_facil` é generalizado para receber o solver. O fluxo de Fácil não usa o laço de tentativas e
   deve consumir o RNG exatamente como hoje.
 - `GenError` ganha a variante `AttemptsExhausted(Difficulty)`.
+- **Decisão tomada na implementação:** `dig` não chama mais `count_solutions`. Um puzzle que o solver
+  resolve só com deduções forçadas já tem solução única, e a busca custava cerca de 80% do tempo. A
+  primeira medição deu 2,24 s no pior caso; sem a busca, ficou abaixo de 0,5 s. `rate` continua conferindo
+  a unicidade de todo Médio aceito.
 - O valor de `MAX_TENTATIVAS_MEDIO` faz parte do contrato de determinismo. Reduzi-lo pode transformar
   um puzzle em erro. Aumentá-lo só transforma erro em puzzle, sem alterar os que já existem.
 

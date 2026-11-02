@@ -2,8 +2,10 @@
 
 > Visão de **design** do projeto. Para os aprendizados de Rust durante a implementação,
 > veja a [wiki](wiki/README.md). Para o detalhe completo de cada decisão, veja a
-> [spec do Core/Engine](superpowers/specs/2026-06-14-sudoku-engine-design.md) e o
-> [plano da fatia Fácil](superpowers/plans/2026-06-14-engine-facil-vertical-slice.md).
+> [spec do Core/Engine](superpowers/specs/2026-06-14-sudoku-engine-design.md), a
+> [spec da fatia Médio](superpowers/specs/2026-11-01-engine-medio-design.md) e os planos das fatias
+> [Fácil](superpowers/plans/2026-06-14-engine-facil-vertical-slice.md) e
+> [Médio](superpowers/plans/2026-11-01-engine-medio.md).
 
 ## 1. Visão geral
 
@@ -15,7 +17,7 @@ o ciclo `spec → plano → implementação` com **TDD**.
 
 | # | Módulo | Responsabilidade | Status |
 |---|--------|------------------|--------|
-| 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **fatia Fácil concluída** |
+| 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **fatias Fácil e Médio concluídas** |
 | 2 | Game/Sessão | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. | futuro |
 | 3 | Frontend/UI | Tabuleiro, input, seleção de dificuldade, telas (Svelte). | futuro |
 | 4 | Tauri/Empacotamento | Ponte Rust↔Svelte e build do APK. | futuro |
@@ -50,33 +52,46 @@ sudoku-core/
     ├── lib.rs          declara os módulos e re-exporta a API pública
     ├── difficulty.rs   enum Difficulty (Facil < Medio < Dificil < MuitoDificil)
     ├── grid.rs         Grid, Cell; parsing/serialização; can_place; validate; helpers de unidade
-    ├── candidates.rs   CandidateSet (bitmask u16) + candidates_for
+    ├── candidates.rs   CandidateSet (bitmask u16), candidates_for, CandidateGrid
     ├── techniques/
-    │   ├── mod.rs          trait Technique + struct Deduction
-    │   ├── naked_single.rs
-    │   └── hidden_single.rs
-    ├── solver.rs       LogicalSolver (solve + next_step) e next_hint
+    │   ├── mod.rs          trait Technique, Deduction, Action, units()
+    │   ├── naked_single.rs     Fácil
+    │   ├── hidden_single.rs    Fácil
+    │   ├── naked_pair.rs       Médio
+    │   ├── hidden_pair.rs      Médio
+    │   └── pointing_pair.rs    Médio
+    ├── solver.rs       LogicalSolver (new, up_to, solve, next_step)
     ├── backtracking.rs count_solutions (unicidade por força bruta)
     ├── rating.rs       rate (classifica pela técnica mais avançada exigida)
     └── generator.rs    generate, Puzzle, GenError (grade completa → cava células)
 ```
+
+Testes de integração em `sudoku-core/tests/`: `api.rs` (fluxos Fácil e Médio pela API pública) e
+`desempenho.rs` (medição do gerador de Médio, `#[ignore]`, só em release).
 
 Responsabilidades:
 
 - **`grid`** — tipos base (`Grid`, `Cell = Empty | Filled(1..=9)`), parsing/serialização
   (string de 81 chars, `.` = vazio), `can_place`, detecção de conflitos linha/coluna/box.
 - **`candidates`** — candidatos de uma célula como bitmask `u16` (bit *n* = dígito *n* possível).
+  `CandidateGrid` guarda os candidatos de todas as células durante uma resolução, porque as
+  eliminações das técnicas de Médio não aparecem na grade.
 - **`techniques`** — cada técnica implementa o trait `Technique` e devolve uma `Deduction`
-  (célula resolvida + nome da técnica + nível). Adicionar técnica nova **não toca no solver**.
-- **`solver`** — `LogicalSolver` aplica as técnicas em ordem e produz a **lista de passos**
-  (serve tanto para o rating quanto para a dica). `next_hint` reusa a primeira dedução.
+  (uma `Action`, `Place` ou `Eliminate`, mais o nome da técnica e o nível). Uma técnica só
+  devolve `Eliminate` se remover ao menos um candidato presente, para o solver não entrar em
+  loop. Adicionar técnica nova **não toca em `solve`**.
+- **`solver`** — `LogicalSolver` aplica as técnicas em ordem, da mais simples para a mais
+  difícil, e produz a **lista de passos** usada pelo rating. `up_to(nível)` limita as técnicas;
+  o gerador de Fácil usa `up_to(Facil)`, e é isso que mantém os puzzles Fáceis inalterados.
 - **`backtracking`** — `count_solutions` resolve por força bruta (ramificando na célula com
   menos candidatos — heurística MRV) e conta soluções até um
   limite (limite 2 ⇒ testa unicidade).
 - **`rating`** — roda o solver lógico e mapeia a técnica mais avançada usada → `Difficulty`;
   cai para `MuitoDificil` quando só o backtracking resolve.
 - **`generator`** — gera grade completa válida (backtracking randomizado **com seed**) e
-  remove células mantendo solução única e solubilidade lógica no nível alvo.
+  remove células enquanto o solver do nível alvo ainda resolve, o que também garante solução
+  única. No Médio, repete com o mesmo RNG até `rate` confirmar o nível, até um número fixo de
+  tentativas (`MAX_TENTATIVAS_MEDIO`, parte do contrato de determinismo).
 
 ## 5. Mapeamento dificuldade → técnica
 
@@ -90,9 +105,9 @@ mais avançada necessária** para resolvê-lo.
 | **Difícil** | + Naked/Hidden Triples, Box-Line Reduction, X-Wing |
 | **Muito Difícil** | + Swordfish, XY-Wing — e/ou backtracking quando a lógica não basta |
 
-> A fatia concluída cobre **apenas o nível Fácil** (Naked/Hidden Single). Puzzles
-> que exigem técnicas mais avançadas aparecem temporariamente como `MuitoDificil` até as
-> fatias seguintes adicionarem as técnicas intermediárias.
+> As fatias concluídas cobrem **Fácil e Médio**. O Pointing Pair também vale para 3 células
+> alinhadas no box. Puzzles que exigem técnicas de Difícil aparecem temporariamente como
+> `MuitoDificil`, até a fatia Difícil.
 
 ## 6. API pública
 
@@ -104,22 +119,31 @@ pub struct Puzzle { givens: Grid, solution: Grid, difficulty: Difficulty, seed: 
 fn generate(difficulty: Difficulty, seed: u64) -> Result<Puzzle, GenError>;
 fn rate(grid: &Grid) -> Option<Difficulty>;
 fn validate(grid: &Grid) -> Vec<Conflict>;
-fn next_hint(grid: &Grid) -> Option<Deduction>;
 fn count_solutions(grid: &Grid, limit: usize) -> usize;
 fn candidates_for(grid: &Grid, index: usize) -> CandidateSet;
+
+pub enum Action { Place { index: usize, value: u8 }, Eliminate(Vec<(usize, u8)>) }
+pub struct Deduction { action: Action, technique: &'static str, level: Difficulty }
+pub enum GenError { Unsupported(Difficulty), AttemptsExhausted(Difficulty) }
 ```
 
-Tipos expostos: `Grid`, `Cell`, `Difficulty`, `Puzzle`, `Deduction`, `Conflict`,
-`CandidateSet`, `ParseError`, `GenError`, `SolveResult`, e as técnicas
-`NakedSingle`/`HiddenSingle` via trait `Technique`.
+`generate` aceita Fácil e Médio; Difícil e Muito Difícil devolvem `GenError::Unsupported`.
+
+Tipos expostos: `Grid`, `Cell`, `Difficulty`, `Puzzle`, `Deduction`, `Action`, `Conflict`,
+`CandidateSet`, `CandidateGrid`, `ParseError`, `GenError`, `LogicalSolver`, `SolveResult`, e as
+técnicas `NakedSingle`, `HiddenSingle`, `NakedPair`, `HiddenPair` e `PointingPair` via trait
+`Technique`.
+
+**A dica do jogo não fica no core.** Ela sorteia uma célula vazia e copia o valor de
+`Puzzle.solution`, então pertence ao módulo Game. O antigo `next_hint` foi removido.
 
 ## 7. Fluxo de geração
 
 ```
 seed → RNG → grade resolvida completa
-           → remover células (mantendo unicidade via backtracking)
+           → remover células enquanto o solver do nível resolve (o que garante unicidade)
            → rate (classificar nível)
-           → bate o nível alvo? sim → Puzzle | não → tenta outro padrão / GenError
+           → bate o nível alvo? sim → Puzzle | não → nova tentativa, até o limite → GenError
 ```
 
 Determinismo é contrato: **mesma seed + mesmo nível → puzzle idêntico, sempre** — inclusive
@@ -155,12 +179,16 @@ fixadas em `skills-lock.json`):
 Artefatos de processo do Engine:
 - **Spec:** `docs/superpowers/specs/2026-06-14-sudoku-engine-design.md`
 - **Plano (fatia Fácil):** `docs/superpowers/plans/2026-06-14-engine-facil-vertical-slice.md`
+- **Spec (fatia Médio):** `docs/superpowers/specs/2026-11-01-engine-medio-design.md`
+- **Plano (fatia Médio):** `docs/superpowers/plans/2026-11-01-engine-medio.md`
 
 ## 10. Evolução futura
 
-- Fatias seguintes adicionam técnicas Médio → Difícil → Muito Difícil (rating fica mais preciso).
-- `Deduction` evolui para também representar **eliminação de candidatos** (não só colocar valor).
-- Módulo Game consumirá `validate` e `next_hint`.
+- Fatias seguintes adicionam técnicas Difícil → Muito Difícil (rating fica mais preciso).
+- Módulo Game consumirá `validate` e implementará a dica, sorteando uma célula vazia e usando
+  `Puzzle.solution`. Como o valor vem da solução, jogadas erradas não afetam a dica.
+- A meta de tempo do Médio (até 5 s no celular) foi medida só neste PC, com pior caso abaixo de
+  0,5 s em 200 seeds. Confirmar em um aparelho real quando o módulo Tauri existir.
 - **Módulo Game — timer + histórico de partidas:** cronometrar quanto o usuário leva para
   resolver e manter um histórico de partidas concluídas, ex.:
   - `Jogo Médio — 10 min — 13/06/2026`

@@ -11,10 +11,12 @@ mod solver;
 mod techniques;
 
 pub use backtracking::count_solutions;
-pub use candidates::{CandidateSet, candidates_for};
+pub use candidates::{CandidateGrid, CandidateSet, candidates_for};
 pub use difficulty::Difficulty;
 pub use generator::{GenError, Puzzle, generate};
 pub use grid::{Cell, Conflict, Grid, ParseError, validate};
 pub use rating::rate;
-pub use solver::{LogicalSolver, SolveResult, next_hint};
-pub use techniques::{Deduction, HiddenSingle, NakedSingle, Technique};
+pub use solver::{LogicalSolver, SolveResult};
+pub use techniques::{
+    Action, Deduction, HiddenPair, HiddenSingle, NakedPair, NakedSingle, PointingPair, Technique,
+};
