@@ -4,7 +4,6 @@ use rand_chacha::ChaCha12Rng;
 
 use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
-use crate::rating::rate;
 use crate::solver::LogicalSolver;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,7 +26,11 @@ pub enum GenError {
 /// transforma erro em puzzle, sem alterar os que já existem.
 const MAX_TENTATIVAS_MEDIO: usize = 50;
 
-/// Gera um puzzle determinístico no nível pedido. Por enquanto, Fácil e Médio.
+/// Limite de tentativas para gerar um Difícil, com o mesmo papel no contrato que o do
+/// Médio.
+const MAX_TENTATIVAS_DIFICIL: usize = 800;
+
+/// Gera um puzzle determinístico no nível pedido. Por enquanto, Fácil, Médio e Difícil.
 ///
 /// Contrato: mesma seed + mesmo nível => sempre o mesmo puzzle, inclusive entre
 /// versões da lib. Por isso o RNG é o `ChaCha12Rng` (algoritmo fixo) e não o
@@ -47,26 +50,42 @@ pub fn generate(difficulty: Difficulty, seed: u64) -> Result<Puzzle, GenError> {
                 seed,
             })
         }
-        Difficulty::Medio => {
-            let solver = LogicalSolver::up_to(Difficulty::Medio);
-            for _ in 0..MAX_TENTATIVAS_MEDIO {
-                let solution = full_solution(&mut rng);
-                let givens = dig(&solution, &solver, &mut rng);
-                // Cavar com técnicas de Médio não garante exigi-las: o puzzle pode
-                // continuar resolvível só com singles.
-                if rate(&givens) == Some(Difficulty::Medio) {
-                    return Ok(Puzzle {
-                        givens,
-                        solution,
-                        difficulty,
-                        seed,
-                    });
-                }
-            }
-            Err(GenError::AttemptsExhausted(difficulty))
-        }
+        Difficulty::Medio => tentar(difficulty, MAX_TENTATIVAS_MEDIO, seed, &mut rng),
+        Difficulty::Dificil => tentar(difficulty, MAX_TENTATIVAS_DIFICIL, seed, &mut rng),
         _ => Err(GenError::Unsupported(difficulty)),
     }
+}
+
+/// Repete tentativas até o puzzle exigir o nível pedido. Cavar com as técnicas de um
+/// nível não garante exigi-las: o puzzle pode continuar resolvível com técnicas mais
+/// simples. Todas as tentativas compartilham o mesmo RNG, então o resultado continua
+/// determinístico.
+///
+/// O aceite dá o mesmo resultado de `rate(&givens) == Some(difficulty)`, sem a busca
+/// de unicidade: `dig` só devolve puzzles que o solver resolve com deduções forçadas,
+/// então eles já são únicos. E como as técnicas acima do nível ficam no fim da lista,
+/// o solver limitado faz os mesmos passos que o completo faria.
+fn tentar(
+    difficulty: Difficulty,
+    max: usize,
+    seed: u64,
+    rng: &mut ChaCha12Rng,
+) -> Result<Puzzle, GenError> {
+    let solver = LogicalSolver::up_to(difficulty);
+    for _ in 0..max {
+        let solution = full_solution(rng);
+        let givens = dig(&solution, &solver, rng);
+        let exigido = solver.solve(&givens).steps.iter().map(|s| s.level).max();
+        if exigido.unwrap_or(Difficulty::Facil) == difficulty {
+            return Ok(Puzzle {
+                givens,
+                solution,
+                difficulty,
+                seed,
+            });
+        }
+    }
+    Err(GenError::AttemptsExhausted(difficulty))
 }
 
 /// Constrói uma grade completa e válida via backtracking randomizado.
@@ -165,6 +184,17 @@ mod tests {
     }
 
     #[test]
+    fn puzzle_dificil_da_seed_42_e_reproduzivel() {
+        // Golden test do Difícil. Também trava MAX_TENTATIVAS_DIFICIL e a ordem das
+        // técnicas, que fazem parte do contrato.
+        let puzzle = generate(Difficulty::Dificil, 42).unwrap();
+        assert_eq!(
+            puzzle.givens.to_line(),
+            ".2..574...79..6...1.............1...5...6.87.4...3.1.5.459...6.9.......26.....7.."
+        );
+    }
+
+    #[test]
     fn mesma_seed_gera_mesmo_puzzle() {
         let a = generate(Difficulty::Facil, 7).unwrap();
         let b = generate(Difficulty::Facil, 7).unwrap();
@@ -180,10 +210,6 @@ mod tests {
 
     #[test]
     fn niveis_nao_suportados_ainda_retornam_erro() {
-        assert_eq!(
-            generate(Difficulty::Dificil, 1),
-            Err(GenError::Unsupported(Difficulty::Dificil))
-        );
         assert_eq!(
             generate(Difficulty::MuitoDificil, 1),
             Err(GenError::Unsupported(Difficulty::MuitoDificil))
@@ -235,6 +261,65 @@ mod tests {
             }
             assert_eq!(result.grid, p.solution);
             assert!(eliminacoes > 0, "seed {seed} deveria exigir eliminação");
+        }
+    }
+
+    #[test]
+    fn gera_puzzle_dificil_valido_e_unico() {
+        let p = generate(Difficulty::Dificil, 42).unwrap();
+        assert_eq!(p.difficulty, Difficulty::Dificil);
+        assert_eq!(p.seed, 42);
+        assert_eq!(count_solutions(&p.givens, 2), 1);
+        assert_eq!(crate::rating::rate(&p.givens), Some(Difficulty::Dificil));
+    }
+
+    #[test]
+    fn mesma_seed_gera_mesmo_puzzle_dificil() {
+        let a = generate(Difficulty::Dificil, 7).unwrap();
+        let b = generate(Difficulty::Dificil, 7).unwrap();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn seeds_extremas_geram_dificil_valido() {
+        for seed in [0, u64::MAX] {
+            let p = generate(Difficulty::Dificil, seed).unwrap();
+            assert_eq!(crate::rating::rate(&p.givens), Some(Difficulty::Dificil));
+        }
+    }
+
+    #[test]
+    fn eliminacoes_do_dificil_nunca_removem_a_resposta() {
+        for seed in 1..=3 {
+            let p = generate(Difficulty::Dificil, seed).unwrap();
+            let result = LogicalSolver::new().solve(&p.givens);
+            for step in &result.steps {
+                match &step.action {
+                    Action::Place { index, value } => {
+                        assert_eq!(p.solution.get(*index), Cell::Filled(*value));
+                    }
+                    Action::Eliminate(pares) => {
+                        for &(index, value) in pares {
+                            assert_ne!(p.solution.get(index), Cell::Filled(value));
+                        }
+                    }
+                }
+            }
+            assert_eq!(result.grid, p.solution);
+            assert!(
+                result.steps.iter().any(|s| s.level == Difficulty::Dificil),
+                "seed {seed} deveria exigir técnica de Difícil"
+            );
+        }
+    }
+
+    #[test]
+    fn medio_nunca_usa_tecnica_de_dificil() {
+        for seed in 0..5 {
+            let p = generate(Difficulty::Medio, seed).unwrap();
+            let result = LogicalSolver::new().solve(&p.givens);
+            assert!(result.steps.iter().all(|s| s.level <= Difficulty::Medio));
+            assert_eq!(crate::rating::rate(&p.givens), Some(Difficulty::Medio));
         }
     }
 

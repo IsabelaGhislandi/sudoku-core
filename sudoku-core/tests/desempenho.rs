@@ -22,3 +22,20 @@ fn medio_cabe_na_meta_de_tempo() {
     println!("mediana: {:?}, pior: {:?}", tempos[100], pior);
     assert!(pior <= Duration::from_secs(1), "pior caso: {pior:?}");
 }
+
+/// Mede o gerador de Difícil, com a mesma meta do Médio.
+#[test]
+#[ignore]
+fn dificil_cabe_na_meta_de_tempo() {
+    let mut tempos: Vec<Duration> = (0..200)
+        .map(|seed| {
+            let inicio = Instant::now();
+            generate(Difficulty::Dificil, seed).unwrap_or_else(|e| panic!("seed {seed}: {e:?}"));
+            inicio.elapsed()
+        })
+        .collect();
+    tempos.sort();
+    let pior = *tempos.last().unwrap();
+    println!("mediana: {:?}, pior: {:?}", tempos[100], pior);
+    assert!(pior <= Duration::from_secs(1), "pior caso: {pior:?}");
+}

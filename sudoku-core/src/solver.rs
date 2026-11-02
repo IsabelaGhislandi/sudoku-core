@@ -204,6 +204,22 @@ mod tests {
     }
 
     #[test]
+    fn so_as_tecnicas_de_dificil_resolvem_o_puzzle() {
+        // Saída de generate(Dificil, 42).
+        let grid = Grid::from_line(
+            ".2..574...79..6...1.............1...5...6.87.4...3.1.5.459...6.9.......26.....7..",
+        )
+        .unwrap();
+        assert!(!LogicalSolver::up_to(Difficulty::Medio).solve(&grid).solved);
+        let result = LogicalSolver::new().solve(&grid);
+        assert!(result.solved);
+        assert_eq!(
+            result.grid.to_line(),
+            "826357419379416258154892637732581946591264873468739125245978361917643582683125794"
+        );
+    }
+
+    #[test]
     fn next_step_devolve_primeira_deducao() {
         let mut grid = Grid::from_line(solucao()).unwrap();
         grid.set(40, Cell::Empty);
