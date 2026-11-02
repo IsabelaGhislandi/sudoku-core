@@ -18,5 +18,6 @@ pub use grid::{Cell, Conflict, Grid, ParseError, validate};
 pub use rating::rate;
 pub use solver::{LogicalSolver, SolveResult};
 pub use techniques::{
-    Action, Deduction, HiddenPair, HiddenSingle, NakedPair, NakedSingle, PointingPair, Technique,
+    Action, BoxLineReduction, Deduction, HiddenPair, HiddenSingle, NakedPair, NakedSingle,
+    PointingPair, Technique,
 };
