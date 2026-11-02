@@ -11,11 +11,27 @@ impl Technique for HiddenSingle {
     }
 
     fn apply(&self, grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction> {
+        // posicoes[u][v]: posições da unidade u, entre as células vazias, onde v cabe.
+        // Montar tudo numa passada só é bem mais barato do que varrer a unidade de
+        // novo para cada dígito, e esta técnica roda a cada passo do solver.
+        let unidades = units();
+        let mut posicoes = [[0u16; 10]; 27];
+        for (u, unidade) in unidades.iter().enumerate() {
+            for (pos, &i) in unidade.iter().enumerate() {
+                if let Cell::Empty = grid.get(i) {
+                    for v in candidates.get(i).digits() {
+                        posicoes[u][v as usize] |= 1 << pos;
+                    }
+                }
+            }
+        }
         for value in 1..=9u8 {
             for unit in 0..9 {
                 // Linha, coluna e box de mesmo número, nessa ordem.
                 for u in [unit, 9 + unit, 18 + unit] {
-                    if let Some(index) = sole_spot(grid, candidates, value, &units()[u]) {
+                    let onde = posicoes[u][value as usize];
+                    if onde.count_ones() == 1 {
+                        let index = unidades[u][onde.trailing_zeros() as usize];
                         return Some(deduction(index, value));
                     }
                 }
@@ -31,28 +47,6 @@ fn deduction(index: usize, value: u8) -> Deduction {
         technique: "Hidden Single",
         level: Difficulty::Facil,
     }
-}
-
-/// Retorna a única célula vazia da unidade que pode receber `value`, se existir
-/// exatamente uma.
-fn sole_spot(
-    grid: &Grid,
-    candidates: &CandidateGrid,
-    value: u8,
-    unit: &[usize; 9],
-) -> Option<usize> {
-    let mut found: Option<usize> = None;
-    for &i in unit {
-        if let Cell::Empty = grid.get(i)
-            && candidates.get(i).contains(value)
-        {
-            if found.is_some() {
-                return None; // mais de um lugar possível
-            }
-            found = Some(i);
-        }
-    }
-    found
 }
 
 #[cfg(test)]

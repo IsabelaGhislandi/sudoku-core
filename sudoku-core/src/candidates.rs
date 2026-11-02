@@ -29,7 +29,7 @@ impl CandidateSet {
     }
 
     /// Dígitos que estão em pelo menos um dos dois conjuntos.
-    pub fn union(self, other: CandidateSet) -> CandidateSet {
+    pub(crate) fn union(self, other: CandidateSet) -> CandidateSet {
         CandidateSet(self.0 | other.0)
     }
 }

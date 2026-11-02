@@ -17,11 +17,16 @@ impl Technique for NakedTriple {
         for unit in units() {
             // Só células com 2 ou 3 candidatos podem fazer parte do triple; células
             // preenchidas têm 0 e ficam de fora.
-            let celulas: Vec<usize> = unit
-                .iter()
-                .copied()
-                .filter(|&i| (2..=3).contains(&candidates.get(i).count()))
-                .collect();
+            // Array na pilha em vez de Vec: esta técnica roda a cada passo do solver.
+            let mut buffer = [0usize; 9];
+            let mut n = 0;
+            for &i in unit {
+                if (2..=3).contains(&candidates.get(i).count()) {
+                    buffer[n] = i;
+                    n += 1;
+                }
+            }
+            let celulas = &buffer[..n];
             // Três laços sobre posições crescentes: cada combinação aparece uma vez,
             // sempre na mesma ordem, sem montar a lista de combinações.
             for x in 0..celulas.len() {
