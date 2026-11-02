@@ -35,5 +35,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [18 — Naked Pair e a iteração por unidades](18-naked-pair-e-iteracao-por-unidades.md)
 - [19 — Hidden Pair e máscaras de posição](19-hidden-pair-e-mascaras.md)
 - [20 — Pointing Pair e funções como parâmetro](20-pointing-pair.md)
+- [21 — Gerador de Médio: tentativas, medição e uma checagem redundante](21-gerador-medio-e-tentativas.md)
 
 > Cada nova task ganha uma página aqui.
