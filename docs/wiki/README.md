@@ -38,5 +38,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [21 — Gerador de Médio: tentativas, medição e uma checagem redundante](21-gerador-medio-e-tentativas.md)
 - [22 — Box/Line Reduction: fatias, `copied` e o primeiro nível Difícil](22-box-line-reduction.md)
 - [23 — Naked Triple: combinações sem alocar e métodos que consomem `self`](23-naked-triple-e-combinacoes.md)
+- [24 — Hidden Triple: `fold`, `any` e o teste que precisava falhar](24-hidden-triple.md)
 
 > Cada nova task ganha uma página aqui.
