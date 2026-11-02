@@ -1,4 +1,5 @@
 use crate::grid::{Cell, Grid, box_of, col_of, row_of};
+use crate::techniques::units;
 
 /// Bitmask dos dígitos candidatos 1..=9 (bit n ligado => dígito n é candidato).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -10,7 +11,13 @@ impl CandidateSet {
     }
 
     pub fn values(&self) -> Vec<u8> {
-        (1..=9).filter(|&v| self.contains(v)).collect()
+        self.digits().collect()
+    }
+
+    /// Os mesmos dígitos de `values`, sem alocar um `Vec`. As técnicas usam esta forma
+    /// porque o gerador as chama milhares de vezes por puzzle.
+    pub(crate) fn digits(self) -> impl Iterator<Item = u8> {
+        (1..=9).filter(move |&v| self.contains(v))
     }
 
     pub fn count(&self) -> u32 {
@@ -38,9 +45,26 @@ pub struct CandidateGrid {
 }
 
 impl CandidateGrid {
+    /// Dá o mesmo resultado que `candidates_for` em cada célula, mas lê a grade uma vez
+    /// só: o gerador monta candidatos a cada solve, milhares de vezes por puzzle.
     pub fn from_grid(grid: &Grid) -> Self {
+        // usados[u]: dígitos já presentes na unidade u (linhas, colunas, boxes).
+        let mut usados = [0u16; 27];
+        for i in 0..81 {
+            if let Cell::Filled(v) = grid.get(i) {
+                for u in [row_of(i), 9 + col_of(i), 18 + box_of(i)] {
+                    usados[u] |= 1 << v;
+                }
+            }
+        }
         CandidateGrid {
-            cells: std::array::from_fn(|i| candidates_for(grid, i)),
+            cells: std::array::from_fn(|i| match grid.get(i) {
+                Cell::Filled(_) => CandidateSet(0),
+                Cell::Empty => {
+                    let visto = usados[row_of(i)] | usados[9 + col_of(i)] | usados[18 + box_of(i)];
+                    CandidateSet(TODOS & !visto)
+                }
+            }),
         }
     }
 
@@ -51,9 +75,9 @@ impl CandidateGrid {
     /// Registra um valor colocado: a célula fica sem candidatos, e o dígito sai
     /// da linha, da coluna e do box dela.
     pub fn place(&mut self, index: usize, value: u8) {
-        let (r, c, b) = (row_of(index), col_of(index), box_of(index));
-        for i in 0..81 {
-            if row_of(i) == r || col_of(i) == c || box_of(i) == b {
+        let unidades = units();
+        for u in [row_of(index), 9 + col_of(index), 18 + box_of(index)] {
+            for &i in &unidades[u] {
                 self.cells[i].remove(value);
             }
         }
@@ -80,9 +104,11 @@ pub fn candidates_for(grid: &Grid, index: usize) -> CandidateSet {
             used |= 1 << v;
         }
     }
-    let all: u16 = 0b11_1111_1110; // bits 1..=9
-    CandidateSet(all & !used)
+    CandidateSet(TODOS & !used)
 }
+
+/// Bits 1..=9 ligados: todos os dígitos.
+const TODOS: u16 = 0b11_1111_1110;
 
 #[cfg(test)]
 mod tests {

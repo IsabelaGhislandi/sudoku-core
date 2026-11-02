@@ -18,16 +18,23 @@ impl Technique for BoxLineReduction {
         for value in 1..=9u8 {
             // As 18 primeiras unidades são as linhas e depois as colunas.
             for linha in &unidades[..18] {
-                let celulas: Vec<usize> = linha
+                // Conta e confere o box sem montar a lista de células: esta técnica
+                // roda a cada passo do solver.
+                let mut celulas = linha
                     .iter()
                     .copied()
-                    .filter(|&i| candidates.get(i).contains(value))
-                    .collect();
-                if !(2..=3).contains(&celulas.len()) {
+                    .filter(|&i| candidates.get(i).contains(value));
+                let Some(primeira) = celulas.next() else {
                     continue;
+                };
+                let b = box_of(primeira);
+                let mut quantas = 1;
+                let mut mesmo_box = true;
+                for i in celulas {
+                    quantas += 1;
+                    mesmo_box &= box_of(i) == b;
                 }
-                let b = box_of(celulas[0]);
-                if !celulas.iter().all(|&i| box_of(i) == b) {
+                if !(2..=3).contains(&quantas) || !mesmo_box {
                     continue;
                 }
                 let pares: Vec<(usize, u8)> = (0..81)

@@ -1,7 +1,7 @@
-use super::{Action, Deduction, Technique};
+use super::{Action, Deduction, Technique, units};
 use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
-use crate::grid::{Cell, Grid, box_of, col_of, row_of};
+use crate::grid::{Cell, Grid};
 
 pub struct HiddenSingle;
 
@@ -13,14 +13,11 @@ impl Technique for HiddenSingle {
     fn apply(&self, grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction> {
         for value in 1..=9u8 {
             for unit in 0..9 {
-                if let Some(index) = sole_spot(grid, candidates, value, |i| row_of(i) == unit) {
-                    return Some(deduction(index, value));
-                }
-                if let Some(index) = sole_spot(grid, candidates, value, |i| col_of(i) == unit) {
-                    return Some(deduction(index, value));
-                }
-                if let Some(index) = sole_spot(grid, candidates, value, |i| box_of(i) == unit) {
-                    return Some(deduction(index, value));
+                // Linha, coluna e box de mesmo número, nessa ordem.
+                for u in [unit, 9 + unit, 18 + unit] {
+                    if let Some(index) = sole_spot(grid, candidates, value, &units()[u]) {
+                        return Some(deduction(index, value));
+                    }
                 }
             }
         }
@@ -42,13 +39,10 @@ fn sole_spot(
     grid: &Grid,
     candidates: &CandidateGrid,
     value: u8,
-    in_unit: impl Fn(usize) -> bool,
+    unit: &[usize; 9],
 ) -> Option<usize> {
     let mut found: Option<usize> = None;
-    for i in 0..81 {
-        if !in_unit(i) {
-            continue;
-        }
+    for &i in unit {
         if let Cell::Empty = grid.get(i)
             && candidates.get(i).contains(value)
         {

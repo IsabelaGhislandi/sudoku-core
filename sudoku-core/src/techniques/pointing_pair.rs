@@ -1,4 +1,4 @@
-use super::{Action, Deduction, Technique};
+use super::{Action, Deduction, Technique, units};
 use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::{Grid, box_of, col_of, row_of};
@@ -15,14 +15,24 @@ impl Technique for PointingPair {
     fn apply(&self, _grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction> {
         for value in 1..=9u8 {
             for b in 0..9 {
-                let celulas: Vec<usize> = (0..81)
-                    .filter(|&i| box_of(i) == b && candidates.get(i).contains(value))
-                    .collect();
-                if !(2..=3).contains(&celulas.len()) {
+                // Até 3 células num array na pilha, em vez de um Vec: esta técnica roda
+                // a cada passo do solver, e alocar ali pesava no gerador.
+                let mut buffer = [0usize; 3];
+                let mut quantas = 0;
+                for &i in &units()[18 + b] {
+                    if candidates.get(i).contains(value) {
+                        if quantas < 3 {
+                            buffer[quantas] = i;
+                        }
+                        quantas += 1;
+                    }
+                }
+                if !(2..=3).contains(&quantas) {
                     continue;
                 }
-                let pares = fora_do_box(candidates, value, b, &celulas, row_of)
-                    .or_else(|| fora_do_box(candidates, value, b, &celulas, col_of));
+                let celulas = &buffer[..quantas];
+                let pares = fora_do_box(candidates, value, b, celulas, row_of)
+                    .or_else(|| fora_do_box(candidates, value, b, celulas, col_of));
                 if let Some(pares) = pares {
                     return Some(Deduction {
                         action: Action::Eliminate(pares),

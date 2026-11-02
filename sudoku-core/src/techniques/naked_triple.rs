@@ -38,7 +38,7 @@ impl Technique for NakedTriple {
                         let pares: Vec<(usize, u8)> = unit
                             .iter()
                             .filter(|i| !trio.contains(i))
-                            .flat_map(|&i| digitos.values().into_iter().map(move |v| (i, v)))
+                            .flat_map(|&i| digitos.digits().map(move |v| (i, v)))
                             .filter(|&(i, v)| candidates.get(i).contains(v))
                             .collect();
                         // Sem nada a remover, repetir esta dedução travaria o solver.

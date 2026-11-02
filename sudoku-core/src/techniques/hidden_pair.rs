@@ -18,7 +18,7 @@ impl Technique for HiddenPair {
             // Comparar máscaras evita montar e comparar listas de células.
             let mut posicoes = [0u16; 10];
             for (pos, &i) in unit.iter().enumerate() {
-                for v in candidates.get(i).values() {
+                for v in candidates.get(i).digits() {
                     posicoes[v as usize] |= 1 << pos;
                 }
             }
@@ -35,9 +35,7 @@ impl Technique for HiddenPair {
                         .iter()
                         .enumerate()
                         .filter(|&(pos, _)| onde & (1 << pos) != 0)
-                        .flat_map(|(_, &i)| {
-                            candidates.get(i).values().into_iter().map(move |v| (i, v))
-                        })
+                        .flat_map(|(_, &i)| candidates.get(i).digits().map(move |v| (i, v)))
                         .filter(|&(_, v)| v != a && v != b)
                         .collect();
                     // Sem nada a remover, repetir esta dedução travaria o solver.

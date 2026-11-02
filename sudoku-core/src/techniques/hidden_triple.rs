@@ -17,19 +17,19 @@ impl Technique for HiddenTriple {
             // posicoes[d]: máscara das posições da unidade onde o dígito d cabe.
             let mut posicoes = [0u16; 10];
             for (pos, &i) in unit.iter().enumerate() {
-                for v in candidates.get(i).values() {
+                for v in candidates.get(i).digits() {
                     posicoes[v as usize] |= 1 << pos;
                 }
             }
-            for a in 1..=9u8 {
-                for b in (a + 1)..=9u8 {
-                    for c in (b + 1)..=9u8 {
+            // Só dígitos com 1 a 3 posições podem formar um triple. Com mais de 3, a
+            // união nunca teria 3 bits; pular antes poupa combinações. Com 0, o dígito
+            // já foi colocado na unidade: contá-lo faria um par parecer triple e
+            // removeria candidatos verdadeiros.
+            let cabe = |d: u8| (1..=3).contains(&posicoes[d as usize].count_ones());
+            for a in (1..=9u8).filter(|&d| cabe(d)) {
+                for b in ((a + 1)..=9u8).filter(|&d| cabe(d)) {
+                    for c in ((b + 1)..=9u8).filter(|&d| cabe(d)) {
                         let trio = [a, b, c];
-                        // Um dígito sem posições já foi colocado na unidade. Contá-lo
-                        // faria um par parecer triple e removeria candidatos verdadeiros.
-                        if trio.iter().any(|&d| posicoes[d as usize] == 0) {
-                            continue;
-                        }
                         let onde = trio.iter().fold(0, |m, &d| m | posicoes[d as usize]);
                         if onde.count_ones() != 3 {
                             continue;
@@ -38,9 +38,7 @@ impl Technique for HiddenTriple {
                             .iter()
                             .enumerate()
                             .filter(|&(pos, _)| onde & (1 << pos) != 0)
-                            .flat_map(|(_, &i)| {
-                                candidates.get(i).values().into_iter().map(move |v| (i, v))
-                            })
+                            .flat_map(|(_, &i)| candidates.get(i).digits().map(move |v| (i, v)))
                             .filter(|(_, v)| !trio.contains(v))
                             .collect();
                         // Sem nada a remover, repetir esta dedução travaria o solver.
