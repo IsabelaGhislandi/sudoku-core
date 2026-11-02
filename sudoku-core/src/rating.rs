@@ -7,9 +7,8 @@ use crate::solver::LogicalSolver;
 /// Cai para MuitoDificil quando só o backtracking resolve.
 /// Retorna None se a grade não tiver solução única.
 ///
-/// Nota: nesta fatia só existem técnicas de nível Fácil, então puzzles que
-/// exigem técnicas intermediárias aparecem como MuitoDificil. Planos futuros
-/// (Médio/Difícil) refinam essa classificação ao adicionar mais técnicas.
+/// Nota: hoje só existem técnicas de Fácil e Médio, então puzzles que exigem
+/// técnicas de Difícil aparecem como MuitoDificil, até a fatia Difícil.
 pub fn rate(grid: &Grid) -> Option<Difficulty> {
     // Provar por busca que uma grade quase vazia com conflito não tem solução pode
     // demorar demais; o conflito já responde.
@@ -44,6 +43,16 @@ mod tests {
         let mut grid = Grid::from_line(solucao()).unwrap();
         grid.set(40, Cell::Empty);
         assert_eq!(rate(&grid), Some(Difficulty::Facil));
+    }
+
+    #[test]
+    fn puzzle_que_exige_par_eh_medio() {
+        // Saída de generate(Medio, 42): os singles empacam e só técnicas de Médio resolvem.
+        let grid = Grid::from_line(
+            "94.3....12....7....6..8.2......3...4.....5...6......3.5..1.9.....26..9...1.5...68",
+        )
+        .unwrap();
+        assert_eq!(rate(&grid), Some(Difficulty::Medio));
     }
 
     #[test]

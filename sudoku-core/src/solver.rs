@@ -183,6 +183,22 @@ mod tests {
     }
 
     #[test]
+    fn so_as_tecnicas_de_medio_resolvem_o_puzzle() {
+        // Saída de generate(Medio, 42).
+        let grid = Grid::from_line(
+            "94.3....12....7....6..8.2......3...4.....5...6......3.5..1.9.....26..9...1.5...68",
+        )
+        .unwrap();
+        assert!(!LogicalSolver::up_to(Difficulty::Facil).solve(&grid).solved);
+        let result = LogicalSolver::new().solve(&grid);
+        assert!(result.solved);
+        assert_eq!(
+            result.grid.to_line(),
+            "948352671251967483763481259127836594834795126695214837586179342372648915419523768"
+        );
+    }
+
+    #[test]
     fn next_step_devolve_primeira_deducao() {
         let mut grid = Grid::from_line(solucao()).unwrap();
         grid.set(40, Cell::Empty);
