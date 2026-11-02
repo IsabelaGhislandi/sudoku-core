@@ -98,7 +98,7 @@ Responsabilidades:
 - **`generator`** — gera grade completa válida (backtracking randomizado **com seed**) e
   remove células enquanto o solver do nível alvo ainda resolve, o que também garante solução
   única. No Médio e no Difícil, repete com o mesmo RNG até o puzzle exigir o nível pedido, até
-  um número fixo de tentativas (`MAX_TENTATIVAS_MEDIO` = 50, `MAX_TENTATIVAS_DIFICIL` = 800,
+  um número fixo de tentativas (`MAX_TENTATIVAS_MEDIO` = 50, `MAX_TENTATIVAS_DIFICIL` = 250,
   parte do contrato de determinismo). O aceite equivale a `rate`, sem repetir a busca de
   unicidade.
 
@@ -197,10 +197,12 @@ Artefatos de processo do Engine:
 ## 10. Evolução futura
 
 - A próxima fatia adiciona as técnicas de Muito Difícil (rating fica mais preciso).
+- Módulo Game trata `AttemptsExhausted` do Difícil (cerca de 1 seed em 5.000) sorteando outra seed.
 - Módulo Game consumirá `validate` e implementará a dica, sorteando uma célula vazia e usando
   `Puzzle.solution`. Como o valor vem da solução, jogadas erradas não afetam a dica.
 - A meta de tempo (até 5 s no celular, estimada como 1 s neste PC) foi medida só neste PC, em
-  200 seeds: pior caso de 44 ms no Médio e de 0,79 s no Difícil, que tem pouca folga. Confirmar em um aparelho real quando o módulo Tauri existir.
+  200 seeds: pior caso de 44 ms no Médio; no Difícil, cerca de 1 s com o PC livre, limitado pelas
+  250 tentativas. Confirmar em um aparelho real quando o módulo Tauri existir.
 - **Módulo Game — timer + histórico de partidas:** cronometrar quanto o usuário leva para
   resolver e manter um histórico de partidas concluídas, ex.:
   - `Jogo Médio — 10 min — 13/06/2026`

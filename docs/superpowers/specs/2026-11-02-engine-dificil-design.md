@@ -86,21 +86,28 @@ generate(Dificil, seed):
   repetir até MAX_TENTATIVAS_DIFICIL vezes:
     solution = full_solution(rng)
     givens   = dig(solution, up_to(Dificil), rng)
-    se rate(givens) == Some(Dificil): devolve Puzzle
+    se o solver exigiu técnica de Difícil: devolve Puzzle   (equivale a rate(givens) == Some(Dificil))
   devolve Err(GenError::AttemptsExhausted(Dificil))
 ```
 
 - É o mesmo laço do Médio, com outro nível e outro limite. O laço pode ser generalizado, desde que o
   Médio consuma o RNG exatamente como hoje e `MAX_TENTATIVAS_MEDIO` continue 50.
 - `dig` continua sem `count_solutions`. As técnicas novas também só fazem deduções forçadas, então o
-  argumento do Médio vale: se o solver resolve, a solução é única. `rate` confere a unicidade de todo
-  Difícil aceito.
+  argumento do Médio vale: se o solver resolve, a solução é única. O aceite também não repete a busca
+  de unicidade (ver a decisão abaixo); os testes conferem a unicidade com `count_solutions`.
 - **Decisão tomada na implementação:** a primeira medição ficou acima da meta (mediana 0,78 s,
   pior caso 7,4 s, 80 de 200 seeds acima de 1 s), porque só 3,4% das tentativas saem Difíceis.
   Com o ok da pessoa responsável, o gerador foi otimizado sem mudar nenhuma saída: o aceite deixou
   de repetir a busca de unicidade, a tabela de unidades passou a ser fixa e as técnicas deixaram de
   alocar `Vec` no caminho quente. Resultado: mediana 93 ms, pior caso 0,79 s. Uma seed chegou a
-  201 tentativas, então `MAX_TENTATIVAS_DIFICIL` = 800.
+  201 tentativas.
+- **Segunda decisão tomada na implementação:** a revisão final mediu de novo e o pior caso oscilou
+  entre 0,77 s e 1,27 s, conforme a carga do PC; numa faixa maior de seeds, uma chegou a 254
+  tentativas. O tempo de uma chamada é ditado pelo número de tentativas (cerca de 4 ms cada), e mais
+  otimização simples não trouxe ganho. A pessoa responsável escolheu **limitar as tentativas**:
+  `MAX_TENTATIVAS_DIFICIL` = 250, o que mantém cada chamada em cerca de 1 s com o PC livre. Em troca,
+  cerca de 1 seed em 5.000 devolve `AttemptsExhausted`, e o módulo Game sorteia outra seed. Isso
+  substitui a regra de que uma seed esgotada conta como falha na medição.
 - `MAX_TENTATIVAS_DIFICIL` é escolhido por medição e faz parte do contrato de determinismo, como o do
   Médio.
 

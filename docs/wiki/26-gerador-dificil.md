@@ -93,8 +93,26 @@ De quebra, o Médio ficou cerca de 5 vezes mais rápido: o pior caso caiu para 4
 
 ## O limite de tentativas
 
-O máximo observado foi 201 tentativas, então o valor provisório de 200 já não servia: aquela seed devolveria
-`AttemptsExhausted`. Pela regra do plano, o limite é cerca de 4 vezes o máximo: `MAX_TENTATIVAS_DIFICIL = 800`.
+O máximo observado foi 201 tentativas, e o plano mandava usar cerca de 4 vezes isso: 800. A revisão final mostrou
+que a conta não fechava. Rodando o mesmo teste três vezes, o pior caso deu 1,08 s, 1,01 s e 0,98 s, e numa faixa
+maior de seeds uma precisou de 254 tentativas. Com 800, uma seed azarada levaria mais de 3 s no PC.
+
+O tempo de uma chamada é, no fundo, **número de tentativas × custo de uma tentativa**. O custo já tinha sido
+otimizado; restava limitar o número. Com `MAX_TENTATIVAS_DIFICIL = 250`, nenhuma chamada passa de cerca de 1 s com o
+PC livre. Em troca, cerca de 1 seed em 5.000 devolve `AttemptsExhausted`, e o Game sorteia outra:
+
+```rust
+assert_eq!(
+    generate(Difficulty::Dificil, 459),
+    Err(GenError::AttemptsExhausted(Difficulty::Dificil))
+);
+```
+
+O erro também é determinístico: a seed 459 sempre esgota, em qualquer aparelho. É isso que um limite por
+tentativas dá e um limite por relógio não daria.
+
+**Medir em PC compartilhado:** com outros programas usando 40% da CPU, a mesma medição chegou a dobrar. Testes de
+tempo dizem algo sobre a máquina naquele momento, não só sobre o código. Por isso ficam `#[ignore]`, fora do CI.
 
 > **Lição geral:** meça antes de mexer, e mexa onde o perfil aponta. Aqui, o gargalo não era o algoritmo das
 > técnicas, e sim alocações pequenas e repetidas, que nenhuma leitura do código denunciava.
