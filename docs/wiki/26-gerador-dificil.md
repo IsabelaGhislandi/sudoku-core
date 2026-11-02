@@ -9,11 +9,11 @@ pequeno; a história desta task é o **desempenho**.
 ## Um laço para dois níveis
 
 ```rust
-Difficulty::Medio   => tentar(difficulty, MAX_TENTATIVAS_MEDIO, seed, &mut rng),
-Difficulty::Dificil => tentar(difficulty, MAX_TENTATIVAS_DIFICIL, seed, &mut rng),
+Difficulty::Medio   => generate_with_attempts(difficulty, MAX_ATTEMPTS_MEDIUM, seed, &mut rng),
+Difficulty::Dificil => generate_with_attempts(difficulty, MAX_ATTEMPTS_HARD, seed, &mut rng),
 ```
 
-O laço que era do Médio virou a função `tentar`, que recebe o RNG como `&mut ChaCha12Rng`. Para o Médio, a ordem
+O laço que era do Médio virou a função `generate_with_attempts`, que recebe o RNG como `&mut ChaCha12Rng`. Para o Médio, a ordem
 das chamadas ao RNG não mudou, e por isso os puzzles Médios continuaram idênticos.
 
 ## A primeira medição: 7,4 segundos
@@ -98,7 +98,7 @@ que a conta não fechava. Rodando o mesmo teste três vezes, o pior caso deu 1,0
 maior de seeds uma precisou de 254 tentativas. Com 800, uma seed azarada levaria mais de 3 s no PC.
 
 O tempo de uma chamada é, no fundo, **número de tentativas × custo de uma tentativa**. O custo já tinha sido
-otimizado; restava limitar o número. Com `MAX_TENTATIVAS_DIFICIL = 250`, nenhuma chamada passa de cerca de 1 s com o
+otimizado; restava limitar o número. Com `MAX_ATTEMPTS_HARD = 250`, nenhuma chamada passa de cerca de 1 s com o
 PC livre. Em troca, cerca de 1 seed em 5.000 devolve `AttemptsExhausted`, e o Game sorteia outra:
 
 ```rust

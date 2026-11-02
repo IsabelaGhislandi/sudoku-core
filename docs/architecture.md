@@ -98,7 +98,7 @@ Responsabilidades:
 - **`generator`** — gera grade completa válida (backtracking randomizado **com seed**) e
   remove células enquanto o solver do nível alvo ainda resolve, o que também garante solução
   única. No Médio e no Difícil, repete com o mesmo RNG até o puzzle exigir o nível pedido, até
-  um número fixo de tentativas (`MAX_TENTATIVAS_MEDIO` = 50, `MAX_TENTATIVAS_DIFICIL` = 250,
+  um número fixo de tentativas (`MAX_ATTEMPTS_MEDIUM` = 50, `MAX_ATTEMPTS_HARD` = 250,
   parte do contrato de determinismo). O aceite equivale a `rate`, sem repetir a busca de
   unicidade.
 

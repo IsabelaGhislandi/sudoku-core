@@ -28,7 +28,7 @@ O gerador de Médio repete tentativas com **um único** RNG, emprestado como `&m
 
 ```rust
 let mut rng = ChaCha12Rng::seed_from_u64(seed);
-for _ in 0..MAX_TENTATIVAS_MEDIO {
+for _ in 0..MAX_ATTEMPTS_MEDIUM {
     let solution = full_solution(&mut rng);
     ...
 }

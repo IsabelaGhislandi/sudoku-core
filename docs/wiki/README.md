@@ -42,5 +42,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [24 — Hidden Triple: `fold`, `any` e o teste que precisava falhar](24-hidden-triple.md)
 - [25 — X-Wing: closures que viram `fn` e uma função para duas direções](25-x-wing.md)
 - [26 — Gerador de Difícil: medir, achar o gargalo e otimizar sem mudar a saída](26-gerador-dificil.md)
+- [27 — Nomes em inglês: uma regra de idioma e um renomeio seguro](27-nomes-em-ingles.md)
 
 > Cada nova task ganha uma página aqui.

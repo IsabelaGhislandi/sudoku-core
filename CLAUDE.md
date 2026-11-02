@@ -31,7 +31,8 @@ TDD de verdade: escreva o teste, **veja-o falhar**, implemente, veja passar.
 - Testes unitários ficam **inline** em cada módulo, num bloco `#[cfg(test)] mod tests`.
 - Testes de integração da API pública ficam em `sudoku-core/tests/` (só enxergam o que é `pub`).
 - Nomes de teste em português, descrevendo o comportamento:
-  `fn puzzle_resolvivel_por_singles_eh_facil()`.
+  `fn puzzle_resolvivel_por_singles_eh_facil()`. Só o nome da função `#[test]`: helpers e
+  variáveis dentro dos testes seguem a regra de nomes da seção Código (inglês).
 - Nada de afirmar que algo passa sem ter rodado o comando e visto a saída.
 
 ## Comandos
@@ -57,7 +58,12 @@ acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`]
 - `sudoku-core` é uma **biblioteca pura**: sem UI, sem IO, sem Tauri, sem relógio. Timer,
   persistência e histórico pertencem ao módulo Game (futuro).
 - Dependências mínimas: hoje só `rand` e `rand_chacha`. Cada nova dependência precisa de motivo.
-- Comentários e doc comments (`///`) em **português**, explicando o *porquê*.
+- **Nomes no código em inglês**: tipos, funções, constantes, variáveis e helpers de teste
+  (`cells`, `pairs`, `MAX_ATTEMPTS_HARD`). É a convenção do ecossistema Rust e combina com a
+  API pública. A exceção são as variantes de `Difficulty` (`Facil`, `Medio`...), que ficam
+  como estão até uma decisão consciente de mudar a API.
+- Comentários e doc comments (`///`) em **português**, explicando o *porquê*. Strings de
+  mensagem (por exemplo, de `assert!`) também em português.
 - Determinismo do gerador é **contrato**: mesma seed + mesmo nível → mesmo puzzle, inclusive
   entre versões da lib. Por isso o RNG é o `ChaCha12Rng`, e um golden test trava a saída da
   seed 42. Mudou a saída? Ou é bug, ou é decisão consciente que vai no mesmo commit.
