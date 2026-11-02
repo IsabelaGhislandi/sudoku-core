@@ -208,8 +208,8 @@ mod tests {
         let mut grid = Grid::empty();
         grid.set(0, Cell::Filled(5));
         grid.set(1, Cell::Filled(5)); // mesma linha => conflito
-        let conflitos = validate(&grid);
-        assert_eq!(conflitos, vec![Conflict { a: 0, b: 1 }]);
+        let conflicts = validate(&grid);
+        assert_eq!(conflicts, vec![Conflict { a: 0, b: 1 }]);
     }
 
     #[test]

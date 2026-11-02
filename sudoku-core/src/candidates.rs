@@ -49,11 +49,11 @@ impl CandidateGrid {
     /// só: o gerador monta candidatos a cada solve, milhares de vezes por puzzle.
     pub fn from_grid(grid: &Grid) -> Self {
         // usados[u]: dígitos já presentes na unidade u (linhas, colunas, boxes).
-        let mut usados = [0u16; 27];
+        let mut used = [0u16; 27];
         for i in 0..81 {
             if let Cell::Filled(v) = grid.get(i) {
                 for u in [row_of(i), 9 + col_of(i), 18 + box_of(i)] {
-                    usados[u] |= 1 << v;
+                    used[u] |= 1 << v;
                 }
             }
         }
@@ -61,8 +61,8 @@ impl CandidateGrid {
             cells: std::array::from_fn(|i| match grid.get(i) {
                 Cell::Filled(_) => CandidateSet(0),
                 Cell::Empty => {
-                    let visto = usados[row_of(i)] | usados[9 + col_of(i)] | usados[18 + box_of(i)];
-                    CandidateSet(TODOS & !visto)
+                    let seen = used[row_of(i)] | used[9 + col_of(i)] | used[18 + box_of(i)];
+                    CandidateSet(ALL_DIGITS & !seen)
                 }
             }),
         }
@@ -75,9 +75,9 @@ impl CandidateGrid {
     /// Registra um valor colocado: a célula fica sem candidatos, e o dígito sai
     /// da linha, da coluna e do box dela.
     pub fn place(&mut self, index: usize, value: u8) {
-        let unidades = units();
+        let all_units = units();
         for u in [row_of(index), 9 + col_of(index), 18 + box_of(index)] {
-            for &i in &unidades[u] {
+            for &i in &all_units[u] {
                 self.cells[i].remove(value);
             }
         }
@@ -104,11 +104,11 @@ pub fn candidates_for(grid: &Grid, index: usize) -> CandidateSet {
             used |= 1 << v;
         }
     }
-    CandidateSet(TODOS & !used)
+    CandidateSet(ALL_DIGITS & !used)
 }
 
 /// Bits 1..=9 ligados: todos os dígitos.
-const TODOS: u16 = 0b11_1111_1110;
+const ALL_DIGITS: u16 = 0b11_1111_1110;
 
 #[cfg(test)]
 mod tests {
@@ -142,7 +142,7 @@ mod tests {
         assert_eq!(candidates_for(&grid, 0).count(), 0);
     }
 
-    fn grade_com_pistas() -> Grid {
+    fn grid_with_givens() -> Grid {
         let mut grid = Grid::empty();
         grid.set(0, Cell::Filled(5));
         grid.set(13, Cell::Filled(3));
@@ -152,10 +152,10 @@ mod tests {
 
     #[test]
     fn construcao_bate_com_candidates_for() {
-        let grid = grade_com_pistas();
-        let candidatos = CandidateGrid::from_grid(&grid);
+        let grid = grid_with_givens();
+        let candidates = CandidateGrid::from_grid(&grid);
         for i in 0..81 {
-            assert_eq!(candidatos.get(i), candidates_for(&grid, i), "célula {i}");
+            assert_eq!(candidates.get(i), candidates_for(&grid, i), "célula {i}");
         }
     }
 
@@ -174,11 +174,11 @@ mod tests {
     #[test]
     fn colocar_equivale_a_reconstruir_da_grade() {
         // É esta equivalência que mantém os puzzles Fáceis idênticos aos de antes.
-        let mut grid = grade_com_pistas();
-        let mut candidatos = CandidateGrid::from_grid(&grid);
+        let mut grid = grid_with_givens();
+        let mut candidates = CandidateGrid::from_grid(&grid);
         grid.set(27, Cell::Filled(7));
-        candidatos.place(27, 7);
-        assert_eq!(candidatos, CandidateGrid::from_grid(&grid));
+        candidates.place(27, 7);
+        assert_eq!(candidates, CandidateGrid::from_grid(&grid));
     }
 
     #[test]

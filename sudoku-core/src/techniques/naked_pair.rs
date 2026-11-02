@@ -15,24 +15,24 @@ impl Technique for NakedPair {
     fn apply(&self, _grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction> {
         for unit in units() {
             for (pos, &a) in unit.iter().enumerate() {
-                let par = candidates.get(a);
-                if par.count() != 2 {
+                let pair = candidates.get(a);
+                if pair.count() != 2 {
                     continue;
                 }
                 for &b in &unit[pos + 1..] {
-                    if candidates.get(b) != par {
+                    if candidates.get(b) != pair {
                         continue;
                     }
-                    let pares: Vec<(usize, u8)> = unit
+                    let pairs: Vec<(usize, u8)> = unit
                         .iter()
                         .filter(|&&i| i != a && i != b)
-                        .flat_map(|&i| par.digits().map(move |v| (i, v)))
+                        .flat_map(|&i| pair.digits().map(move |v| (i, v)))
                         .filter(|&(i, v)| candidates.get(i).contains(v))
                         .collect();
                     // Sem nada a remover, repetir esta dedução travaria o solver.
-                    if !pares.is_empty() {
+                    if !pairs.is_empty() {
                         return Some(Deduction {
-                            action: Action::Eliminate(pares),
+                            action: Action::Eliminate(pairs),
                             technique: "Naked Pair",
                             level: Difficulty::Medio,
                         });
@@ -49,27 +49,27 @@ mod tests {
     use super::*;
     use crate::techniques::Action;
 
-    fn sem_outros_digitos(c: &mut CandidateGrid, celula: usize) {
+    fn without_other_digits(c: &mut CandidateGrid, cell: usize) {
         for v in 3..=9 {
-            c.eliminate(celula, v);
+            c.eliminate(cell, v);
         }
     }
 
-    fn par_nas_celulas_0_e_1() -> CandidateGrid {
+    fn pair_in_cells_0_and_1() -> CandidateGrid {
         let mut c = CandidateGrid::from_grid(&Grid::empty());
-        sem_outros_digitos(&mut c, 0);
-        sem_outros_digitos(&mut c, 1);
+        without_other_digits(&mut c, 0);
+        without_other_digits(&mut c, 1);
         c
     }
 
     #[test]
     fn elimina_o_par_das_outras_celulas_da_unidade() {
         // A linha 0 vem antes do box 0 na ordem das unidades.
-        let esperado: Vec<(usize, u8)> = (2..9).flat_map(|i| [(i, 1), (i, 2)]).collect();
+        let expected: Vec<(usize, u8)> = (2..9).flat_map(|i| [(i, 1), (i, 2)]).collect();
         let d = NakedPair
-            .apply(&Grid::empty(), &par_nas_celulas_0_e_1())
+            .apply(&Grid::empty(), &pair_in_cells_0_and_1())
             .unwrap();
-        assert_eq!(d.action, Action::Eliminate(esperado));
+        assert_eq!(d.action, Action::Eliminate(expected));
         assert_eq!(d.technique, "Naked Pair");
         assert_eq!(d.level, Difficulty::Medio);
     }
@@ -77,14 +77,14 @@ mod tests {
     #[test]
     fn so_lista_candidatos_presentes() {
         // A célula 2 já perdeu o 1: esse par não pode aparecer na lista.
-        let mut c = par_nas_celulas_0_e_1();
+        let mut c = pair_in_cells_0_and_1();
         c.eliminate(2, 1);
         let d = NakedPair.apply(&Grid::empty(), &c).unwrap();
-        let Action::Eliminate(pares) = d.action else {
+        let Action::Eliminate(pairs) = d.action else {
             panic!("deveria eliminar");
         };
-        assert!(!pares.contains(&(2, 1)));
-        assert!(pares.contains(&(2, 2)));
+        assert!(!pairs.contains(&(2, 1)));
+        assert!(pairs.contains(&(2, 2)));
     }
 
     #[test]
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn retorna_none_quando_nao_ha_o_que_eliminar() {
-        let mut c = par_nas_celulas_0_e_1();
+        let mut c = pair_in_cells_0_and_1();
         for i in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 18, 19, 20] {
             c.eliminate(i, 1);
             c.eliminate(i, 2);

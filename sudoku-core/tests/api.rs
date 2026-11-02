@@ -13,10 +13,10 @@ fn fluxo_completo_facil() {
     assert!(validate(&puzzle.givens).is_empty());
 
     // candidates_for é acessível pela API pública
-    let alguma_vazia = (0..81)
+    let some_empty = (0..81)
         .find(|&i| puzzle.givens.get(i) == Cell::Empty)
         .unwrap();
-    assert!(candidates_for(&puzzle.givens, alguma_vazia).count() >= 1);
+    assert!(candidates_for(&puzzle.givens, some_empty).count() >= 1);
 }
 
 #[test]

@@ -39,19 +39,19 @@ mod tests {
     use super::*;
     use crate::grid::Grid;
 
-    fn solucao() -> &'static str {
+    fn solution() -> &'static str {
         "534678912672195348198342567859761423426853791713924856961537284287419635345286179"
     }
 
     #[test]
     fn grade_resolvida_tem_uma_solucao() {
-        let grid = Grid::from_line(solucao()).unwrap();
+        let grid = Grid::from_line(solution()).unwrap();
         assert_eq!(count_solutions(&grid, 2), 1);
     }
 
     #[test]
     fn uma_celula_vazia_continua_unica() {
-        let mut grid = Grid::from_line(solucao()).unwrap();
+        let mut grid = Grid::from_line(solution()).unwrap();
         grid.set(40, Cell::Empty);
         assert_eq!(count_solutions(&grid, 2), 1);
     }

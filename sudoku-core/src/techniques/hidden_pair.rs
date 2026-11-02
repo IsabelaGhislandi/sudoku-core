@@ -16,32 +16,32 @@ impl Technique for HiddenPair {
         for unit in units() {
             // posicoes[d]: máscara das posições da unidade onde o dígito d cabe.
             // Comparar máscaras evita montar e comparar listas de células.
-            let mut posicoes = [0u16; 10];
+            let mut positions = [0u16; 10];
             for (pos, &i) in unit.iter().enumerate() {
                 for v in candidates.get(i).digits() {
-                    posicoes[v as usize] |= 1 << pos;
+                    positions[v as usize] |= 1 << pos;
                 }
             }
             for a in 1..=9u8 {
-                let onde = posicoes[a as usize];
-                if onde.count_ones() != 2 {
+                let spots = positions[a as usize];
+                if spots.count_ones() != 2 {
                     continue;
                 }
                 for b in (a + 1)..=9u8 {
-                    if posicoes[b as usize] != onde {
+                    if positions[b as usize] != spots {
                         continue;
                     }
-                    let pares: Vec<(usize, u8)> = unit
+                    let pairs: Vec<(usize, u8)> = unit
                         .iter()
                         .enumerate()
-                        .filter(|&(pos, _)| onde & (1 << pos) != 0)
+                        .filter(|&(pos, _)| spots & (1 << pos) != 0)
                         .flat_map(|(_, &i)| candidates.get(i).digits().map(move |v| (i, v)))
                         .filter(|&(_, v)| v != a && v != b)
                         .collect();
                     // Sem nada a remover, repetir esta dedução travaria o solver.
-                    if !pares.is_empty() {
+                    if !pairs.is_empty() {
                         return Some(Deduction {
-                            action: Action::Eliminate(pares),
+                            action: Action::Eliminate(pairs),
                             technique: "Hidden Pair",
                             level: Difficulty::Medio,
                         });
@@ -69,12 +69,12 @@ mod tests {
 
     #[test]
     fn elimina_os_outros_candidatos_das_duas_celulas() {
-        let esperado: Vec<(usize, u8)> = [0, 1]
+        let expected: Vec<(usize, u8)> = [0, 1]
             .into_iter()
             .flat_map(|i| (3..=9).map(move |v| (i, v)))
             .collect();
         let d = HiddenPair.apply(&Grid::empty(), &fixture()).unwrap();
-        assert_eq!(d.action, Action::Eliminate(esperado));
+        assert_eq!(d.action, Action::Eliminate(expected));
         assert_eq!(d.technique, "Hidden Pair");
         assert_eq!(d.level, Difficulty::Medio);
     }
@@ -88,9 +88,9 @@ mod tests {
     #[test]
     fn retorna_none_quando_as_celulas_ja_so_tem_o_par() {
         let mut c = fixture();
-        for celula in [0, 1] {
+        for cell in [0, 1] {
             for v in 3..=9 {
-                c.eliminate(celula, v);
+                c.eliminate(cell, v);
             }
         }
         assert_eq!(HiddenPair.apply(&Grid::empty(), &c), None);

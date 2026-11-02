@@ -26,30 +26,30 @@ impl Technique for NakedTriple {
                     n += 1;
                 }
             }
-            let celulas = &buffer[..n];
+            let cells = &buffer[..n];
             // Três laços sobre posições crescentes: cada combinação aparece uma vez,
             // sempre na mesma ordem, sem montar a lista de combinações.
-            for x in 0..celulas.len() {
-                for y in (x + 1)..celulas.len() {
-                    for z in (y + 1)..celulas.len() {
-                        let trio = [celulas[x], celulas[y], celulas[z]];
-                        let digitos = candidates
+            for x in 0..cells.len() {
+                for y in (x + 1)..cells.len() {
+                    for z in (y + 1)..cells.len() {
+                        let trio = [cells[x], cells[y], cells[z]];
+                        let combined = candidates
                             .get(trio[0])
                             .union(candidates.get(trio[1]))
                             .union(candidates.get(trio[2]));
-                        if digitos.count() != 3 {
+                        if combined.count() != 3 {
                             continue;
                         }
-                        let pares: Vec<(usize, u8)> = unit
+                        let pairs: Vec<(usize, u8)> = unit
                             .iter()
                             .filter(|i| !trio.contains(i))
-                            .flat_map(|&i| digitos.digits().map(move |v| (i, v)))
+                            .flat_map(|&i| combined.digits().map(move |v| (i, v)))
                             .filter(|&(i, v)| candidates.get(i).contains(v))
                             .collect();
                         // Sem nada a remover, repetir esta dedução travaria o solver.
-                        if !pares.is_empty() {
+                        if !pairs.is_empty() {
                             return Some(Deduction {
-                                action: Action::Eliminate(pares),
+                                action: Action::Eliminate(pairs),
                                 technique: "Naked Triple",
                                 level: Difficulty::Dificil,
                             });
@@ -67,23 +67,23 @@ mod tests {
     use super::*;
 
     /// Deixa a célula só com os dígitos pedidos.
-    fn so_com(c: &mut CandidateGrid, celula: usize, digitos: &[u8]) {
+    fn keep_only(c: &mut CandidateGrid, cell: usize, combined: &[u8]) {
         for v in 1..=9 {
-            if !digitos.contains(&v) {
-                c.eliminate(celula, v);
+            if !combined.contains(&v) {
+                c.eliminate(cell, v);
             }
         }
     }
 
     fn triple(a: &[u8], b: &[u8], d: &[u8]) -> CandidateGrid {
         let mut c = CandidateGrid::from_grid(&Grid::empty());
-        so_com(&mut c, 0, a);
-        so_com(&mut c, 1, b);
-        so_com(&mut c, 2, d);
+        keep_only(&mut c, 0, a);
+        keep_only(&mut c, 1, b);
+        keep_only(&mut c, 2, d);
         c
     }
 
-    fn esperado_linha_0() -> Vec<(usize, u8)> {
+    fn expected_row_0() -> Vec<(usize, u8)> {
         (3..9).flat_map(|i| [(i, 1), (i, 2), (i, 3)]).collect()
     }
 
@@ -91,7 +91,7 @@ mod tests {
     fn elimina_os_tres_digitos_das_outras_celulas() {
         let c = triple(&[1, 2], &[2, 3], &[1, 3]);
         let d = NakedTriple.apply(&Grid::empty(), &c).unwrap();
-        assert_eq!(d.action, Action::Eliminate(esperado_linha_0()));
+        assert_eq!(d.action, Action::Eliminate(expected_row_0()));
         assert_eq!(d.technique, "Naked Triple");
         assert_eq!(d.level, Difficulty::Dificil);
     }
@@ -100,15 +100,15 @@ mod tests {
     fn aceita_celula_com_os_tres_candidatos() {
         let c = triple(&[1, 2, 3], &[1, 2], &[2, 3]);
         let d = NakedTriple.apply(&Grid::empty(), &c).unwrap();
-        assert_eq!(d.action, Action::Eliminate(esperado_linha_0()));
+        assert_eq!(d.action, Action::Eliminate(expected_row_0()));
     }
 
     #[test]
     fn uniao_de_dois_digitos_nao_eh_triple() {
         // Duas células com {1,2} e uma cheia: é um Naked Pair, não um triple.
         let mut c = CandidateGrid::from_grid(&Grid::empty());
-        so_com(&mut c, 0, &[1, 2]);
-        so_com(&mut c, 1, &[1, 2]);
+        keep_only(&mut c, 0, &[1, 2]);
+        keep_only(&mut c, 1, &[1, 2]);
         assert_eq!(NakedTriple.apply(&Grid::empty(), &c), None);
     }
 

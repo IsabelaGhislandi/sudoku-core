@@ -10,17 +10,17 @@ use sudoku_core::{Difficulty, GenError, generate};
 #[test]
 #[ignore]
 fn medio_cabe_na_meta_de_tempo() {
-    let mut tempos: Vec<Duration> = (0..200)
+    let mut times: Vec<Duration> = (0..200)
         .map(|seed| {
-            let inicio = Instant::now();
+            let start = Instant::now();
             generate(Difficulty::Medio, seed).unwrap_or_else(|e| panic!("seed {seed}: {e:?}"));
-            inicio.elapsed()
+            start.elapsed()
         })
         .collect();
-    tempos.sort();
-    let pior = *tempos.last().unwrap();
-    println!("mediana: {:?}, pior: {:?}", tempos[100], pior);
-    assert!(pior <= Duration::from_secs(1), "pior caso: {pior:?}");
+    times.sort();
+    let worst = *times.last().unwrap();
+    println!("mediana: {:?}, pior: {:?}", times[100], worst);
+    assert!(worst <= Duration::from_secs(1), "pior caso: {worst:?}");
 }
 
 /// Mede o gerador de Difícil. A meta é por chamada, termine ela com um puzzle ou com
@@ -29,23 +29,23 @@ fn medio_cabe_na_meta_de_tempo() {
 #[test]
 #[ignore]
 fn dificil_cabe_na_meta_de_tempo() {
-    let mut esgotadas = 0;
-    let mut tempos: Vec<Duration> = (0..200)
+    let mut exhausted = 0;
+    let mut times: Vec<Duration> = (0..200)
         .map(|seed| {
-            let inicio = Instant::now();
+            let start = Instant::now();
             match generate(Difficulty::Dificil, seed) {
                 Ok(_) => {}
-                Err(GenError::AttemptsExhausted(_)) => esgotadas += 1,
+                Err(GenError::AttemptsExhausted(_)) => exhausted += 1,
                 Err(e) => panic!("seed {seed}: {e:?}"),
             }
-            inicio.elapsed()
+            start.elapsed()
         })
         .collect();
-    tempos.sort();
-    let pior = *tempos.last().unwrap();
+    times.sort();
+    let worst = *times.last().unwrap();
     println!(
-        "mediana: {:?}, pior: {:?}, esgotadas: {esgotadas}",
-        tempos[100], pior
+        "mediana: {:?}, pior: {:?}, esgotadas: {exhausted}",
+        times[100], worst
     );
-    assert!(pior <= Duration::from_secs(1), "pior caso: {pior:?}");
+    assert!(worst <= Duration::from_secs(1), "pior caso: {worst:?}");
 }

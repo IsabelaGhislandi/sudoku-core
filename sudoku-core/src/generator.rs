@@ -24,14 +24,14 @@ pub enum GenError {
 /// porque a mesma seed precisa dar o mesmo resultado em qualquer aparelho. Faz parte do
 /// contrato de determinismo: reduzir pode transformar um puzzle em erro; aumentar só
 /// transforma erro em puzzle, sem alterar os que já existem.
-const MAX_TENTATIVAS_MEDIO: usize = 50;
+const MAX_ATTEMPTS_MEDIUM: usize = 50;
 
 /// Limite de tentativas para gerar um Difícil, com o mesmo papel no contrato que o do
 /// Médio. Só 3,4% das tentativas saem Difíceis, então o número de tentativas varia muito
 /// de seed para seed. O limite é o que garante que nenhuma chamada passe de cerca de 1 s
 /// neste PC (cada tentativa custa uns 4 ms). Em troca, cerca de 1 seed em 5.000 devolve
 /// `AttemptsExhausted`, e o módulo Game sorteia outra.
-const MAX_TENTATIVAS_DIFICIL: usize = 250;
+const MAX_ATTEMPTS_HARD: usize = 250;
 
 /// Gera um puzzle determinístico no nível pedido. Por enquanto, Fácil, Médio e Difícil.
 ///
@@ -53,8 +53,12 @@ pub fn generate(difficulty: Difficulty, seed: u64) -> Result<Puzzle, GenError> {
                 seed,
             })
         }
-        Difficulty::Medio => tentar(difficulty, MAX_TENTATIVAS_MEDIO, seed, &mut rng),
-        Difficulty::Dificil => tentar(difficulty, MAX_TENTATIVAS_DIFICIL, seed, &mut rng),
+        Difficulty::Medio => {
+            generate_with_attempts(difficulty, MAX_ATTEMPTS_MEDIUM, seed, &mut rng)
+        }
+        Difficulty::Dificil => {
+            generate_with_attempts(difficulty, MAX_ATTEMPTS_HARD, seed, &mut rng)
+        }
         _ => Err(GenError::Unsupported(difficulty)),
     }
 }
@@ -68,7 +72,7 @@ pub fn generate(difficulty: Difficulty, seed: u64) -> Result<Puzzle, GenError> {
 /// de unicidade: `dig` só devolve puzzles que o solver resolve com deduções forçadas,
 /// então eles já são únicos. E como as técnicas acima do nível ficam no fim da lista,
 /// o solver limitado faz os mesmos passos que o completo faria.
-fn tentar(
+fn generate_with_attempts(
     difficulty: Difficulty,
     max: usize,
     seed: u64,
@@ -78,8 +82,8 @@ fn tentar(
     for _ in 0..max {
         let solution = full_solution(rng);
         let givens = dig(&solution, &solver, rng);
-        let exigido = solver.solve(&givens).steps.iter().map(|s| s.level).max();
-        if exigido.unwrap_or(Difficulty::Facil) == difficulty {
+        let required = solver.solve(&givens).steps.iter().map(|s| s.level).max();
+        if required.unwrap_or(Difficulty::Facil) == difficulty {
             return Ok(Puzzle {
                 givens,
                 solution,
@@ -157,10 +161,10 @@ mod tests {
         assert_eq!(count_solutions(&puzzle.givens, 2), 1);
         assert_eq!(crate::rating::rate(&puzzle.givens), Some(Difficulty::Facil));
         // o enunciado removeu pelo menos algumas células
-        let vazias = (0..81)
+        let empty_cells = (0..81)
             .filter(|&i| puzzle.givens.get(i) == Cell::Empty)
             .count();
-        assert!(vazias > 0);
+        assert!(empty_cells > 0);
     }
 
     #[test]
@@ -178,7 +182,7 @@ mod tests {
     #[test]
     fn puzzle_medio_da_seed_42_e_reproduzivel() {
         // Golden test do Médio, no mesmo espírito do Fácil. Também trava
-        // MAX_TENTATIVAS_MEDIO e a ordem das técnicas, que fazem parte do contrato.
+        // MAX_ATTEMPTS_MEDIUM e a ordem das técnicas, que fazem parte do contrato.
         let puzzle = generate(Difficulty::Medio, 42).unwrap();
         assert_eq!(
             puzzle.givens.to_line(),
@@ -188,7 +192,7 @@ mod tests {
 
     #[test]
     fn puzzle_dificil_da_seed_42_e_reproduzivel() {
-        // Golden test do Difícil. Também trava MAX_TENTATIVAS_DIFICIL e a ordem das
+        // Golden test do Difícil. Também trava MAX_ATTEMPTS_HARD e a ordem das
         // técnicas, que fazem parte do contrato.
         let puzzle = generate(Difficulty::Dificil, 42).unwrap();
         assert_eq!(
@@ -248,22 +252,22 @@ mod tests {
         for seed in 1..=3 {
             let p = generate(Difficulty::Medio, seed).unwrap();
             let result = LogicalSolver::new().solve(&p.givens);
-            let mut eliminacoes = 0;
+            let mut eliminations = 0;
             for step in &result.steps {
                 match &step.action {
                     Action::Place { index, value } => {
                         assert_eq!(p.solution.get(*index), Cell::Filled(*value));
                     }
-                    Action::Eliminate(pares) => {
-                        eliminacoes += 1;
-                        for &(index, value) in pares {
+                    Action::Eliminate(pairs) => {
+                        eliminations += 1;
+                        for &(index, value) in pairs {
                             assert_ne!(p.solution.get(index), Cell::Filled(value));
                         }
                     }
                 }
             }
             assert_eq!(result.grid, p.solution);
-            assert!(eliminacoes > 0, "seed {seed} deveria exigir eliminação");
+            assert!(eliminations > 0, "seed {seed} deveria exigir eliminação");
         }
     }
 
@@ -311,8 +315,8 @@ mod tests {
                     Action::Place { index, value } => {
                         assert_eq!(p.solution.get(*index), Cell::Filled(*value));
                     }
-                    Action::Eliminate(pares) => {
-                        for &(index, value) in pares {
+                    Action::Eliminate(pairs) => {
+                        for &(index, value) in pairs {
                             assert_ne!(p.solution.get(index), Cell::Filled(value));
                         }
                     }

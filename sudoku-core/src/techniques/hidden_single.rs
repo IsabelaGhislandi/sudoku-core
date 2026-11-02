@@ -14,13 +14,13 @@ impl Technique for HiddenSingle {
         // posicoes[u][v]: posições da unidade u, entre as células vazias, onde v cabe.
         // Montar tudo numa passada só é bem mais barato do que varrer a unidade de
         // novo para cada dígito, e esta técnica roda a cada passo do solver.
-        let unidades = units();
-        let mut posicoes = [[0u16; 10]; 27];
-        for (u, unidade) in unidades.iter().enumerate() {
-            for (pos, &i) in unidade.iter().enumerate() {
+        let all_units = units();
+        let mut positions = [[0u16; 10]; 27];
+        for (u, unit) in all_units.iter().enumerate() {
+            for (pos, &i) in unit.iter().enumerate() {
                 if let Cell::Empty = grid.get(i) {
                     for v in candidates.get(i).digits() {
-                        posicoes[u][v as usize] |= 1 << pos;
+                        positions[u][v as usize] |= 1 << pos;
                     }
                 }
             }
@@ -29,9 +29,9 @@ impl Technique for HiddenSingle {
             for unit in 0..9 {
                 // Linha, coluna e box de mesmo número, nessa ordem.
                 for u in [unit, 9 + unit, 18 + unit] {
-                    let onde = posicoes[u][value as usize];
-                    if onde.count_ones() == 1 {
-                        let index = unidades[u][onde.trailing_zeros() as usize];
+                    let spots = positions[u][value as usize];
+                    if spots.count_ones() == 1 {
+                        let index = all_units[u][spots.trailing_zeros() as usize];
                         return Some(deduction(index, value));
                     }
                 }
@@ -68,8 +68,8 @@ mod tests {
         // confirma que é "hidden" e não "naked": índice 0 tem >1 candidato
         assert!(candidates_for(&grid, 0).count() > 1);
 
-        let candidatos = CandidateGrid::from_grid(&grid);
-        let d = HiddenSingle.apply(&grid, &candidatos).unwrap();
+        let candidates = CandidateGrid::from_grid(&grid);
+        let d = HiddenSingle.apply(&grid, &candidates).unwrap();
         assert_eq!(d.action, Action::Place { index: 0, value: 5 });
         assert_eq!(d.level, Difficulty::Facil);
     }
@@ -77,7 +77,7 @@ mod tests {
     #[test]
     fn retorna_none_quando_nao_aplica() {
         let grid = Grid::empty();
-        let candidatos = CandidateGrid::from_grid(&grid);
-        assert_eq!(HiddenSingle.apply(&grid, &candidatos), None);
+        let candidates = CandidateGrid::from_grid(&grid);
+        assert_eq!(HiddenSingle.apply(&grid, &candidates), None);
     }
 }

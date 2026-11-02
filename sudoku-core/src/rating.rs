@@ -34,13 +34,13 @@ mod tests {
     use super::*;
     use crate::grid::{Cell, Grid};
 
-    fn solucao() -> &'static str {
+    fn solution() -> &'static str {
         "534678912672195348198342567859761423426853791713924856961537284287419635345286179"
     }
 
     #[test]
     fn puzzle_resolvivel_por_singles_eh_facil() {
-        let mut grid = Grid::from_line(solucao()).unwrap();
+        let mut grid = Grid::from_line(solution()).unwrap();
         grid.set(40, Cell::Empty);
         assert_eq!(rate(&grid), Some(Difficulty::Facil));
     }

@@ -41,23 +41,23 @@ pub(crate) fn units() -> &'static [[usize; 9]; 27] {
     &UNITS
 }
 
-static UNITS: [[usize; 9]; 27] = monta_unidades();
+static UNITS: [[usize; 9]; 27] = build_units();
 
 /// `const fn` só aceita laços `while`, então a montagem não usa iteradores.
-const fn monta_unidades() -> [[usize; 9]; 27] {
-    let mut unidades = [[0; 9]; 27];
+const fn build_units() -> [[usize; 9]; 27] {
+    let mut all_units = [[0; 9]; 27];
     let mut k = 0;
     while k < 9 {
         let mut j = 0;
         while j < 9 {
-            unidades[k][j] = k * 9 + j; // linha k
-            unidades[9 + k][j] = j * 9 + k; // coluna k
-            unidades[18 + k][j] = (k / 3 * 3 + j / 3) * 9 + k % 3 * 3 + j % 3; // box k
+            all_units[k][j] = k * 9 + j; // linha k
+            all_units[9 + k][j] = j * 9 + k; // coluna k
+            all_units[18 + k][j] = (k / 3 * 3 + j / 3) * 9 + k % 3 * 3 + j % 3; // box k
             j += 1;
         }
         k += 1;
     }
-    unidades
+    all_units
 }
 
 #[cfg(test)]
@@ -67,15 +67,15 @@ mod tests {
 
     #[test]
     fn unidades_batem_com_linha_coluna_e_box() {
-        for (u, unidade) in units().iter().enumerate() {
-            let esperado: Vec<usize> = (0..81)
+        for (u, unit) in units().iter().enumerate() {
+            let expected: Vec<usize> = (0..81)
                 .filter(|&i| match u {
                     0..=8 => row_of(i) == u,
                     9..=17 => col_of(i) == u - 9,
                     _ => box_of(i) == u - 18,
                 })
                 .collect();
-            assert_eq!(unidade.to_vec(), esperado, "unidade {u}");
+            assert_eq!(unit.to_vec(), expected, "unidade {u}");
         }
     }
 }
