@@ -41,5 +41,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [23 — Naked Triple: combinações sem alocar e métodos que consomem `self`](23-naked-triple-e-combinacoes.md)
 - [24 — Hidden Triple: `fold`, `any` e o teste que precisava falhar](24-hidden-triple.md)
 - [25 — X-Wing: closures que viram `fn` e uma função para duas direções](25-x-wing.md)
+- [26 — Gerador de Difícil: medir, achar o gargalo e otimizar sem mudar a saída](26-gerador-dificil.md)
 
 > Cada nova task ganha uma página aqui.

@@ -95,6 +95,12 @@ generate(Dificil, seed):
 - `dig` continua sem `count_solutions`. As técnicas novas também só fazem deduções forçadas, então o
   argumento do Médio vale: se o solver resolve, a solução é única. `rate` confere a unicidade de todo
   Difícil aceito.
+- **Decisão tomada na implementação:** a primeira medição ficou acima da meta (mediana 0,78 s,
+  pior caso 7,4 s, 80 de 200 seeds acima de 1 s), porque só 3,4% das tentativas saem Difíceis.
+  Com o ok da pessoa responsável, o gerador foi otimizado sem mudar nenhuma saída: o aceite deixou
+  de repetir a busca de unicidade, a tabela de unidades passou a ser fixa e as técnicas deixaram de
+  alocar `Vec` no caminho quente. Resultado: mediana 93 ms, pior caso 0,79 s. Uma seed chegou a
+  201 tentativas, então `MAX_TENTATIVAS_DIFICIL` = 800.
 - `MAX_TENTATIVAS_DIFICIL` é escolhido por medição e faz parte do contrato de determinismo, como o do
   Médio.
 
