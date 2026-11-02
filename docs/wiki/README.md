@@ -12,6 +12,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 6 a 10](fundamentos/rust-base-tarefas-06-a-10.md)
 - [Fundamentos de Rust — Tarefas 11 a 15](fundamentos/rust-base-tarefas-11-a-15.md)
 - [Fundamentos de Rust — Tarefas 16 a 20](fundamentos/rust-base-tarefas-16-a-20.md)
+- [Fundamentos de Rust — Tarefas 21 a 25](fundamentos/rust-base-tarefas-21-a-25.md)
 
 ## Índice por task
 
@@ -39,5 +40,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [22 — Box/Line Reduction: fatias, `copied` e o primeiro nível Difícil](22-box-line-reduction.md)
 - [23 — Naked Triple: combinações sem alocar e métodos que consomem `self`](23-naked-triple-e-combinacoes.md)
 - [24 — Hidden Triple: `fold`, `any` e o teste que precisava falhar](24-hidden-triple.md)
+- [25 — X-Wing: closures que viram `fn` e uma função para duas direções](25-x-wing.md)
 
 > Cada nova task ganha uma página aqui.
