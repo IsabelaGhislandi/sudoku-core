@@ -27,8 +27,11 @@ pub enum GenError {
 const MAX_TENTATIVAS_MEDIO: usize = 50;
 
 /// Limite de tentativas para gerar um Difícil, com o mesmo papel no contrato que o do
-/// Médio.
-const MAX_TENTATIVAS_DIFICIL: usize = 800;
+/// Médio. Só 3,4% das tentativas saem Difíceis, então o número de tentativas varia muito
+/// de seed para seed. O limite é o que garante que nenhuma chamada passe de cerca de 1 s
+/// neste PC (cada tentativa custa uns 4 ms). Em troca, cerca de 1 seed em 5.000 devolve
+/// `AttemptsExhausted`, e o módulo Game sorteia outra.
+const MAX_TENTATIVAS_DIFICIL: usize = 250;
 
 /// Gera um puzzle determinístico no nível pedido. Por enquanto, Fácil, Médio e Difícil.
 ///
@@ -271,6 +274,16 @@ mod tests {
         assert_eq!(p.seed, 42);
         assert_eq!(count_solutions(&p.givens, 2), 1);
         assert_eq!(crate::rating::rate(&p.givens), Some(Difficulty::Dificil));
+    }
+
+    #[test]
+    fn dificil_desiste_depois_do_limite_de_tentativas() {
+        // A seed 459 precisaria de 254 tentativas. Com o limite de 250, ela devolve erro
+        // em vez de fazer quem joga esperar; o Game sorteia outra seed.
+        assert_eq!(
+            generate(Difficulty::Dificil, 459),
+            Err(GenError::AttemptsExhausted(Difficulty::Dificil))
+        );
     }
 
     #[test]

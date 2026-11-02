@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use sudoku_core::{Difficulty, generate};
+use sudoku_core::{Difficulty, GenError, generate};
 
 /// Mede o gerador de Médio. Fica fora da suíte normal porque tempo só faz sentido em
 /// build de release: `cargo test --release --test desempenho -- --ignored --nocapture`.
@@ -23,19 +23,29 @@ fn medio_cabe_na_meta_de_tempo() {
     assert!(pior <= Duration::from_secs(1), "pior caso: {pior:?}");
 }
 
-/// Mede o gerador de Difícil, com a mesma meta do Médio.
+/// Mede o gerador de Difícil. A meta é por chamada, termine ela com um puzzle ou com
+/// `AttemptsExhausted`: as seeds raras que esgotam as tentativas são aceitas e só
+/// contadas, porque o Game sorteia outra seed nesses casos.
 #[test]
 #[ignore]
 fn dificil_cabe_na_meta_de_tempo() {
+    let mut esgotadas = 0;
     let mut tempos: Vec<Duration> = (0..200)
         .map(|seed| {
             let inicio = Instant::now();
-            generate(Difficulty::Dificil, seed).unwrap_or_else(|e| panic!("seed {seed}: {e:?}"));
+            match generate(Difficulty::Dificil, seed) {
+                Ok(_) => {}
+                Err(GenError::AttemptsExhausted(_)) => esgotadas += 1,
+                Err(e) => panic!("seed {seed}: {e:?}"),
+            }
             inicio.elapsed()
         })
         .collect();
     tempos.sort();
     let pior = *tempos.last().unwrap();
-    println!("mediana: {:?}, pior: {:?}", tempos[100], pior);
+    println!(
+        "mediana: {:?}, pior: {:?}, esgotadas: {esgotadas}",
+        tempos[100], pior
+    );
     assert!(pior <= Duration::from_secs(1), "pior caso: {pior:?}");
 }
