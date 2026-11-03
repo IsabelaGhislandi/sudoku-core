@@ -7,5 +7,8 @@ edition = "2024"
 publish = false
 
 [dependencies]
-rand = "0.10"
+# Sem as features padrão: elas trazem StdRng, ThreadRng e acesso à aleatoriedade do sistema
+# (chacha20, getrandom...). O core é determinístico e só usa SeedableRng e shuffle; o
+# gerador vem do rand_chacha.
+rand = { version = "0.10", default-features = false }
 rand_chacha = "0.10.0"
