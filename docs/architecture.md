@@ -38,7 +38,7 @@ Isso a torna testável isoladamente com `cargo test` e reaproveitável por todos
 | Critério de dificuldade | Técnicas de resolução (solver "humano") | Mais justo que contar pistas |
 | Muito Difícil | Pode exigir backtracking | Quando a lógica pura não basta |
 | Organização | Crate único `sudoku-core` | Simples, testável, fácil de evoluir (YAGNI sobre workspace) |
-| Dependências | `rand` + `rand_chacha` | Mínimo necessário; nada de Tauri/IO/UI |
+| Dependências | `rand` (sem features padrão) + `rand_chacha` | Mínimo necessário; nada de Tauri/IO/UI nem aleatoriedade do SO |
 
 **Padrão espinha-dorsal:** *Strategy* via trait `Technique` organiza as técnicas de
 resolução; `enum` + `match` modelam os dados; `Result`/`Option` modelam falha e ausência.
@@ -49,7 +49,8 @@ Submódulos isolados, cada um com propósito único e testável de forma indepen
 
 ```
 sudoku-core/
-├── Cargo.toml          edition 2024, deps: rand 0.10, rand_chacha 0.10
+├── Cargo.toml          edition 2024, publish = false, deps: rand 0.10 (sem default), rand_chacha 0.10
+├── deny.toml           regras do cargo-deny (RustSec, licenças, origem)
 └── src/
     ├── lib.rs          declara os módulos e re-exporta a API pública
     ├── difficulty.rs   enum Difficulty (Facil < Medio < Dificil < MuitoDificil)
@@ -163,8 +164,8 @@ flagrar qualquer mudança acidental.
 
 ## 8. Stack e convenções
 
-- **Rust** edition **2024**, crate único `sudoku-core`. Dependências: **`rand` 0.10** e
-  **`rand_chacha` 0.10** (`ChaCha12Rng`, de algoritmo fixo, para o determinismo da seed).
+- **Rust** edition **2024**, crate único `sudoku-core`. Dependências: **`rand` 0.10**, sem as
+  features padrão (o core não usa StdRng nem a aleatoriedade do SO), e **`rand_chacha` 0.10** (`ChaCha12Rng`, de algoritmo fixo, para o determinismo da seed).
 - Testes unitários **inline** em cada módulo (`#[cfg(test)] mod tests`); teste de
   integração da API pública em `sudoku-core/tests/`.
 - Comandos rodam da raiz do repo via `--manifest-path sudoku-core/Cargo.toml`.
@@ -174,6 +175,9 @@ flagrar qualquer mudança acidental.
   Ubuntu/Windows/macOS a cada PR, com `-D warnings` e `--locked`. **CD** fica para o módulo
   Tauri: build do APK a cada tag `v*`, anexado a uma GitHub Release.
   Spec: `docs/superpowers/specs/2026-09-19-ci-design.md`.
+- **Dependências** (`.github/workflows/dependencias.yml`): `cargo deny check` com as regras de
+  `sudoku-core/deny.toml` a cada PR e toda segunda-feira. Ao adicionar uma dependência, o agente segue a
+  skill `.claude/skills/adding-dependencies` (verificar o crate e pedir aprovação antes do `cargo add`).
 
 ## 9. Processo e skills
 

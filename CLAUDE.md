@@ -57,7 +57,9 @@ acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`]
 - Rust **edition 2024**. Preferir sempre as versões mais novas de edition e dependências.
 - `sudoku-core` é uma **biblioteca pura**: sem UI, sem IO, sem Tauri, sem relógio. Timer,
   persistência e histórico pertencem ao módulo Game (futuro).
-- Dependências mínimas: hoje só `rand` e `rand_chacha`. Cada nova dependência precisa de motivo.
+- Dependências mínimas: hoje só `rand` (sem features padrão) e `rand_chacha`. Cada nova dependência
+  precisa de motivo e segue a skill `adding-dependencies` (`.claude/skills/`): verificar o crate e pedir
+  aprovação antes do `cargo add`. `cargo deny --manifest-path sudoku-core/Cargo.toml check` precisa passar.
 - **Nomes no código em inglês**: tipos, funções, constantes, variáveis e helpers de teste
   (`cells`, `pairs`, `MAX_ATTEMPTS_HARD`). É a convenção do ecossistema Rust e combina com a
   API pública. A exceção são as variantes de `Difficulty` (`Facil`, `Medio`...), que ficam
