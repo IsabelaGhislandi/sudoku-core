@@ -139,6 +139,10 @@ pub enum GenError {
 Variantes de enum podem carregar dados. O erro diz **qual** nível foi pedido, sem precisar de
 string. Quem chama faz `match` e monta a própria mensagem, o que combina com um core sem UI.
 
+> **Nota posterior:** `Unsupported` saiu da API na fatia Muito Difícil, quando os quatro níveis
+> passaram a ser suportados. Hoje `GenError` só tem `AttemptsExhausted(Difficulty)`, que segue o
+> mesmo princípio de carregar o nível (página [32](../32-gerador-muito-dificil.md)).
+
 ### Tirando o valor de dentro
 
 | Método | Se for `None`/`Err` | Quando usar |
