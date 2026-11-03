@@ -1,4 +1,4 @@
-use super::{Action, Deduction, Technique};
+use super::{Action, Deduction, Technique, line_masks};
 use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::Grid;
@@ -40,12 +40,7 @@ fn search(
     value: u8,
     cell: fn(usize, usize) -> usize,
 ) -> Option<Vec<(usize, u8)>> {
-    // mascaras[l]: posições da linha l onde o dígito cabe.
-    let masks: [u16; 9] = std::array::from_fn(|l| {
-        (0..9)
-            .filter(|&p| candidates.get(cell(l, p)).contains(value))
-            .fold(0, |m, p| m | (1 << p))
-    });
+    let masks = line_masks(candidates, value, cell);
     for a in 0..9 {
         if masks[a].count_ones() != 2 {
             continue;

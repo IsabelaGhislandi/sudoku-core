@@ -60,6 +60,20 @@ const fn build_units() -> [[usize; 9]; 27] {
     all_units
 }
 
+/// Para cada "linha" `l` (linha ou coluna do tabuleiro, conforme `cell(l, posição)`), a
+/// máscara das posições onde `value` ainda é candidato. Base do X-Wing e do Swordfish.
+pub(crate) fn line_masks(
+    candidates: &CandidateGrid,
+    value: u8,
+    cell: fn(usize, usize) -> usize,
+) -> [u16; 9] {
+    std::array::from_fn(|l| {
+        (0..9)
+            .filter(|&p| candidates.get(cell(l, p)).contains(value))
+            .fold(0, |m, p| m | (1 << p))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -88,6 +102,7 @@ mod naked_pair;
 mod naked_single;
 mod naked_triple;
 mod pointing_pair;
+mod swordfish;
 mod x_wing;
 
 pub use box_line_reduction::BoxLineReduction;
@@ -98,4 +113,5 @@ pub use naked_pair::NakedPair;
 pub use naked_single::NakedSingle;
 pub use naked_triple::NakedTriple;
 pub use pointing_pair::PointingPair;
+pub use swordfish::Swordfish;
 pub use x_wing::XWing;
