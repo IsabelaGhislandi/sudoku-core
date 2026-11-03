@@ -1,8 +1,14 @@
 [package]
 name = "sudoku-core"
+license = "MIT"
 version = "0.1.0"
 edition = "2024"
+# O crate não é publicado no crates.io: ele é consumido pelo próprio app.
+publish = false
 
 [dependencies]
-rand = "0.10"
+# Sem as features padrão: elas trazem StdRng, ThreadRng e acesso à aleatoriedade do sistema
+# (chacha20, getrandom...). O core é determinístico e só usa SeedableRng e shuffle; o
+# gerador vem do rand_chacha.
+rand = { version = "0.10", default-features = false }
 rand_chacha = "0.10.0"
