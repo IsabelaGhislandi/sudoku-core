@@ -1,0 +1,39 @@
+# Configuração do cargo-deny: o que o CI verifica nas dependências a cada PR e toda semana.
+# Detalhes e motivos em docs/wiki/28-seguranca-de-dependencias.md.
+# Rodar localmente: cargo deny --manifest-path sudoku-core/Cargo.toml check
+
+[graph]
+# O app vai rodar em Android e desktop: as dependências de qualquer plataforma contam.
+all-features = true
+
+[advisories]
+# Banco de vulnerabilidades da RustSec. Crates sem manutenção ou retirados do crates.io
+# (yanked) também falham, porque não vão receber correção.
+version = 2
+yanked = "deny"
+unmaintained = "all"
+# Exceções exigem um ID e o motivo, num comentário ao lado. Hoje não há nenhuma.
+ignore = []
+
+[licenses]
+version = 2
+# rand e rand_chacha são "MIT OR Apache-2.0". Uma licença nova pede decisão consciente.
+allow = ["MIT", "Apache-2.0"]
+confidence-threshold = 0.9
+
+[licenses.private]
+# Crates com `publish = false` (o próprio sudoku-core) não precisam declarar licença.
+# Escolher uma licença para o projeto é uma decisão à parte.
+ignore = true
+
+[bans]
+# Duas versões do mesmo crate não é falha, mas aparece como aviso no log.
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+# Só o crates.io: nada de dependência direto de um repositório git ou de outro registry.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
