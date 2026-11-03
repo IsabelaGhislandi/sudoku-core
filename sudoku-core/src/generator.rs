@@ -16,7 +16,6 @@ pub struct Puzzle {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GenError {
-    Unsupported(Difficulty),
     AttemptsExhausted(Difficulty),
 }
 
@@ -33,7 +32,22 @@ const MAX_ATTEMPTS_MEDIUM: usize = 50;
 /// `AttemptsExhausted`, e o módulo Game sorteia outra.
 const MAX_ATTEMPTS_HARD: usize = 250;
 
-/// Gera um puzzle determinístico no nível pedido. Por enquanto, Fácil, Médio e Difícil.
+/// No máximo quantos números o Muito Difícil começa. Os outros níveis ficam com cerca de 25;
+/// menos números é o que faz o Muito Difícil parecer mais vazio.
+const MAX_GIVENS_VERY_HARD: usize = 22;
+
+/// Quantos números da solução o refinamento devolve antes de recavar.
+const REFILL_VERY_HARD: usize = 6;
+
+/// Quantas vezes cada solução é refinada antes de o gerador montar outra.
+const MAX_REFINEMENTS_VERY_HARD: usize = 80;
+
+/// Quantas soluções o gerador tenta. É o teto de trabalho do Muito Difícil: cada chamada
+/// cava no máximo `MAX_SOLUTIONS_VERY_HARD × (1 + MAX_REFINEMENTS_VERY_HARD)` vezes. Os
+/// três valores fazem parte do contrato de determinismo, como `MAX_ATTEMPTS_HARD`.
+const MAX_SOLUTIONS_VERY_HARD: usize = 20;
+
+/// Gera um puzzle determinístico no nível pedido.
 ///
 /// Contrato: mesma seed + mesmo nível => sempre o mesmo puzzle, inclusive entre
 /// versões da lib. Por isso o RNG é o `ChaCha12Rng` (algoritmo fixo) e não o
@@ -59,7 +73,7 @@ pub fn generate(difficulty: Difficulty, seed: u64) -> Result<Puzzle, GenError> {
         Difficulty::Dificil => {
             generate_with_attempts(difficulty, MAX_ATTEMPTS_HARD, seed, &mut rng)
         }
-        _ => Err(GenError::Unsupported(difficulty)),
+        Difficulty::MuitoDificil => generate_very_hard(seed, &mut rng),
     }
 }
 
@@ -127,19 +141,100 @@ fn fill(grid: &mut Grid, rng: &mut ChaCha12Rng) -> bool {
 /// também garante solução única. É o solver que limita o nível do puzzle.
 fn dig(solution: &Grid, solver: &LogicalSolver, rng: &mut ChaCha12Rng) -> Grid {
     let mut puzzle = solution.clone();
-    let mut order: Vec<usize> = (0..81).collect();
-    order.shuffle(rng);
-    for index in order {
+    remove_where_possible(&mut puzzle, (0..81).collect(), solver, rng);
+    puzzle
+}
+
+/// Como `dig`, mas só tenta tirar os números ainda dados. Usado pelo refinamento do
+/// Muito Difícil, que devolve alguns números e cava de novo.
+fn redig(puzzle: &mut Grid, solver: &LogicalSolver, rng: &mut ChaCha12Rng) {
+    let filled = (0..81).filter(|&i| puzzle.get(i) != Cell::Empty).collect();
+    remove_where_possible(puzzle, filled, solver, rng);
+}
+
+/// Embaralha `cells` e tenta esvaziar cada uma, nessa ordem, desfazendo a remoção quando
+/// o solver deixa de resolver. `dig` depende de o embaralhamento ser o primeiro uso do RNG.
+fn remove_where_possible(
+    puzzle: &mut Grid,
+    mut cells: Vec<usize>,
+    solver: &LogicalSolver,
+    rng: &mut ChaCha12Rng,
+) {
+    cells.shuffle(rng);
+    for index in cells {
         let removed = puzzle.get(index);
         puzzle.set(index, Cell::Empty);
         // Não é preciso testar a unicidade aqui: se o solver resolve só com deduções
         // forçadas, a solução já é única. A checagem por busca custava cerca de 80% do
         // tempo de gerar um Médio.
-        if !solver.solve(&puzzle).solved {
+        if !solver.solve(puzzle).solved {
             puzzle.set(index, removed); // restaura
         }
     }
-    puzzle
+}
+
+/// Devolve a `puzzle` os números da solução em `count` células vazias, sorteadas sem
+/// repetição.
+fn refill(puzzle: &Grid, solution: &Grid, count: usize, rng: &mut ChaCha12Rng) -> Grid {
+    let mut empty: Vec<usize> = (0..81).filter(|&i| puzzle.get(i) == Cell::Empty).collect();
+    empty.shuffle(rng);
+    let mut refilled = puzzle.clone();
+    for &index in empty.iter().take(count) {
+        refilled.set(index, solution.get(index));
+    }
+    refilled
+}
+
+/// Aceite do Muito Difícil: poucos números, resolvido inteiro pela lógica e exigindo ao
+/// menos uma técnica de Muito Difícil. O "resolvido" é garantido por `dig` e `redig`, mas
+/// fica aqui para proteger a regra de nunca exigir chute.
+fn accepts_very_hard(givens: &Grid, solver: &LogicalSolver) -> bool {
+    if given_count(givens) > MAX_GIVENS_VERY_HARD {
+        return false;
+    }
+    let result = solver.solve(givens);
+    result.solved
+        && result
+            .steps
+            .iter()
+            .any(|s| s.level == Difficulty::MuitoDificil)
+}
+
+fn given_count(grid: &Grid) -> usize {
+    (0..81).filter(|&i| grid.get(i) != Cell::Empty).count()
+}
+
+/// Gera um Muito Difícil refinando em vez de recomeçar: quando o puzzle cavado tem números
+/// demais, devolve alguns da solução e cava de novo. Recavar só testa as cerca de 25 células
+/// preenchidas, então custa bem menos que montar uma solução nova. Todo sorteio vem do
+/// mesmo RNG, na ordem fixa deste laço, o que mantém o resultado determinístico.
+fn generate_very_hard(seed: u64, rng: &mut ChaCha12Rng) -> Result<Puzzle, GenError> {
+    let difficulty = Difficulty::MuitoDificil;
+    let solver = LogicalSolver::up_to(difficulty);
+    let found = |givens: Grid, solution: Grid| Puzzle {
+        givens,
+        solution,
+        difficulty,
+        seed,
+    };
+    for _ in 0..MAX_SOLUTIONS_VERY_HARD {
+        let solution = full_solution(rng);
+        let mut puzzle = dig(&solution, &solver, rng);
+        if accepts_very_hard(&puzzle, &solver) {
+            return Ok(found(puzzle, solution));
+        }
+        for _ in 0..MAX_REFINEMENTS_VERY_HARD {
+            let mut candidate = refill(&puzzle, &solution, REFILL_VERY_HARD, rng);
+            redig(&mut candidate, &solver, rng);
+            if accepts_very_hard(&candidate, &solver) {
+                return Ok(found(candidate, solution));
+            }
+            if given_count(&candidate) <= given_count(&puzzle) {
+                puzzle = candidate;
+            }
+        }
+    }
+    Err(GenError::AttemptsExhausted(difficulty))
 }
 
 #[cfg(test)]
@@ -215,11 +310,75 @@ mod tests {
         assert_ne!(a.solution, b.solution);
     }
 
+    /// Seed de Muito Difícil rápida o bastante para o CI, que roda em debug.
+    const VERY_HARD_SEED: u64 = 15;
+
     #[test]
-    fn niveis_nao_suportados_ainda_retornam_erro() {
+    fn gera_puzzle_muito_dificil_valido() {
+        let p = generate(Difficulty::MuitoDificil, VERY_HARD_SEED).unwrap();
+        assert_eq!(p.difficulty, Difficulty::MuitoDificil);
+        assert_eq!(p.seed, VERY_HARD_SEED);
+        assert_eq!(count_solutions(&p.givens, 2), 1);
         assert_eq!(
-            generate(Difficulty::MuitoDificil, 1),
-            Err(GenError::Unsupported(Difficulty::MuitoDificil))
+            crate::rating::rate(&p.givens),
+            Some(Difficulty::MuitoDificil)
+        );
+        let result = LogicalSolver::new().solve(&p.givens);
+        assert!(result.solved, "o Muito Difícil não pode exigir chute");
+        assert_eq!(result.grid, p.solution);
+        let givens = given_count(&p.givens);
+        assert!(givens <= 22, "{givens} números");
+    }
+
+    #[test]
+    fn givens_do_muito_dificil_batem_com_a_solucao() {
+        let p = generate(Difficulty::MuitoDificil, VERY_HARD_SEED).unwrap();
+        for i in 0..81 {
+            if let Cell::Filled(v) = p.givens.get(i) {
+                assert_eq!(p.solution.get(i), Cell::Filled(v), "célula {i}");
+            }
+        }
+    }
+
+    #[test]
+    fn mesma_seed_gera_mesmo_puzzle_muito_dificil() {
+        let a = generate(Difficulty::MuitoDificil, VERY_HARD_SEED).unwrap();
+        let b = generate(Difficulty::MuitoDificil, VERY_HARD_SEED).unwrap();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn seeds_extremas_geram_muito_dificil_valido() {
+        for seed in [0, u64::MAX] {
+            let p = generate(Difficulty::MuitoDificil, seed).unwrap();
+            assert_eq!(
+                crate::rating::rate(&p.givens),
+                Some(Difficulty::MuitoDificil)
+            );
+        }
+    }
+
+    #[test]
+    fn eliminacoes_do_muito_dificil_nunca_removem_a_resposta() {
+        let p = generate(Difficulty::MuitoDificil, VERY_HARD_SEED).unwrap();
+        let result = LogicalSolver::new().solve(&p.givens);
+        for step in &result.steps {
+            match &step.action {
+                Action::Place { index, value } => {
+                    assert_eq!(p.solution.get(*index), Cell::Filled(*value));
+                }
+                Action::Eliminate(pairs) => {
+                    for &(index, value) in pairs {
+                        assert_ne!(p.solution.get(index), Cell::Filled(value));
+                    }
+                }
+            }
+        }
+        assert!(
+            result
+                .steps
+                .iter()
+                .any(|s| s.level == Difficulty::MuitoDificil)
         );
     }
 

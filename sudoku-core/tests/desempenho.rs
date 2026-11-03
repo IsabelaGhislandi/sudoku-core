@@ -36,7 +36,6 @@ fn dificil_cabe_na_meta_de_tempo() {
             match generate(Difficulty::Dificil, seed) {
                 Ok(_) => {}
                 Err(GenError::AttemptsExhausted(_)) => exhausted += 1,
-                Err(e) => panic!("seed {seed}: {e:?}"),
             }
             start.elapsed()
         })

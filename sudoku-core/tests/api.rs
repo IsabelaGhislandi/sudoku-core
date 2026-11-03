@@ -53,3 +53,26 @@ fn fluxo_completo_dificil() {
     assert_eq!(result.grid, puzzle.solution);
     assert!(result.steps.iter().any(|s| s.level == Difficulty::Dificil));
 }
+
+#[test]
+fn fluxo_completo_muito_dificil() {
+    let puzzle = generate(Difficulty::MuitoDificil, 14).unwrap();
+
+    assert_eq!(count_solutions(&puzzle.givens, 2), 1);
+    assert!(validate(&puzzle.givens).is_empty());
+    assert_eq!(rate(&puzzle.givens), Some(Difficulty::MuitoDificil));
+    let givens = (0..81)
+        .filter(|&i| puzzle.givens.get(i) != Cell::Empty)
+        .count();
+    assert!(givens <= 22, "{givens} números");
+
+    let result = LogicalSolver::new().solve(&puzzle.givens);
+    assert!(result.solved);
+    assert_eq!(result.grid, puzzle.solution);
+    assert!(
+        result
+            .steps
+            .iter()
+            .any(|s| s.level == Difficulty::MuitoDificil)
+    );
+}
