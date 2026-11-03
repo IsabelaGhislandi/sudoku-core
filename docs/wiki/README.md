@@ -12,6 +12,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 6 a 10](fundamentos/rust-base-tarefas-06-a-10.md)
 - [Fundamentos de Rust — Tarefas 11 a 15](fundamentos/rust-base-tarefas-11-a-15.md)
 - [Fundamentos de Rust — Tarefas 16 a 20](fundamentos/rust-base-tarefas-16-a-20.md)
+- [Fundamentos de Rust — Tarefas 21 a 25](fundamentos/rust-base-tarefas-21-a-25.md)
 
 ## Índice por task
 
@@ -36,5 +37,11 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [19 — Hidden Pair e máscaras de posição](19-hidden-pair-e-mascaras.md)
 - [20 — Pointing Pair e funções como parâmetro](20-pointing-pair.md)
 - [21 — Gerador de Médio: tentativas, medição e uma checagem redundante](21-gerador-medio-e-tentativas.md)
+- [22 — Box/Line Reduction: fatias, `copied` e o primeiro nível Difícil](22-box-line-reduction.md)
+- [23 — Naked Triple: combinações sem alocar e métodos que consomem `self`](23-naked-triple-e-combinacoes.md)
+- [24 — Hidden Triple: `fold`, `any` e o teste que precisava falhar](24-hidden-triple.md)
+- [25 — X-Wing: closures que viram `fn` e uma função para duas direções](25-x-wing.md)
+- [26 — Gerador de Difícil: medir, achar o gargalo e otimizar sem mudar a saída](26-gerador-dificil.md)
+- [27 — Nomes em inglês: uma regra de idioma e um renomeio seguro](27-nomes-em-ingles.md)
 
 > Cada nova task ganha uma página aqui.

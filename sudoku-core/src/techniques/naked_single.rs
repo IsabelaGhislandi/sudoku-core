@@ -42,8 +42,8 @@ mod tests {
         line.push_str(&".".repeat(72));
         let grid = Grid::from_line(&line).unwrap();
 
-        let candidatos = CandidateGrid::from_grid(&grid);
-        let d = NakedSingle.apply(&grid, &candidatos).unwrap();
+        let candidates = CandidateGrid::from_grid(&grid);
+        let d = NakedSingle.apply(&grid, &candidates).unwrap();
         assert_eq!(d.action, Action::Place { index: 0, value: 9 });
         assert_eq!(d.level, Difficulty::Facil);
     }
@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn retorna_none_quando_nao_aplica() {
         let grid = Grid::empty();
-        let candidatos = CandidateGrid::from_grid(&grid);
-        assert_eq!(NakedSingle.apply(&grid, &candidatos), None);
+        let candidates = CandidateGrid::from_grid(&grid);
+        assert_eq!(NakedSingle.apply(&grid, &candidates), None);
     }
 }

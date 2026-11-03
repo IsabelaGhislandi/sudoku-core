@@ -1,7 +1,7 @@
 # Spec — Engine, fatia de nível Médio
 
 - **Data:** 2026-11-01
-- **Status:** aprovado, pronto para virar plano de implementação
+- **Status:** implementado (PR #10)
 - **Módulo:** 1 de 5 (Core/Engine), continuação da [spec do Engine](2026-06-14-sudoku-engine-design.md)
 - **Fatia anterior:** [plano da fatia Fácil](../plans/2026-06-14-engine-facil-vertical-slice.md)
 

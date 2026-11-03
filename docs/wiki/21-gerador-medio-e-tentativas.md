@@ -9,7 +9,7 @@ Por isso o gerador **tenta de novo** até `rate` confirmar o nível.
 
 ```rust
 let mut rng = ChaCha12Rng::seed_from_u64(seed);
-for _ in 0..MAX_TENTATIVAS_MEDIO {
+for _ in 0..MAX_ATTEMPTS_MEDIUM {
     let solution = full_solution(&mut rng);
     let givens = dig(&solution, &solver, &mut rng);
     if rate(&givens) == Some(Difficulty::Medio) {
@@ -30,7 +30,7 @@ Err(GenError::AttemptsExhausted(difficulty))
 Um "pare depois de 5 s" daria resultados diferentes em aparelhos diferentes: o celular lento desistiria antes do rápido.
 A mesma seed deixaria de dar o mesmo puzzle, e o core teria que ler o relógio, o que ele não faz.
 
-O limite é a constante `MAX_TENTATIVAS_MEDIO = 50`, e ela **faz parte do contrato**:
+O limite é a constante `MAX_ATTEMPTS_MEDIUM = 50`, e ela **faz parte do contrato**:
 
 | Mudança | Efeito |
 |---|---|
@@ -86,7 +86,7 @@ de que as eliminações nunca removem a resposta.
 
 `puzzle_medio_da_seed_42_e_reproduzivel` trava a saída de `generate(Medio, 42)`, como o golden do Fácil. Ele também
 protege detalhes que viraram contrato sem parecer: a **ordem das técnicas**, a **ordem de varredura** de cada uma e o valor
-de `MAX_TENTATIVAS_MEDIO`. Qualquer mudança neles altera os puzzles de Médio, e o teste avisa.
+de `MAX_ATTEMPTS_MEDIUM`. Qualquer mudança neles altera os puzzles de Médio, e o teste avisa.
 
 A mesma grade virou fixture de `rate` e do solver: um puzzle **conhecido** que os singles não resolvem e o Médio resolve.
 Como esse valor saiu da implementação, os testes de propriedade (único, sem conflitos, eliminações corretas) é que provam

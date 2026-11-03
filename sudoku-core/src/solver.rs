@@ -2,7 +2,8 @@ use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
 use crate::techniques::{
-    Action, Deduction, HiddenPair, HiddenSingle, NakedPair, NakedSingle, PointingPair, Technique,
+    Action, BoxLineReduction, Deduction, HiddenPair, HiddenSingle, HiddenTriple, NakedPair,
+    NakedSingle, NakedTriple, PointingPair, Technique, XWing,
 };
 
 pub struct LogicalSolver {
@@ -26,6 +27,10 @@ fn all_techniques() -> Vec<Box<dyn Technique>> {
         Box::new(NakedPair),
         Box::new(HiddenPair),
         Box::new(PointingPair),
+        Box::new(BoxLineReduction),
+        Box::new(NakedTriple),
+        Box::new(HiddenTriple),
+        Box::new(XWing),
     ]
 }
 
@@ -109,17 +114,17 @@ mod tests {
     use super::*;
     use crate::grid::Grid;
 
-    fn solucao() -> &'static str {
+    fn solution() -> &'static str {
         "534678912672195348198342567859761423426853791713924856961537284287419635345286179"
     }
 
     #[test]
     fn resolve_grade_com_uma_celula_vazia() {
-        let mut grid = Grid::from_line(solucao()).unwrap();
+        let mut grid = Grid::from_line(solution()).unwrap();
         grid.set(40, Cell::Empty);
         let result = LogicalSolver::new().solve(&grid);
         assert!(result.solved);
-        assert_eq!(result.grid.to_line(), solucao());
+        assert_eq!(result.grid.to_line(), solution());
         assert_eq!(result.steps.len(), 1);
     }
 
@@ -150,7 +155,7 @@ mod tests {
 
     #[test]
     fn grade_completa_nao_tem_passos() {
-        let grid = Grid::from_line(solucao()).unwrap();
+        let grid = Grid::from_line(solution()).unwrap();
         let result = LogicalSolver::new().solve(&grid);
         assert!(result.solved);
         assert!(result.steps.is_empty());
@@ -159,7 +164,7 @@ mod tests {
 
     #[test]
     fn up_to_facil_resolve_puzzle_de_singles() {
-        let mut grid = Grid::from_line(solucao()).unwrap();
+        let mut grid = Grid::from_line(solution()).unwrap();
         grid.set(40, Cell::Empty);
         assert!(LogicalSolver::up_to(Difficulty::Facil).solve(&grid).solved);
     }
@@ -168,17 +173,17 @@ mod tests {
     fn up_to_facil_nao_usa_tecnica_de_medio() {
         // Sem singles disponíveis: só o Naked Pair das células 0 e 1 se aplica.
         let grid = Grid::empty();
-        let mut candidatos = CandidateGrid::from_grid(&grid);
-        for celula in [0, 1] {
+        let mut candidates = CandidateGrid::from_grid(&grid);
+        for cell in [0, 1] {
             for v in 3..=9 {
-                candidatos.eliminate(celula, v);
+                candidates.eliminate(cell, v);
             }
         }
         assert_eq!(
-            LogicalSolver::up_to(Difficulty::Facil).next_step(&grid, &candidatos),
+            LogicalSolver::up_to(Difficulty::Facil).next_step(&grid, &candidates),
             None
         );
-        let d = LogicalSolver::new().next_step(&grid, &candidatos).unwrap();
+        let d = LogicalSolver::new().next_step(&grid, &candidates).unwrap();
         assert_eq!(d.technique, "Naked Pair");
     }
 
@@ -199,11 +204,27 @@ mod tests {
     }
 
     #[test]
+    fn so_as_tecnicas_de_dificil_resolvem_o_puzzle() {
+        // Saída de generate(Dificil, 42).
+        let grid = Grid::from_line(
+            ".2..574...79..6...1.............1...5...6.87.4...3.1.5.459...6.9.......26.....7..",
+        )
+        .unwrap();
+        assert!(!LogicalSolver::up_to(Difficulty::Medio).solve(&grid).solved);
+        let result = LogicalSolver::new().solve(&grid);
+        assert!(result.solved);
+        assert_eq!(
+            result.grid.to_line(),
+            "826357419379416258154892637732581946591264873468739125245978361917643582683125794"
+        );
+    }
+
+    #[test]
     fn next_step_devolve_primeira_deducao() {
-        let mut grid = Grid::from_line(solucao()).unwrap();
+        let mut grid = Grid::from_line(solution()).unwrap();
         grid.set(40, Cell::Empty);
-        let candidatos = CandidateGrid::from_grid(&grid);
-        let step = LogicalSolver::new().next_step(&grid, &candidatos).unwrap();
+        let candidates = CandidateGrid::from_grid(&grid);
+        let step = LogicalSolver::new().next_step(&grid, &candidates).unwrap();
         assert_eq!(
             step.action,
             Action::Place {

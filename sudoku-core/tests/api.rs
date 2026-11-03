@@ -13,10 +13,10 @@ fn fluxo_completo_facil() {
     assert!(validate(&puzzle.givens).is_empty());
 
     // candidates_for é acessível pela API pública
-    let alguma_vazia = (0..81)
+    let some_empty = (0..81)
         .find(|&i| puzzle.givens.get(i) == Cell::Empty)
         .unwrap();
-    assert!(candidates_for(&puzzle.givens, alguma_vazia).count() >= 1);
+    assert!(candidates_for(&puzzle.givens, some_empty).count() >= 1);
 }
 
 #[test]
@@ -38,4 +38,18 @@ fn fluxo_completo_medio() {
             .iter()
             .any(|s| matches!(s.action, Action::Eliminate(_)))
     );
+}
+
+#[test]
+fn fluxo_completo_dificil() {
+    let puzzle = generate(Difficulty::Dificil, 123).unwrap();
+
+    assert_eq!(count_solutions(&puzzle.givens, 2), 1);
+    assert!(validate(&puzzle.givens).is_empty());
+    assert_eq!(rate(&puzzle.givens), Some(Difficulty::Dificil));
+
+    let result = LogicalSolver::new().solve(&puzzle.givens);
+    assert!(result.solved);
+    assert_eq!(result.grid, puzzle.solution);
+    assert!(result.steps.iter().any(|s| s.level == Difficulty::Dificil));
 }

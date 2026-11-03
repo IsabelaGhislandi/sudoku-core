@@ -19,7 +19,7 @@ mod tests {
 
     #[test]
     fn max_pega_o_nivel_mais_alto() {
-        let niveis = [Difficulty::Facil, Difficulty::Dificil, Difficulty::Medio];
-        assert_eq!(niveis.iter().max().copied(), Some(Difficulty::Dificil));
+        let levels = [Difficulty::Facil, Difficulty::Dificil, Difficulty::Medio];
+        assert_eq!(levels.iter().max().copied(), Some(Difficulty::Dificil));
     }
 }
