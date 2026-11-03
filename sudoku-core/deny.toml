@@ -21,11 +21,6 @@ version = 2
 allow = ["MIT", "Apache-2.0"]
 confidence-threshold = 0.9
 
-[licenses.private]
-# Crates com `publish = false` (o próprio sudoku-core) não precisam declarar licença.
-# Escolher uma licença para o projeto é uma decisão à parte.
-ignore = true
-
 [bans]
 # Duas versões do mesmo crate não é falha, mas aparece como aviso no log.
 multiple-versions = "warn"

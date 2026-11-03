@@ -35,6 +35,7 @@ Isso a torna testável isoladamente com `cargo test` e reaproveitável por todos
 | Tamanho da grade | 9×9 clássico | Padrão do Sudoku |
 | Solução | Única garantida | Sudoku "de verdade" tem uma resposta só |
 | Geração | Determinística por seed | Testes reprodutíveis + futuro "puzzle por código" |
+| Licença | MIT (`LICENSE` na raiz) | Portfólio e estudo: uso livre, mantendo o aviso de copyright |
 | Critério de dificuldade | Técnicas de resolução (solver "humano") | Mais justo que contar pistas |
 | Muito Difícil | Pode exigir backtracking | Quando a lógica pura não basta |
 | Organização | Crate único `sudoku-core` | Simples, testável, fácil de evoluir (YAGNI sobre workspace) |

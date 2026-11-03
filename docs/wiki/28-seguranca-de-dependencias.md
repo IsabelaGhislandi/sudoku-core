@@ -26,7 +26,7 @@ A execução semanal existe porque vulnerabilidades novas são publicadas sem qu
 - **`[advisories]`:** consulta a [RustSec Advisory Database](https://rustsec.org). Crates retirados do crates.io
   (`yanked`) e sem manutenção também falham, porque não vão receber correção.
 - **`[licenses]`:** só MIT e Apache-2.0. Uma licença nova vira decisão consciente, e não um efeito colateral. O
-  próprio `sudoku-core` tem `publish = false` e fica de fora (`[licenses.private]`).
+  próprio `sudoku-core` declara `license = "MIT"` e passa pela mesma checagem (página 29).
 - **`[bans]`:** duas versões do mesmo crate geram aviso; versão `*` falha.
 - **`[sources]`:** só o crates.io. Uma dependência puxada direto de um repositório git falha.
 

@@ -1,9 +1,9 @@
 [package]
 name = "sudoku-core"
+license = "MIT"
 version = "0.1.0"
 edition = "2024"
-# O crate não é publicado no crates.io: ele é consumido pelo próprio app. Isso também tira
-# o sudoku-core da checagem de licenças do cargo-deny (ver deny.toml).
+# O crate não é publicado no crates.io: ele é consumido pelo próprio app.
 publish = false
 
 [dependencies]
