@@ -1,7 +1,7 @@
 # Spec — Engine, fatia de nível Difícil
 
 - **Data:** 2026-11-02
-- **Status:** aprovado, pronto para virar plano de implementação
+- **Status:** implementado (branch `feat/engine-dificil`)
 - **Módulo:** 1 de 5 (Core/Engine), continuação da [spec do Médio](2026-11-01-engine-medio-design.md)
 - **Fatia anterior:** [plano da fatia Médio](../plans/2026-11-01-engine-medio.md)
 

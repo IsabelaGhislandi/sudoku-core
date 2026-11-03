@@ -1,7 +1,7 @@
 # Spec — Módulo Core/Engine (`sudoku-core`)
 
 - **Data:** 2026-06-14
-- **Status:** Aprovado (design) — pronto para virar plano de implementação
+- **Status:** em implementação por fatias — Fácil, Médio e Difícil concluídos; Muito Difícil pendente
 - **Módulo:** 1 de 5 (Core/Engine)
 - **Stack do projeto:** Tauri + Rust (backend) / Svelte (frontend) — alvo final: APK Android
 - **Metodologia:** Spec-driven, modular, TDD (teste antes da implementação)
