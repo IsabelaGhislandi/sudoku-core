@@ -104,6 +104,7 @@ mod naked_triple;
 mod pointing_pair;
 mod swordfish;
 mod x_wing;
+mod xy_wing;
 
 pub use box_line_reduction::BoxLineReduction;
 pub use hidden_pair::HiddenPair;
@@ -115,3 +116,4 @@ pub use naked_triple::NakedTriple;
 pub use pointing_pair::PointingPair;
 pub use swordfish::Swordfish;
 pub use x_wing::XWing;
+pub use xy_wing::XYWing;

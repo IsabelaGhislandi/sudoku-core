@@ -3,7 +3,7 @@ use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
 use crate::techniques::{
     Action, BoxLineReduction, Deduction, HiddenPair, HiddenSingle, HiddenTriple, NakedPair,
-    NakedSingle, NakedTriple, PointingPair, Swordfish, Technique, XWing,
+    NakedSingle, NakedTriple, PointingPair, Swordfish, Technique, XWing, XYWing,
 };
 
 pub struct LogicalSolver {
@@ -32,6 +32,7 @@ fn all_techniques() -> Vec<Box<dyn Technique>> {
         Box::new(HiddenTriple),
         Box::new(XWing),
         Box::new(Swordfish),
+        Box::new(XYWing),
     ]
 }
 
@@ -218,6 +219,54 @@ mod tests {
             result.grid.to_line(),
             "826357419379416258154892637732581946591264873468739125245978361917643582683125794"
         );
+    }
+
+    /// Exige XY-Wing: achado no experimento da spec do Muito Difícil.
+    const NEEDS_XY_WING: &str =
+        ".82....6.7..4...1.....9.75....1.8..6...235...4...6.....9.3..2.........3.15...9.4.";
+    /// Exige Swordfish e XY-Wing: também do experimento.
+    const NEEDS_SWORDFISH: &str =
+        "46..1.....5.9.64.3..3..8...2..5.9.....1....9.......34...........8.4..925.398.....";
+
+    /// Confere que só o solver completo resolve o puzzle, e que usa a técnica pedida.
+    fn assert_needs_very_hard(line: &str, technique: &str) {
+        let grid = Grid::from_line(line).unwrap();
+        assert!(
+            !LogicalSolver::up_to(Difficulty::Dificil)
+                .solve(&grid)
+                .solved
+        );
+        let result = LogicalSolver::new().solve(&grid);
+        assert!(result.solved);
+        assert!(crate::grid::validate(&result.grid).is_empty());
+        assert!(
+            result.steps.iter().any(|s| s.technique == technique),
+            "deveria usar {technique}"
+        );
+    }
+
+    #[test]
+    fn so_as_tecnicas_de_muito_dificil_resolvem_o_puzzle() {
+        assert_needs_very_hard(NEEDS_XY_WING, "XY-Wing");
+    }
+
+    #[test]
+    fn swordfish_entra_na_resolucao() {
+        assert_needs_very_hard(NEEDS_SWORDFISH, "Swordfish");
+    }
+
+    #[test]
+    fn up_to_dificil_nao_usa_tecnica_de_muito_dificil() {
+        for line in [NEEDS_XY_WING, NEEDS_SWORDFISH] {
+            let grid = Grid::from_line(line).unwrap();
+            let result = LogicalSolver::up_to(Difficulty::Dificil).solve(&grid);
+            assert!(
+                result
+                    .steps
+                    .iter()
+                    .all(|s| s.level != Difficulty::MuitoDificil)
+            );
+        }
     }
 
     #[test]

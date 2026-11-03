@@ -4,11 +4,12 @@ use crate::grid::{Grid, validate};
 use crate::solver::LogicalSolver;
 
 /// Classifica um puzzle pela técnica mais avançada que sua resolução lógica exige.
-/// Cai para MuitoDificil quando só o backtracking resolve.
 /// Retorna None se a grade não tiver solução única.
 ///
-/// Nota: hoje só existem técnicas até Difícil, então MuitoDificil quer dizer "exige algo
-/// além das técnicas implementadas", até a fatia Muito Difícil.
+/// MuitoDificil fica no topo da escala e quer dizer "pelo menos Muito Difícil": cobre os
+/// puzzles que exigem Swordfish ou XY-Wing e também os de solução única que nem essas
+/// técnicas resolvem, que só saem por tentativa e erro. O gerador nunca produz estes
+/// últimos; eles só chegam por puzzles vindos de fora.
 pub fn rate(grid: &Grid) -> Option<Difficulty> {
     // Provar por busca que uma grade quase vazia com conflito não tem solução pode
     // demorar demais; o conflito já responde.
@@ -63,6 +64,26 @@ mod tests {
         )
         .unwrap();
         assert_eq!(rate(&grid), Some(Difficulty::Dificil));
+    }
+
+    #[test]
+    fn puzzle_que_exige_xy_wing_eh_muito_dificil() {
+        let grid = Grid::from_line(
+            ".82....6.7..4...1.....9.75....1.8..6...235...4...6.....9.3..2.........3.15...9.4.",
+        )
+        .unwrap();
+        assert_eq!(rate(&grid), Some(Difficulty::MuitoDificil));
+    }
+
+    #[test]
+    fn puzzle_que_so_sai_no_chute_continua_muito_dificil() {
+        // Solução única, mas nem o solver completo resolve (puzzle de Arto Inkala).
+        let grid = Grid::from_line(
+            "8..........36......7..9.2...5...7.......457.....1...3...1....68..85...1..9....4..",
+        )
+        .unwrap();
+        assert!(!LogicalSolver::new().solve(&grid).solved);
+        assert_eq!(rate(&grid), Some(Difficulty::MuitoDificil));
     }
 
     #[test]
