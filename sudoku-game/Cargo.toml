@@ -1,0 +1,15 @@
+[package]
+name = "sudoku-game"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Pure game rules for a Sudoku match: moves, lives, hints and notes, on top of sudoku-core."
+readme = "../README.md"
+# Consumido pelo app e, no futuro, pelo servidor do PvP; não vai para o crates.io.
+publish = false
+
+[dependencies]
+# Dependência por caminho, dentro do workspace: sem download e sem versão a escolher.
+sudoku-core = { path = "../sudoku-core" }

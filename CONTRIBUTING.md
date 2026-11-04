@@ -16,17 +16,17 @@ For a small fix, just open an issue or a PR.
 
 ## Before opening a PR
 
-Run these from the repository root. CI runs the same checks on Linux, Windows and macOS,
+The repository is a Cargo workspace; run these from any folder inside it. CI runs the same checks on Linux, Windows and macOS,
 treats warnings as errors and uses `--locked`.
 
 ```bash
-cargo fmt    --manifest-path sudoku-core/Cargo.toml
-cargo clippy --manifest-path sudoku-core/Cargo.toml --all-targets -- -D warnings
-cargo test   --manifest-path sudoku-core/Cargo.toml
-cargo deny   --manifest-path sudoku-core/Cargo.toml check
+cargo fmt    --all
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test   --workspace
+cargo deny   check
 ```
 
-The minimum supported Rust version is set in `sudoku-core/Cargo.toml` (`rust-version`).
+The minimum supported Rust version is set in the root `Cargo.toml` (`rust-version`).
 
 ## Commits
 
@@ -49,7 +49,7 @@ commit does ("add rate", not "added rate"). Keep one logical change per commit.
   Portuguese and explain the *why*. The `Difficulty` variants (`Facil`, `Medio`...) are the one
   exception and stay as they are.
 - **Tests**: unit tests go inline in a `#[cfg(test)] mod tests` block. Public API integration
-  tests go in `sudoku-core/tests/`. `#[test]` function names are in Portuguese and describe the
+  tests go in each crate’s `tests/` folder. `#[test]` function names are in Portuguese and describe the
   behavior (`fn puzzle_resolvivel_por_singles_eh_facil()`).
 - **Determinism is a contract.** The same seed and difficulty must give the same puzzle across
   versions, and golden tests lock the output for seed 42. If your change alters generated

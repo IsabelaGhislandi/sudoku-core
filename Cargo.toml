@@ -1,0 +1,15 @@
+# Workspace do projeto: vários crates num repositório só, com um Cargo.lock e um target/
+# compartilhados. O sudoku-core é o engine; o sudoku-game (regras da partida) e, no futuro, o app
+# Tauri e o servidor do PvP entram como membros. Motivos em docs/wiki/34-cargo-workspace.md.
+[workspace]
+resolver = "3"
+members = ["sudoku-core", "sudoku-game"]
+
+# Campos comuns, herdados pelos crates com `<campo>.workspace = true`.
+[workspace.package]
+edition = "2024"
+# Versão mínima do Rust (MSRV). Quem define é `u16::isolate_lowest_one`, estável desde a 1.97;
+# rand e rand_chacha pedem só a 1.85. Subir aqui é decisão consciente, registrada no CHANGELOG.
+rust-version = "1.97"
+license = "MIT"
+repository = "https://github.com/IsabelaGhislandi/sudoku-core"

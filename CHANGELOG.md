@@ -15,6 +15,13 @@ The first release (`0.1.0`) will be tagged together with the first browser versi
 
 ### Added
 
+- **`sudoku-game` crate** with the rules of a match, on top of `sudoku-core`: `Game::new` and
+  `Game::from_puzzle` (which validates the puzzle and returns a `PuzzleError` otherwise), `place` (a correct number locks; a wrong one costs a life and leaves the
+  board), `toggle_note` (per-cell pencil notes), `hint` (reveals a cell from the solution), win and
+  loss. `GameConfig` defaults to 3 lives and 2 hints. Refused actions return a `MoveError` and
+  change nothing.
+- The repository is now a Cargo workspace (`sudoku-core`, `sudoku-game`), with a shared
+  `Cargo.lock` and `deny.toml` at the root.
 - `Grid` and `Cell`, with parsing and serialization to an 81-character line
   (`Grid::from_line`, `Grid::to_line`).
 - `validate`, which reports conflicting cells in rows, columns and boxes.
@@ -34,6 +41,10 @@ The first release (`0.1.0`) will be tagged together with the first browser versi
 
 ### Puzzle output
 
+- `Game::new` retries with the next seed when `generate` returns `AttemptsExhausted` (seed 15 on
+  Very Hard becomes 16).
+- The hinted cell is deterministic: `splitmix64(seed ^ hint_number) % empty_cells`. A golden test
+  locks the first hint for seed 42 on Easy (cell 40, value 9).
 - The generator uses `ChaCha12Rng`, so seeds stay reproducible across `rand` versions.
 - Fixed work budgets are part of the determinism contract: `MAX_ATTEMPTS_MEDIUM` = 50,
   `MAX_ATTEMPTS_HARD` = 250, and for Very Hard `REFILL_VERY_HARD`,

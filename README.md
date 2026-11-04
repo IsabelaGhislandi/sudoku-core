@@ -116,10 +116,10 @@ The project is **spec-driven and test-driven**. Each module goes from design spe
 implementation plan to TDD (see [`docs/superpowers/`](docs/superpowers)).
 
 ```bash
-cargo test   --manifest-path sudoku-core/Cargo.toml
-cargo clippy --manifest-path sudoku-core/Cargo.toml --all-targets -- -D warnings
-cargo fmt    --manifest-path sudoku-core/Cargo.toml
-cargo deny   --manifest-path sudoku-core/Cargo.toml check
+cargo test   --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt    --all
+cargo deny   check
 ```
 
 CI runs fmt, clippy, build and tests on Linux, Windows and macOS for every PR, with warnings
@@ -131,7 +131,7 @@ again every week.
 | # | Module | Status |
 |---|---|---|
 | 1 | **Core/Engine** (`sudoku-core`): generate, solve, validate, rate | ✅ done (all four levels) |
-| 2 | Game/Session: moves, notes, mistakes, timer, hints, game history | next |
+| 2 | Game/Session (`sudoku-game`): moves, lives, hints, notes, timer, game history | 🚧 in progress (slice 1 done: basic game) |
 | 3 | Frontend (Svelte): board, input, screens | planned |
 | 4 | Tauri packaging: Rust ↔ Svelte bridge, Android APK | planned |
 | 5 | Online: two-player race via a shared puzzle code | future |

@@ -1,6 +1,6 @@
 # Configuração do cargo-deny: o que o CI verifica nas dependências a cada PR e toda semana.
 # Detalhes e motivos em docs/wiki/28-seguranca-de-dependencias.md.
-# Rodar localmente: cargo deny --manifest-path sudoku-core/Cargo.toml check
+# Rodar localmente, de qualquer pasta do repositório: cargo deny check
 
 [graph]
 # O app vai rodar em Android e desktop: as dependências de qualquer plataforma contam.
@@ -25,6 +25,10 @@ confidence-threshold = 0.9
 # Duas versões do mesmo crate não é falha, mas aparece como aviso no log.
 multiple-versions = "warn"
 wildcards = "deny"
+# Dependência por caminho dentro do workspace (sudoku-game → sudoku-core) não tem versão, e o
+# cargo-deny a trataria como curinga. Esta opção libera só esse caso, e só em crates com
+# publish = false; curingas de crates do crates.io continuam proibidos.
+allow-wildcard-paths = true
 
 [sources]
 # Só o crates.io: nada de dependência direto de um repositório git ou de outro registry.
