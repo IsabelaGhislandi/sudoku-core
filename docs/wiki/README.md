@@ -54,5 +54,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [34 — Cargo workspace: vários crates num repositório só](34-cargo-workspace.md)
 - [35 — O crate `sudoku-game`: dependência por caminho, re-export e `NonZeroU8`](35-crate-sudoku-game-e-nonzero.md)
 - [36 — Jogadas: `Result` para regras do jogo, enums com dados e `?`](36-jogadas-e-result.md)
+- [37 — Anotações: newtype sobre `u16`, XOR e `pub(crate)`](37-anotacoes-e-bitmask.md)
 
 > Cada nova task ganha uma página aqui.
