@@ -1,0 +1,32 @@
+# Dependabot: abre PRs para manter as dependências na versão mais nova, que é a preferência do
+# projeto. Cada PR passa pelo CI e pelo cargo-deny. Um bump de crate ainda segue a skill
+# adding-dependencies (.claude/skills/) antes do merge: changelog lido, licença e manutenção
+# conferidas, e golden tests verdes, porque mudar o rand pode mudar puzzles gerados.
+version: 2
+
+updates:
+  - package-ecosystem: cargo
+    directory: /sudoku-core
+    schedule:
+      interval: weekly
+      day: monday
+    # Mesmo padrão dos commits do projeto (Conventional Commits): "chore: bump ...".
+    commit-message:
+      prefix: chore
+    # rand e rand_chacha andam juntos (rand_core em comum): um PR só para os dois evita
+    # duas versões de rand_core no Cargo.lock.
+    groups:
+      rand:
+        patterns: ["rand", "rand_*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: chore
+    # Todas as actions num PR só por semana: são atualizações de baixo risco.
+    groups:
+      actions:
+        patterns: ["*"]
