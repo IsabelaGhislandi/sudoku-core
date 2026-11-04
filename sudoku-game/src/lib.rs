@@ -4,9 +4,11 @@
 
 mod config;
 mod game;
+mod notes;
 
 pub use config::GameConfig;
 pub use game::{CellState, Game, MoveError, PlaceOutcome, Status};
+pub use notes::Notes;
 
 // A casca só precisa depender deste crate: os tipos do core que aparecem na API vêm junto.
 pub use sudoku_core::{Difficulty, Puzzle};

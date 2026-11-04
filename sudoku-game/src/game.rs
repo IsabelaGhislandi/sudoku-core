@@ -1,6 +1,7 @@
 use sudoku_core::{Cell, Difficulty, GenError, Puzzle, generate};
 
 use crate::config::GameConfig;
+use crate::notes::Notes;
 
 /// O que a tela mostra numa célula. Não existe estado "errado": um número errado nunca fica
 /// no tabuleiro, só custa uma vida.
@@ -64,6 +65,7 @@ pub enum MoveError {
 pub struct Game {
     puzzle: Puzzle,
     cells: [CellState; 81],
+    notes: [Notes; 81],
     lives_left: u8,
     hints_left: u8,
     mistakes: u32,
@@ -97,6 +99,7 @@ impl Game {
         Game {
             puzzle,
             cells,
+            notes: [Notes::default(); 81],
             lives_left: config.lives.get(),
             hints_left: config.hints,
             mistakes: 0,
@@ -113,6 +116,12 @@ impl Game {
     /// `Grid::get`: ler uma célula inexistente é erro de programação, não jogada.
     pub fn cell(&self, index: usize) -> CellState {
         self.cells[index]
+    }
+
+    /// Anotações da célula `index`. Uma célula com número nunca tem anotações. Entra em pânico
+    /// fora de 0..81, como `cell`.
+    pub fn notes(&self, index: usize) -> Notes {
+        self.notes[index]
     }
 
     pub fn lives_left(&self) -> u8 {
@@ -145,7 +154,7 @@ impl Game {
     pub fn place(&mut self, index: usize, value: u8) -> Result<PlaceOutcome, MoveError> {
         self.check_empty_cell(index, value)?;
         if value == self.solution_value(index) {
-            self.cells[index] = CellState::Placed(value);
+            self.lock(index, CellState::Placed(value));
             self.finish_if_complete();
             Ok(PlaceOutcome::Correct)
         } else {
@@ -156,6 +165,20 @@ impl Game {
             }
             Ok(PlaceOutcome::Wrong { index, value })
         }
+    }
+
+    /// Liga ou desliga a anotação `value` na célula `index`. Só vale em célula vazia, e nada
+    /// muda nas outras células. Recusa as mesmas coisas que `place`, na mesma ordem.
+    pub fn toggle_note(&mut self, index: usize, value: u8) -> Result<(), MoveError> {
+        self.check_empty_cell(index, value)?;
+        self.notes[index].toggle(value);
+        Ok(())
+    }
+
+    /// Trava um número certo na célula e apaga as anotações dela (só dela).
+    fn lock(&mut self, index: usize, state: CellState) {
+        self.cells[index] = state;
+        self.notes[index] = Notes::default();
     }
 
     /// As recusas comuns a toda ação numa célula vazia, na ordem documentada em `place`.
@@ -343,5 +366,69 @@ mod tests {
         assert_eq!(game.place(i, 10), Err(MoveError::InvalidValue));
         assert_eq!((game.lives_left(), game.mistakes()), (3, 0));
         assert_eq!(game.cell(i), CellState::Empty);
+    }
+
+    fn empties(game: &Game) -> Vec<usize> {
+        (0..81)
+            .filter(|&i| game.cell(i) == CellState::Empty)
+            .collect()
+    }
+
+    #[test]
+    fn anotacao_liga_e_desliga() {
+        let mut game = easy_game();
+        let i = first_empty(&game);
+        assert_eq!(game.toggle_note(i, 3), Ok(()));
+        assert_eq!(game.toggle_note(i, 7), Ok(()));
+        assert_eq!(game.notes(i).values(), vec![3, 7]);
+        assert_eq!(game.toggle_note(i, 3), Ok(()));
+        assert_eq!(game.notes(i).values(), vec![7]);
+    }
+
+    #[test]
+    fn numero_certo_limpa_so_as_anotacoes_da_propria_celula() {
+        let mut game = easy_game();
+        let (a, b) = (empties(&game)[0], empties(&game)[1]);
+        game.toggle_note(a, 5).unwrap();
+        game.toggle_note(b, 5).unwrap();
+        let v = solution_value(&game, a);
+        game.place(a, v).unwrap();
+        assert!(game.notes(a).is_empty());
+        assert_eq!(game.notes(b).values(), vec![5]);
+    }
+
+    #[test]
+    fn numero_errado_mantem_as_anotacoes() {
+        let mut game = easy_game();
+        let i = first_empty(&game);
+        game.toggle_note(i, 2).unwrap();
+        game.toggle_note(i, 4).unwrap();
+        let w = wrong_value(&game, i);
+        game.place(i, w).unwrap();
+        assert_eq!(game.notes(i).values(), vec![2, 4]);
+    }
+
+    #[test]
+    fn anotacao_so_em_celula_vazia() {
+        let mut game = easy_game();
+        let g = first_given(&game);
+        assert_eq!(game.toggle_note(g, 1), Err(MoveError::CellNotEmpty));
+        let i = first_empty(&game);
+        let v = solution_value(&game, i);
+        game.place(i, v).unwrap();
+        assert_eq!(game.toggle_note(i, 1), Err(MoveError::CellNotEmpty));
+        assert!(game.notes(i).is_empty());
+    }
+
+    #[test]
+    fn anotacao_invalida_ou_depois_do_fim_eh_recusada() {
+        let mut game = easy_game();
+        let i = first_empty(&game);
+        assert_eq!(game.toggle_note(81, 1), Err(MoveError::InvalidIndex));
+        assert_eq!(game.toggle_note(i, 0), Err(MoveError::InvalidValue));
+        assert_eq!(game.toggle_note(i, 10), Err(MoveError::InvalidValue));
+        make_mistakes(&mut game, 3);
+        assert_eq!(game.toggle_note(i, 1), Err(MoveError::GameOver));
+        assert!(game.notes(i).is_empty());
     }
 }
