@@ -55,5 +55,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [35 — O crate `sudoku-game`: dependência por caminho, re-export e `NonZeroU8`](35-crate-sudoku-game-e-nonzero.md)
 - [36 — Jogadas: `Result` para regras do jogo, enums com dados e `?`](36-jogadas-e-result.md)
 - [37 — Anotações: newtype sobre `u16`, XOR e `pub(crate)`](37-anotacoes-e-bitmask.md)
+- [38 — Dica determinística: SplitMix64, `wrapping_*` e golden test](38-dica-deterministica.md)
 
 > Cada nova task ganha uma página aqui.
