@@ -45,16 +45,16 @@
 - Consumes: `Technique`, `Action`, `Deduction`, `CandidateGrid::{from_grid, get, eliminate}`.
 - Produces: `pub struct Swordfish`, `technique: "Swordfish"`, `level: Difficulty::MuitoDificil`. Exportado em `techniques` e `lib.rs`; adicionado ao fim de `all_techniques()`.
 
-- [ ] **Step 1: Criar a branch `feat/engine-muito-dificil`**
+- [x] **Step 1: Criar a branch `feat/engine-muito-dificil`**
 
-- [ ] **Step 2: Gravar a referência dos níveis antigos, antes de mudar qualquer código**
+- [x] **Step 2: Gravar a referência dos níveis antigos, antes de mudar qualquer código**
 
 Teste temporário `sudoku-core/tests/referencia.rs`, **sem commit**, `#[ignore]`, que imprime `givens.to_line()` de `generate(nível, s)` para Fácil, Médio e Difícil, `s in 0..50`, e `Err` quando houver.
 
 Run: `cargo test --release --manifest-path sudoku-core/Cargo.toml --test referencia -- --ignored --nocapture > .superpowers/referencia.txt`
 Expected: 150 linhas. Comparado na Task 3.
 
-- [ ] **Step 3: Escrever os testes que falham**
+- [x] **Step 3: Escrever os testes que falham**
 
 Montagem: `CandidateGrid::from_grid(&Grid::empty())`, eliminando o 5 das linhas pedidas fora das colunas pedidas (helper `five_in_rows_at(&[(row, &[cols])])`, no molde do `five_in_rows` do X-Wing). Esperado nos casos por linha: o 5 sai das colunas 1, 4 e 7 nas linhas 1, 2, 3, 5, 6 e 7, ou seja `[10, 13, 16, 19, 22, 25, 28, 31, 34, 46, 49, 52, 55, 58, 61, 64, 67, 70]`.
 
@@ -74,28 +74,28 @@ Montagem: `CandidateGrid::from_grid(&Grid::empty())`, eliminando o 5 das linhas 
 #[test] fn retorna_none_quando_nao_ha_o_que_eliminar() { /* caso principal, com o esperado já eliminado */ }
 ```
 
-- [ ] **Step 4: Rodar e ver falhar**
+- [x] **Step 4: Rodar e ver falhar**
 
 Run: `cargo test --manifest-path sudoku-core/Cargo.toml swordfish`
 Expected: erro de compilação, `Swordfish` não existe.
 
-- [ ] **Step 5: Implementar `Swordfish`**
+- [x] **Step 5: Implementar `Swordfish`**
 
 Mesmo esqueleto do `XWing::apply`: para `value in 1..=9`, por linha e depois por coluna, monta as 9 máscaras de posições; considera só linhas com 2 ou 3 posições; para `a < b < c`, se a união das três máscaras tem exatamente 3 bits, elimina `value` dessas posições nas outras 6 linhas; primeira lista não vazia (ordenada por célula) vira a dedução. Se compartilhar a montagem das máscaras com o `x_wing.rs`, os testes do X-Wing têm de continuar passando sem mudança.
 
-- [ ] **Step 6: Rodar e ver passar; rodar a suíte inteira**
+- [x] **Step 6: Rodar e ver passar; rodar a suíte inteira**
 
 Run: `cargo test --manifest-path sudoku-core/Cargo.toml`
 Expected: tudo PASS, incluindo os três golden tests.
 
-- [ ] **Step 7: Commit do código**
+- [x] **Step 7: Commit do código**
 
 ```bash
 git add sudoku-core/src
 git commit -m "feat: add Swordfish technique"
 ```
 
-- [ ] **Step 8: Wiki 30 e consolidado das tasks 26 a 30**
+- [x] **Step 8: Wiki 30 e consolidado das tasks 26 a 30**
 
 `docs/wiki/30-swordfish.md`: conceitos de Rust da task (generalizar o X-Wing, máscaras `u16` com `|` e `count_ones`, laços triplos com `a < b < c`, helper compartilhado entre módulos). `docs/wiki/fundamentos/rust-base-tarefas-26-a-30.md`: consolidado das páginas 26 a 30, no formato dos anteriores. Indexar os dois em `docs/wiki/README.md`.
 
@@ -116,7 +116,7 @@ git commit -m "docs: add wiki page on Swordfish and consolidated doc (tasks 26-3
 - Consumes: os mesmos da Task 1, mais `row_of`, `col_of`, `box_of`, `CandidateSet::{count, values, contains}`.
 - Produces: `pub struct XYWing`, `technique: "XY-Wing"`, `level: Difficulty::MuitoDificil`. Exportado em `techniques` e `lib.rs`; adicionado ao fim de `all_techniques()`, depois do `Swordfish`.
 
-- [ ] **Step 1: Escrever os testes da técnica, que falham**
+- [x] **Step 1: Escrever os testes da técnica, que falham**
 
 Montagem: grade vazia; cada célula listada fica só com os candidatos indicados (eliminar os outros 7 ou 8 dígitos).
 
@@ -135,7 +135,7 @@ Montagem: grade vazia; cada célula listada fica só com os candidatos indicados
 #[test] fn retorna_none_quando_nao_ha_o_que_eliminar() { /* caso principal com o 3 já fora de 1, 2, 21, 22, 23 */ }
 ```
 
-- [ ] **Step 2: Escrever os testes de solver e rating, que falham**
+- [x] **Step 2: Escrever os testes de solver e rating, que falham**
 
 Em `solver.rs`:
 
@@ -171,32 +171,32 @@ Em `rating.rs`:
 }
 ```
 
-- [ ] **Step 3: Rodar e ver falhar**
+- [x] **Step 3: Rodar e ver falhar**
 
 Run: `cargo test --manifest-path sudoku-core/Cargo.toml xy_wing`
 Expected: erro de compilação, `XYWing` não existe.
 
-- [ ] **Step 4: Implementar `XYWing`**
+- [x] **Step 4: Implementar `XYWing`**
 
 "Enxerga" = célula diferente na mesma linha, coluna ou box. Para cada pivô bivalor {x, y} (x < y) por índice: para cada asa 1 bivalor que o pivô enxerga, contendo x e não y (z = o outro dígito); para cada asa 2 bivalor, diferente da asa 1, que o pivô enxerga e que é exatamente {y, z}: elimina z das células, fora as duas asas, que enxergam as duas asas e têm z. Primeira lista não vazia vira a dedução. Pré-filtrar as células bivalores numa lista fixa (`[usize; 81]` + tamanho, ou `Vec` montado uma vez por chamada) para não varrer 81³ combinações.
 
-- [ ] **Step 5: Atualizar o doc comment de `rate`**
+- [x] **Step 5: Atualizar o doc comment de `rate`**
 
 A nota "hoje só existem técnicas até Difícil" sai. Fica: `MuitoDificil` também cobre puzzles de solução única que nem as técnicas de Muito Difícil resolvem ("pelo menos Muito Difícil").
 
-- [ ] **Step 6: Rodar e ver passar; rodar a suíte inteira**
+- [x] **Step 6: Rodar e ver passar; rodar a suíte inteira**
 
 Run: `cargo test --manifest-path sudoku-core/Cargo.toml`
 Expected: tudo PASS, incluindo os três golden tests.
 
-- [ ] **Step 7: Commit do código**
+- [x] **Step 7: Commit do código**
 
 ```bash
 git add sudoku-core/src
 git commit -m "feat: add XY-Wing technique"
 ```
 
-- [ ] **Step 8: Wiki 31**
+- [x] **Step 8: Wiki 31**
 
 `docs/wiki/31-xy-wing.md`: conceitos de Rust da task (função `sees` com `||`, iteradores aninhados com `filter`, pré-filtrar para cortar combinações, `let ... else`/`if let` para extrair o z). Indexar.
 
@@ -224,7 +224,7 @@ git commit -m "docs: add wiki page on XY-Wing"
   - `fn refill(puzzle: &Grid, solution: &Grid, count: usize, rng: &mut ChaCha12Rng) -> Grid`
   - `fn accepts_very_hard(givens: &Grid, solver: &LogicalSolver) -> bool`
 
-- [ ] **Step 1: Escrever os testes que falham**
+- [x] **Step 1: Escrever os testes que falham**
 
 Em `generator.rs`. As seeds abaixo são provisórias: rode `generate` em release para `0..20` e use, nos testes, as que terminam em menos de 200 ms, porque o CI roda em debug. Cada teste chama `generate` uma vez só.
 
@@ -255,12 +255,12 @@ Em `generator.rs`. As seeds abaixo são provisórias: rode `generate` em release
 
 Remover `niveis_nao_suportados_ainda_retornam_erro`. Em `tests/api.rs`, `fluxo_completo_muito_dificil` no molde de `fluxo_completo_dificil`, com a asserção de no máximo 22 números.
 
-- [ ] **Step 2: Rodar e ver falhar**
+- [x] **Step 2: Rodar e ver falhar**
 
 Run: `cargo test --manifest-path sudoku-core/Cargo.toml muito_dificil`
 Expected: FAIL com `Unsupported(MuitoDificil)`.
 
-- [ ] **Step 3: Implementar o gerador**
+- [x] **Step 3: Implementar o gerador**
 
 O ramo `Difficulty::MuitoDificil` chama `generate_very_hard`, que segue o pseudocódigo da seção 8 da spec. Decisões fixadas aqui:
 - `accepts_very_hard`: no máximo `MAX_GIVENS_VERY_HARD` números, `solver.solve` resolve, e algum passo tem `level == MuitoDificil`. Uma chamada a `solve` só.
@@ -270,24 +270,24 @@ O ramo `Difficulty::MuitoDificil` chama `generate_very_hard`, que segue o pseudo
 
 Remover `GenError::Unsupported` e o braço `_`.
 
-- [ ] **Step 4: Rodar e ver passar; rodar a suíte inteira**
+- [x] **Step 4: Rodar e ver passar; rodar a suíte inteira**
 
 Run: `cargo test --manifest-path sudoku-core/Cargo.toml`
 Expected: tudo PASS, incluindo os três golden tests.
 
-- [ ] **Step 5: Comparar com a referência da Task 1**
+- [x] **Step 5: Comparar com a referência da Task 1**
 
 Rodar o teste temporário `referencia` de novo e comparar com `.superpowers/referencia.txt`.
 Expected: as 150 linhas idênticas (`diff` sem saída).
 
-- [ ] **Step 6: Commit do código**
+- [x] **Step 6: Commit do código**
 
 ```bash
 git add sudoku-core/src sudoku-core/tests/api.rs
 git commit -m "feat: generate Very Hard puzzles by refining near misses"
 ```
 
-- [ ] **Step 7: Wiki 32 e notas sobre `Unsupported`**
+- [x] **Step 7: Wiki 32 e notas sobre `Unsupported`**
 
 `docs/wiki/32-gerador-muito-dificil.md`: conceitos de Rust da task (remover uma variante e deixar o `match` exaustivo trabalhar a favor, `clone` de `Grid` para tentar um candidato, busca local com estado mutável, RNG compartilhado e determinismo). Na wiki 12 e no consolidado 11–15, acrescentar uma nota curta de que `Unsupported` saiu na fatia Muito Difícil, sem reescrever o texto original. Indexar.
 
@@ -308,29 +308,29 @@ git commit -m "docs: add wiki page on Very Hard generation"
 - Consumes: tudo da Task 3.
 - Produces: valores finais de `REFILL_VERY_HARD`, `MAX_REFINEMENTS_VERY_HARD`, `MAX_SOLUTIONS_VERY_HARD`; golden test do Muito Difícil.
 
-- [ ] **Step 1: Escrever o teste de desempenho**
+- [x] **Step 1: Escrever o teste de desempenho**
 
 Em `tests/desempenho.rs`, `muito_dificil_cabe_na_meta_de_tempo`, `#[ignore]`, no molde de `dificil_cabe_na_meta_de_tempo`: 200 seeds, imprime mediana, pior e esgotadas; afirma `worst <= 1 s` e `exhausted <= 10`.
 
-- [ ] **Step 2: Medir a linha de base**
+- [x] **Step 2: Medir a linha de base**
 
 Run: `cargo test --release --manifest-path sudoku-core/Cargo.toml --test desempenho muito_dificil -- --ignored --nocapture`
 Anote mediana, pior e esgotadas. Grave também a referência do Muito Difícil (as 50 primeiras seeds) acrescentando o nível ao teste temporário `referencia`.
 
-- [ ] **Step 3: Otimizar sem mudar saída**
+- [x] **Step 3: Otimizar sem mudar saída**
 
 Medir antes de mexer. Caminhos prováveis: tirar alocações do caminho quente de Swordfish e XY-Wing; fazer o `solve` usado por `dig`/`redig` parar assim que empaca, sem montar a lista de passos que ninguém lê. Depois de cada mudança: suíte inteira e `referencia` dos **quatro** níveis idêntica.
 
-- [ ] **Step 4: Ajustar as constantes por medição**
+- [x] **Step 4: Ajustar as constantes por medição**
 
 Testar algumas combinações de `REFILL_VERY_HARD` e `MAX_REFINEMENTS_VERY_HARD` em torno de (6, 80) e escolher a de menor p90; depois, o maior `MAX_SOLUTIONS_VERY_HARD` que mantém o pior caso em até 1 s. Aqui a saída do Muito Difícil muda de propósito, porque o golden test ainda não existe.
 
-- [ ] **Step 5: Ponto de parada**
+- [x] **Step 5: Ponto de parada**
 
 Run: o comando do Step 2.
 Expected: PASS (pior ≤ 1 s, esgotadas ≤ 10 de 200). **Se falhar, pare** e traga mediana, p90, pior e esgotadas para a pessoa responsável. Não relaxe a meta, o critério nem o limite de 22 números.
 
-- [ ] **Step 6: Golden test e seed esgotada**
+- [x] **Step 6: Golden test e seed esgotada**
 
 ```rust
 #[test] fn puzzle_muito_dificil_da_seed_42_e_reproduzivel() {
@@ -345,19 +345,19 @@ Expected: PASS (pior ≤ 1 s, esgotadas ≤ 10 de 200). **Se falhar, pare** e tr
 
 Se a seed 42 for lenta em debug, ainda assim é ela: é a seed do contrato.
 
-- [ ] **Step 7: Rodar a suíte inteira, fmt e clippy**
+- [x] **Step 7: Rodar a suíte inteira, fmt e clippy**
 
 Run: `cargo test --manifest-path sudoku-core/Cargo.toml` e `cargo clippy --manifest-path sudoku-core/Cargo.toml --all-targets -- -D warnings`
 Expected: tudo PASS, sem warnings. Apagar o teste temporário `referencia.rs`.
 
-- [ ] **Step 8: Commit do código**
+- [x] **Step 8: Commit do código**
 
 ```bash
 git add sudoku-core
 git commit -m "perf: speed up Very Hard generation and fix its constants"
 ```
 
-- [ ] **Step 9: Documentação**
+- [x] **Step 9: Documentação**
 
 - `docs/architecture.md`: status do módulo (engine completo), tabela de níveis (Muito Difícil sempre resolvível por lógica, no máximo 22 números), técnicas, API (`generate` aceita os quatro níveis, `GenError` só com `AttemptsExhausted`, `Swordfish` e `XYWing` expostos), fluxo de geração com refinamento e as constantes finais, números medidos na seção 10. Na seção 10, tirar "a próxima fatia adiciona as técnicas de Muito Difícil" e registrar a ideia de encher Fácil e Médio.
 - `Status` da spec original do engine: os quatro níveis concluídos. `Status` da spec do Muito Difícil: implementado, com os números finais medidos e o que mudou em relação ao experimento.
