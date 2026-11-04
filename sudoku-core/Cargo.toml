@@ -3,6 +3,14 @@ name = "sudoku-core"
 license = "MIT"
 version = "0.1.0"
 edition = "2024"
+# Versão mínima do Rust (MSRV). Quem define é `u16::isolate_lowest_one`, estável desde a 1.97;
+# rand e rand_chacha pedem só a 1.85. Subir aqui é decisão consciente, registrada no CHANGELOG.
+rust-version = "1.97"
+description = "Pure Rust engine that generates, solves, validates and rates 9x9 Sudoku puzzles."
+repository = "https://github.com/IsabelaGhislandi/sudoku-core"
+readme = "../README.md"
+keywords = ["sudoku", "puzzle", "solver", "generator", "game"]
+categories = ["games", "algorithms"]
 # O crate não é publicado no crates.io: ele é consumido pelo próprio app.
 publish = false
 
