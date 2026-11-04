@@ -1,7 +1,17 @@
 # Spec — Engine, fatia de nível Muito Difícil
 
 - **Data:** 2026-11-03
-- **Status:** proposta
+- **Status:** implementado. Medido em 200 seeds, release, neste PC: mediana de 119 ms, p90 de
+  411 ms, pior caso de 793 ms, 1 seed esgotada (a 15), dentro das metas de 1 s e 10 esgotadas.
+  O que mudou em relação ao experimento da seção 8:
+  - **Constantes:** K = 8 (e não 6), 80 refinamentos e 5 soluções, teto de 405 cavações. Na
+    varredura, K = 8 deu a menor mediana e a cauda mais curta; K = 4, 6 e 10 ficaram atrás.
+    `MAX_SOLUCOES = 6` também passaria, mas nenhuma das 200 seeds chega ao teto dele, que custaria
+    cerca de 1 s; com 5, a seed esgotada mostra o custo do teto inteiro.
+  - **Desempenho:** sem otimizar, o pior caso era de 5,7 s. Dois ganhos, sem mudar a saída de
+    nenhum nível: o gerador pergunta ao solver por `hardest_step` (singles em lote, sem lista de
+    passos), e o `CandidateGrid` mantém as posições de cada dígito por unidade, que as técnicas
+    de unidade antes recalculavam a cada chamada.
 - **Módulo:** 1 de 5 (Core/Engine), continuação da [spec do Difícil](2026-11-02-engine-dificil-design.md)
 - **Fatia anterior:** [plano da fatia Difícil](../plans/2026-11-02-engine-dificil.md)
 

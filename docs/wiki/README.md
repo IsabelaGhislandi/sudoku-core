@@ -49,5 +49,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [30 — Swordfish: generalizar o X-Wing e extrair um helper comum](30-swordfish.md)
 - [31 — XY-Wing: `let ... else`, pré-filtrar e uma função `sees`](31-xy-wing.md)
 - [32 — Gerador de Muito Difícil: refinar em vez de recomeçar, e um `match` exaustivo](32-gerador-muito-dificil.md)
+- [33 — Desempenho do Muito Difícil: medir, cachear com invariante e constantes como contrato](33-desempenho-do-muito-dificil.md)
 
 > Cada nova task ganha uma página aqui.
