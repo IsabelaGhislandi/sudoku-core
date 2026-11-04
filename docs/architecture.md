@@ -22,13 +22,14 @@ o ciclo `spec → plano → implementação` com **TDD**.
 | # | Módulo | Responsabilidade | Status |
 |---|--------|------------------|--------|
 | 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **concluído: os quatro níveis** |
-| 2 | Game/Sessão | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. | futuro |
+| 2 | **Game/Sessão** (`sudoku-game`) | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. Lógica pura. | **em andamento: fatia 1 concluída** (partida básica) |
 | 3 | Frontend/UI | Tabuleiro, input, seleção de dificuldade, telas (Svelte). | futuro |
 | 4 | Tauri/Empacotamento | Ponte Rust↔Svelte e build do APK. | futuro |
 | 5 | Online | Partida por código com outro player. | futuro distante |
 
 A fronteira é dura: **`sudoku-core` é uma biblioteca pura** — sem UI, sem IO, sem Tauri.
 Isso a torna testável isoladamente com `cargo test` e reaproveitável por todos os outros módulos.
+O `sudoku-game` segue a mesma regra (ver seção 4.1).
 
 ## 3. Decisões de design (Core/Engine)
 
@@ -40,7 +41,7 @@ Isso a torna testável isoladamente com `cargo test` e reaproveitável por todos
 | Licença | MIT (`LICENSE` na raiz) | Portfólio e estudo: uso livre, mantendo o aviso de copyright |
 | Critério de dificuldade | Técnicas de resolução (solver "humano") | Mais justo que contar pistas |
 | Muito Difícil | Sempre resolvível por lógica, no máximo 22 números | Difícil sem exigir chute; poucos números o fazem parecer mais vazio |
-| Organização | Crate único `sudoku-core` | Simples, testável, fácil de evoluir (YAGNI sobre workspace) |
+| Organização | Cargo workspace: `sudoku-core` + `sudoku-game` | Começou como crate único (YAGNI); virou workspace no módulo Game, quando o app e o servidor passaram a precisar das mesmas regras de partida |
 | Dependências | `rand` (sem features padrão) + `rand_chacha` | Mínimo necessário; nada de Tauri/IO/UI nem aleatoriedade do SO |
 
 **Padrão espinha-dorsal:** *Strategy* via trait `Technique` organiza as técnicas de
@@ -117,6 +118,37 @@ Responsabilidades:
   recava, até 80 vezes por solução e 5 soluções (`REFILL_VERY_HARD`, `MAX_REFINEMENTS_VERY_HARD`,
   `MAX_SOLUTIONS_VERY_HARD`, também contrato).
 
+### 4.1 Arquitetura do `sudoku-game`
+
+Camadas no estilo *functional core, imperative shell*: o núcleo (`sudoku-core` e `sudoku-game`)
+recebe dados e devolve dados; a casca (app Tauri, navegador, servidor do PvP) lê o relógio, grava
+no disco, fala com a rede e chama o núcleo. Spec: `docs/superpowers/specs/2026-11-04-game-design.md`.
+
+```
+app Tauri + Svelte   ─┐
+navegador (Wasm)     ─┼─→  sudoku-game  ─→  sudoku-core
+servidor PvP         ─┘     (regras)         (gerar, resolver)
+```
+
+```
+sudoku-game/
+├── Cargo.toml          publish = false, deps: sudoku-core (path)
+├── src/
+│   ├── lib.rs          re-exporta a API e os tipos do core que ela usa (Difficulty, Puzzle, Grid, Cell)
+│   ├── config.rs       GameConfig { lives: NonZeroU8, hints: u8 }, padrão 3 vidas e 2 dicas
+│   ├── game.rs         Game (new, from_puzzle, place, toggle_note, hint), CellState, Status,
+│   │                   PlaceOutcome, HintOutcome, MoveError
+│   ├── notes.rs        Notes: anotações de uma célula (bitmask u16)
+│   └── hint.rs         splitmix64 e pick: sorteio determinístico da célula da dica
+└── tests/api.rs        partidas completas pela API pública
+```
+
+Regras da fatia 1: número certo trava; número errado tira uma vida e **sai do tabuleiro** (a mesma
+regra do PvP); sem desfazer; zero vidas termina em derrota; tabuleiro completo termina em vitória;
+2 dicas, sorteadas de forma determinística (`splitmix64(seed ^ número da dica) % vazias`); anotações
+só em célula vazia, apagadas quando um número trava nela. Seed esgotada no gerador: o Game tenta a
+seguinte. Ações recusadas devolvem `MoveError` e não mudam nada.
+
 ## 5. Mapeamento dificuldade → técnica
 
 Cada nível **inclui** as técnicas dos anteriores. O nível de um tabuleiro é a **técnica
@@ -188,7 +220,7 @@ flagrar qualquer mudança acidental.
 
 ## 8. Stack e convenções
 
-- **Rust** edition **2024**, num **Cargo workspace** (resolver 3) com o crate `sudoku-core`. Dependências: **`rand` 0.10**, sem as
+- **Rust** edition **2024**, num **Cargo workspace** (resolver 3) com os crates `sudoku-core` e `sudoku-game`. Dependências: **`rand` 0.10**, sem as
   features padrão (o core não usa StdRng nem a aleatoriedade do SO), e **`rand_chacha` 0.10** (`ChaCha12Rng`, de algoritmo fixo, para o determinismo da seed).
 - Testes unitários **inline** em cada módulo (`#[cfg(test)] mod tests`); teste de
   integração da API pública em `sudoku-core/tests/`.
@@ -224,6 +256,10 @@ Artefatos de processo do Engine:
 - **Plano (fatia Difícil):** `docs/superpowers/plans/2026-11-02-engine-dificil.md`
 - **Spec (fatia Muito Difícil):** `docs/superpowers/specs/2026-11-03-engine-muito-dificil-design.md`
 - **Plano (fatia Muito Difícil):** `docs/superpowers/plans/2026-11-03-engine-muito-dificil.md`
+
+Artefatos de processo do Game:
+- **Spec:** `docs/superpowers/specs/2026-11-04-game-design.md`
+- **Plano (fatia 1, partida básica):** `docs/superpowers/plans/2026-11-04-game-partida.md`
 
 ## 10. Visão do módulo Online (PvP)
 
@@ -296,4 +332,4 @@ o puzzle pronto ao entrar.
   responsabilidade do módulo Game, que já recebe a `Difficulty` e o `seed` do `Puzzle`.
   Entra na **spec do módulo Game** quando ela for escrita.
 - Seed pública habilita "compartilhar puzzle por código" (base do futuro multiplayer).
-- Promoção a workspace multi-crate só se houver necessidade real.
+- ~~Promoção a workspace multi-crate só se houver necessidade real.~~ Feita no módulo Game (wiki 34).

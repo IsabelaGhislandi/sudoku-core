@@ -131,7 +131,7 @@ again every week.
 | # | Module | Status |
 |---|---|---|
 | 1 | **Core/Engine** (`sudoku-core`): generate, solve, validate, rate | ✅ done (all four levels) |
-| 2 | Game/Session: moves, notes, mistakes, timer, hints, game history | next |
+| 2 | Game/Session (`sudoku-game`): moves, lives, hints, notes, timer, game history | 🚧 in progress (slice 1 done: basic game) |
 | 3 | Frontend (Svelte): board, input, screens | planned |
 | 4 | Tauri packaging: Rust ↔ Svelte bridge, Android APK | planned |
 | 5 | Online: two-player race via a shared puzzle code | future |
