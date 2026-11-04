@@ -1,6 +1,7 @@
 use sudoku_core::{Cell, Difficulty, GenError, Puzzle, generate};
 
 use crate::config::GameConfig;
+use crate::hint;
 use crate::notes::Notes;
 
 /// O que a tela mostra numa célula. Não existe estado "errado": um número errado nunca fica
@@ -42,6 +43,13 @@ pub enum PlaceOutcome {
     /// O número estava errado: custou uma vida e não ficou no tabuleiro. Volta a célula e o
     /// número tentados, para a tela mostrar o vermelho no lugar certo.
     Wrong { index: usize, value: u8 },
+}
+
+/// A célula que uma dica revelou e o número certo dela.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HintOutcome {
+    pub index: usize,
+    pub value: u8,
 }
 
 /// Por que uma ação foi recusada. Uma ação recusada não muda nada na partida: não custa vida
@@ -173,6 +181,30 @@ impl Game {
         self.check_empty_cell(index, value)?;
         self.notes[index].toggle(value);
         Ok(())
+    }
+
+    /// Revela o número certo de uma célula vazia, sorteada pelo jogo, e o trava como `Hinted`.
+    ///
+    /// O sorteio é determinístico (ver `hint::pick`): depende só da seed do puzzle e de
+    /// quantas dicas já foram usadas. Recusa com `GameOver` depois do fim e com `NoHintsLeft`
+    /// quando as dicas acabaram, nessa ordem. Revelar a última célula vazia vence a partida.
+    pub fn hint(&mut self) -> Result<HintOutcome, MoveError> {
+        if self.status != Status::Playing {
+            return Err(MoveError::GameOver);
+        }
+        if self.hints_left == 0 {
+            return Err(MoveError::NoHintsLeft);
+        }
+        let empties: Vec<usize> = (0..81)
+            .filter(|&i| self.cells[i] == CellState::Empty)
+            .collect();
+        let index = empties[hint::pick(self.puzzle.seed, self.hints_used, empties.len())];
+        let value = self.solution_value(index);
+        self.lock(index, CellState::Hinted(value));
+        self.hints_left -= 1;
+        self.hints_used += 1;
+        self.finish_if_complete();
+        Ok(HintOutcome { index, value })
     }
 
     /// Trava um número certo na célula e apaga as anotações dela (só dela).
@@ -430,5 +462,87 @@ mod tests {
         make_mistakes(&mut game, 3);
         assert_eq!(game.toggle_note(i, 1), Err(MoveError::GameOver));
         assert!(game.notes(i).is_empty());
+    }
+
+    #[test]
+    fn dica_revela_o_valor_da_solucao_e_trava() {
+        let mut game = easy_game();
+        let h = game.hint().unwrap();
+        assert_eq!(game.cell(h.index), CellState::Hinted(h.value));
+        assert_eq!(h.value, solution_value(&game, h.index));
+        assert_eq!((game.hints_left(), game.hints_used()), (1, 1));
+        assert_eq!((game.lives_left(), game.mistakes()), (3, 0));
+        assert_eq!(game.place(h.index, h.value), Err(MoveError::CellNotEmpty));
+    }
+
+    #[test]
+    fn dica_eh_deterministica() {
+        let (mut a, mut b) = (easy_game(), easy_game());
+        let first = (a.hint().unwrap(), a.hint().unwrap());
+        let second = (b.hint().unwrap(), b.hint().unwrap());
+        assert_eq!(first, second);
+        assert_ne!(first.0.index, first.1.index);
+    }
+
+    #[test]
+    fn dica_da_seed_42_fica_travada() {
+        // Golden: mudou? É bug ou decisão consciente, registrada no mesmo commit.
+        let mut game = easy_game();
+        assert_eq!(
+            game.hint(),
+            Ok(HintOutcome {
+                index: 40,
+                value: 9
+            })
+        );
+    }
+
+    #[test]
+    fn dica_limpa_as_anotacoes_da_celula() {
+        let mut game = easy_game();
+        for i in empties(&game) {
+            game.toggle_note(i, 1).unwrap();
+        }
+        let h = game.hint().unwrap();
+        assert!(game.notes(h.index).is_empty());
+        let other = first_empty(&game);
+        assert_eq!(game.notes(other).values(), vec![1]);
+    }
+
+    #[test]
+    fn sem_dicas_restantes_recusa() {
+        let mut game = easy_game();
+        game.hint().unwrap();
+        game.hint().unwrap();
+        assert_eq!(game.hint(), Err(MoveError::NoHintsLeft));
+        assert_eq!(game.hints_used(), 2);
+
+        let config = GameConfig {
+            lives: NonZeroU8::new(3).unwrap(),
+            hints: 0,
+        };
+        let mut no_hints = Game::new(Difficulty::Facil, 42, config);
+        assert_eq!(no_hints.hint(), Err(MoveError::NoHintsLeft));
+    }
+
+    #[test]
+    fn dica_na_ultima_celula_vence() {
+        let mut game = easy_game();
+        let open = empties(&game);
+        for &i in &open[1..] {
+            let v = solution_value(&game, i);
+            game.place(i, v).unwrap();
+        }
+        let h = game.hint().unwrap();
+        assert_eq!(h.index, open[0]);
+        assert_eq!(game.status(), Status::Won);
+    }
+
+    #[test]
+    fn dica_depois_do_fim_eh_recusada() {
+        let mut game = easy_game();
+        make_mistakes(&mut game, 3);
+        assert_eq!(game.hint(), Err(MoveError::GameOver));
+        assert_eq!(game.hints_left(), 2);
     }
 }

@@ -4,10 +4,11 @@
 
 mod config;
 mod game;
+mod hint;
 mod notes;
 
 pub use config::GameConfig;
-pub use game::{CellState, Game, MoveError, PlaceOutcome, Status};
+pub use game::{CellState, Game, HintOutcome, MoveError, PlaceOutcome, Status};
 pub use notes::Notes;
 
 // A casca só precisa depender deste crate: os tipos do core que aparecem na API vêm junto.
