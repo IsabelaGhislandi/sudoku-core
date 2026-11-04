@@ -50,5 +50,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [31 — XY-Wing: `let ... else`, pré-filtrar e uma função `sees`](31-xy-wing.md)
 - [32 — Gerador de Muito Difícil: refinar em vez de recomeçar, e um `match` exaustivo](32-gerador-muito-dificil.md)
 - [33 — Desempenho do Muito Difícil: medir, cachear com invariante e constantes como contrato](33-desempenho-do-muito-dificil.md)
+- [34 — Cargo workspace: vários crates num repositório só](34-cargo-workspace.md)
 
 > Cada nova task ganha uma página aqui.
