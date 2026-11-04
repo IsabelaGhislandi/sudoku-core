@@ -199,7 +199,54 @@ Artefatos de processo do Engine:
 - **Spec (fatia Difícil):** `docs/superpowers/specs/2026-11-02-engine-dificil-design.md`
 - **Plano (fatia Difícil):** `docs/superpowers/plans/2026-11-02-engine-dificil.md`
 
-## 10. Evolução futura
+## 10. Visão do módulo Online (PvP)
+
+> Decisões de produto já tomadas, **ainda sem spec**. Quando o módulo começar, a spec parte
+> daqui. O módulo Game/Sessão deve ser desenhado para rodar também no servidor: lógica pura,
+> com o tempo entrando como parâmetro, nunca lido de um relógio interno.
+
+O jogo também roda no **navegador**: o `sudoku-core` compila para WebAssembly e a UI Svelte é
+a mesma do app. O PvP precisa de um **servidor autoritativo** (por exemplo, axum + WebSockets),
+que também usa o `sudoku-core`.
+
+| Tema | Decisão |
+|------|---------|
+| Sala | Exatamente 2 jogadores, entrada por código |
+| Configuração | **Quem cria a sala** escolhe o nível e o limite de erros; o convidado entra já sabendo |
+| Puzzle | O mesmo para os dois. O servidor gera, envia **só as pistas** e guarda a solução |
+| Vitória | Quem completar primeiro, pelo **relógio do servidor** |
+| Privacidade | Ninguém vê as jogadas do oponente: o servidor não as repassa |
+| Progresso do oponente | Barra com células corretas ÷ células vazias no início, calculada pelo servidor |
+| Erro | Número diferente da solução. Ao atingir o limite (ex.: 3), o jogador perde |
+| Feedback de erro | Aviso na hora, e o número errado é removido do tabuleiro |
+| Anotações (lápis) | Livres, nunca contam como erro. Na v1 ficam só no cliente; sincronizar depois |
+
+Máquina de estados da sala:
+
+```
+Aguardando (1 jogador) → Contagem regressiva → Jogando → Finalizada
+                                                  ↘ Abandonada (desconexão)
+```
+
+Em aberto: limpeza automática de anotações (opção do jogador?), tempo de espera por
+reconexão antes do W.O. e defesas contra trapaça (quem tem as pistas pode usar um solver).
+
+**Persistência.** A v1 não tem banco de dados: as salas vivem na memória do servidor e somem
+ao terminar. Contas, ranking e histórico online ficam para uma versão futura, e é só aí que
+entra um banco.
+
+**Observabilidade.** O servidor é instrumentado com logs estruturados, métricas e traces (por
+exemplo, o crate `tracing` exportando via OpenTelemetry). O `sudoku-core` continua puro, sem
+instrumentação: o servidor mede o que acontece *em volta* das chamadas ao core (por exemplo,
+o tempo de `generate` por nível).
+
+**Geração fora do loop assíncrono.** `generate` é trabalho pesado de CPU (o Muito Difícil é o
+mais caro). No servidor, ele roda em `tokio::task::spawn_blocking` (ou num pool dedicado), para
+que a geração de uma sala não atrase as jogadas das outras salas, que dividem as mesmas
+threads do runtime. Como a sala já gera o puzzle na criação, o convidado normalmente encontra
+o puzzle pronto ao entrar.
+
+## 11. Evolução futura
 
 - A próxima fatia adiciona as técnicas de Muito Difícil (rating fica mais preciso).
 - Módulo Game trata `AttemptsExhausted` do Difícil (cerca de 1 seed em 5.000) sorteando outra seed.
