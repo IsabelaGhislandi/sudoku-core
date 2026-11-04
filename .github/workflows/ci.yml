@@ -48,3 +48,31 @@ jobs:
       - run: cargo clippy --manifest-path sudoku-core/Cargo.toml --all-targets --locked -- -D warnings
       - run: cargo build --manifest-path sudoku-core/Cargo.toml --locked
       - run: cargo test --manifest-path sudoku-core/Cargo.toml --locked
+
+  # Cobertura de testes com o cargo-llvm-cov. Só informa: o relatório vai para o resumo do job
+  # (aba Summary da execução), sem serviço externo, sem token e sem porcentagem mínima. Um SO
+  # basta, porque o core é o mesmo código em todos.
+  coverage:
+    name: Cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      # Action do próprio autor do cargo-llvm-cov: baixa o binário pronto em vez de compilar.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: sudoku-core
+      # Gera o relatório antes de escrever o resumo: se os testes falharem, o step falha.
+      - run: cargo llvm-cov --manifest-path sudoku-core/Cargo.toml --locked --summary-only > coverage.txt
+      - run: |
+          {
+            echo '## Cobertura de testes'
+            echo '```'
+            cat coverage.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,33 @@
+name: Bug report
+description: Something in the engine behaves incorrectly.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: >
+        Generation is deterministic, so the difficulty and seed are usually enough. For a grid,
+        paste its 81-character line (`Grid::to_line`, `.` for empty cells).
+      placeholder: |
+        generate(Difficulty::Dificil, 42)
+        .2..574...79..6...1.............1...5...6.87.4...3.1.5.459...6.9.......26.....7..
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: 0.1.0 or a commit hash
+  - type: input
+    id: env
+    attributes:
+      label: Rust version and OS
+      placeholder: rustc 1.99.1, Windows 11
