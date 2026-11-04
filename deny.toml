@@ -1,6 +1,6 @@
 # Configuração do cargo-deny: o que o CI verifica nas dependências a cada PR e toda semana.
 # Detalhes e motivos em docs/wiki/28-seguranca-de-dependencias.md.
-# Rodar localmente: cargo deny --manifest-path sudoku-core/Cargo.toml check
+# Rodar localmente, de qualquer pasta do repositório: cargo deny check
 
 [graph]
 # O app vai rodar em Android e desktop: as dependências de qualquer plataforma contam.

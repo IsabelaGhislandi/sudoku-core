@@ -48,12 +48,15 @@ resolução; `enum` + `match` modelam os dados; `Result`/`Option` modelam falha 
 
 ## 4. Arquitetura interna do `sudoku-core`
 
-Submódulos isolados, cada um com propósito único e testável de forma independente:
+O repositório é um **Cargo workspace**. Na raiz ficam o `Cargo.toml` do workspace (membros e
+campos comuns: edition, MSRV, licença), o `Cargo.lock` e o `deny.toml` (regras do cargo-deny:
+RustSec, licenças, origem), compartilhados por todos os crates.
+
+Dentro do `sudoku-core`, submódulos isolados, cada um com propósito único e testável de forma independente:
 
 ```
 sudoku-core/
-├── Cargo.toml          edition 2024, publish = false, deps: rand 0.10 (sem default), rand_chacha 0.10
-├── deny.toml           regras do cargo-deny (RustSec, licenças, origem)
+├── Cargo.toml          publish = false, deps: rand 0.10 (sem default), rand_chacha 0.10
 └── src/
     ├── lib.rs          declara os módulos e re-exporta a API pública
     ├── difficulty.rs   enum Difficulty (Facil < Medio < Dificil < MuitoDificil)
@@ -185,11 +188,12 @@ flagrar qualquer mudança acidental.
 
 ## 8. Stack e convenções
 
-- **Rust** edition **2024**, crate único `sudoku-core`. Dependências: **`rand` 0.10**, sem as
+- **Rust** edition **2024**, num **Cargo workspace** (resolver 3) com o crate `sudoku-core`. Dependências: **`rand` 0.10**, sem as
   features padrão (o core não usa StdRng nem a aleatoriedade do SO), e **`rand_chacha` 0.10** (`ChaCha12Rng`, de algoritmo fixo, para o determinismo da seed).
 - Testes unitários **inline** em cada módulo (`#[cfg(test)] mod tests`); teste de
   integração da API pública em `sudoku-core/tests/`.
-- Comandos rodam da raiz do repo via `--manifest-path sudoku-core/Cargo.toml`.
+- Comandos rodam de qualquer pasta do repo, sem `--manifest-path`: `cargo test --workspace`,
+  `cargo test -p sudoku-core`, `cargo fmt --all`, `cargo deny check`.
 - Commits em **inglês**, padrão Conventional Commits.
 - Código formatado com `rustfmt` (configuração padrão); finais de linha LF via `.gitattributes`.
 - **CI** (GitHub Actions, `.github/workflows/ci.yml`): fmt, clippy, build e testes em
@@ -197,7 +201,7 @@ flagrar qualquer mudança acidental.
   Tauri: build do APK a cada tag `v*`, anexado a uma GitHub Release.
   Spec: `docs/superpowers/specs/2026-09-19-ci-design.md`.
 - **Dependências** (`.github/workflows/dependencias.yml`): `cargo deny check` com as regras de
-  `sudoku-core/deny.toml` a cada PR e toda segunda-feira. Ao adicionar uma dependência, o agente segue a
+  `deny.toml` (raiz) a cada PR e toda segunda-feira. Ao adicionar uma dependência, o agente segue a
   skill `.claude/skills/adding-dependencies` (verificar o crate e pedir aprovação antes do `cargo add`).
 
 ## 9. Processo e skills

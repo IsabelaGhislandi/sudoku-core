@@ -29,7 +29,8 @@ Tipos em uso: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`.
 TDD de verdade: escreva o teste, **veja-o falhar**, implemente, veja passar.
 
 - Testes unitários ficam **inline** em cada módulo, num bloco `#[cfg(test)] mod tests`.
-- Testes de integração da API pública ficam em `sudoku-core/tests/` (só enxergam o que é `pub`).
+- Testes de integração da API pública ficam na pasta `tests/` de cada crate (por exemplo,
+  `sudoku-core/tests/`) e só enxergam o que é `pub`.
 - Nomes de teste em português, descrevendo o comportamento:
   `fn puzzle_resolvivel_por_singles_eh_facil()`. Só o nome da função `#[test]`: helpers e
   variáveis dentro dos testes seguem a regra de nomes da seção Código (inglês).
@@ -37,15 +38,17 @@ TDD de verdade: escreva o teste, **veja-o falhar**, implemente, veja passar.
 
 ## Comandos
 
-Rodam da raiz do repositório, com `--manifest-path`, para funcionarem de qualquer diretório:
+O repositório é um **Cargo workspace** (`Cargo.toml` na raiz). Os comandos funcionam de qualquer
+pasta do repositório, porque o Cargo sobe até achar o workspace:
 
 ```bash
-cargo test  --manifest-path sudoku-core/Cargo.toml          # tudo
-cargo test  --manifest-path sudoku-core/Cargo.toml rating   # um módulo
-cargo test  --manifest-path sudoku-core/Cargo.toml --test api
-cargo build --manifest-path sudoku-core/Cargo.toml          # deve ficar sem warnings
-cargo clippy --manifest-path sudoku-core/Cargo.toml --all-targets -- -D warnings
-cargo fmt    --manifest-path sudoku-core/Cargo.toml          # antes de cada commit
+cargo test   --workspace                        # tudo
+cargo test   -p sudoku-core rating              # um módulo de um crate
+cargo test   -p sudoku-core --test api          # testes de integração de um crate
+cargo build  --workspace                        # deve ficar sem warnings
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt    --all                              # antes de cada commit
+cargo deny   check
 ```
 
 O CI (`.github/workflows/ci.yml`) roda fmt, clippy, build e testes em Linux, Windows e macOS
@@ -59,7 +62,7 @@ acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`]
   persistência e histórico pertencem ao módulo Game (futuro).
 - Dependências mínimas: hoje só `rand` (sem features padrão) e `rand_chacha`. Cada nova dependência
   precisa de motivo e segue a skill `adding-dependencies` (`.claude/skills/`): verificar o crate e pedir
-  aprovação antes do `cargo add`. `cargo deny --manifest-path sudoku-core/Cargo.toml check` precisa passar.
+  aprovação antes do `cargo add`. `cargo deny check` precisa passar.
 - **Nomes no código em inglês**: tipos, funções, constantes, variáveis e helpers de teste
   (`cells`, `pairs`, `MAX_ATTEMPTS_HARD`). É a convenção do ecossistema Rust e combina com a
   API pública. A exceção são as variantes de `Difficulty` (`Facil`, `Medio`...), que ficam

@@ -1,6 +1,6 @@
-# Verificação das dependências do sudoku-core com o cargo-deny: vulnerabilidades conhecidas
+# Verificação das dependências do workspace com o cargo-deny: vulnerabilidades conhecidas
 # (RustSec), crates sem manutenção ou retirados, licenças e origem dos crates.
-# Regras em sudoku-core/deny.toml; motivos em docs/wiki/28-seguranca-de-dependencias.md.
+# Regras em deny.toml (raiz); motivos em docs/wiki/28-seguranca-de-dependencias.md.
 name: Dependências
 
 on:
@@ -31,4 +31,4 @@ jobs:
       # Versão fixa e --locked: instala sempre o mesmo cargo-deny, com as mesmas dependências.
       # Compilar do crates.io evita mais uma action de terceiros no pipeline.
       - run: cargo install cargo-deny --version 0.20.2 --locked
-      - run: cargo deny --manifest-path sudoku-core/Cargo.toml check
+      - run: cargo deny check

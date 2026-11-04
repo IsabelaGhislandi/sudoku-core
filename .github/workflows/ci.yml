@@ -1,4 +1,4 @@
-# CI do sudoku-core: formatação, lint, build e testes em Linux, Windows e macOS.
+# CI do workspace: formatação, lint, build e testes em Linux, Windows e macOS.
 # Garante automaticamente as regras do CLAUDE.md antes de qualquer merge no master.
 name: CI
 
@@ -26,7 +26,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      - run: cargo fmt --manifest-path sudoku-core/Cargo.toml --check
+      - run: cargo fmt --all --check
 
   test:
     name: Testes (${{ matrix.os }})
@@ -42,12 +42,10 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: sudoku-core
       # --locked falha se o Cargo.lock estiver desatualizado em relação ao Cargo.toml.
-      - run: cargo clippy --manifest-path sudoku-core/Cargo.toml --all-targets --locked -- -D warnings
-      - run: cargo build --manifest-path sudoku-core/Cargo.toml --locked
-      - run: cargo test --manifest-path sudoku-core/Cargo.toml --locked
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo build --workspace --locked
+      - run: cargo test --workspace --locked
 
   # Cobertura de testes com o cargo-llvm-cov. Só informa: o relatório vai para o resumo do job
   # (aba Summary da execução), sem serviço externo, sem token e sem porcentagem mínima. Um SO
@@ -65,10 +63,8 @@ jobs:
         with:
           tool: cargo-llvm-cov
       - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: sudoku-core
       # Gera o relatório antes de escrever o resumo: se os testes falharem, o step falha.
-      - run: cargo llvm-cov --manifest-path sudoku-core/Cargo.toml --locked --summary-only > coverage.txt
+      - run: cargo llvm-cov --workspace --locked --summary-only > coverage.txt
       - run: |
           {
             echo '## Cobertura de testes'

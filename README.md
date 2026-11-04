@@ -116,10 +116,10 @@ The project is **spec-driven and test-driven**. Each module goes from design spe
 implementation plan to TDD (see [`docs/superpowers/`](docs/superpowers)).
 
 ```bash
-cargo test   --manifest-path sudoku-core/Cargo.toml
-cargo clippy --manifest-path sudoku-core/Cargo.toml --all-targets -- -D warnings
-cargo fmt    --manifest-path sudoku-core/Cargo.toml
-cargo deny   --manifest-path sudoku-core/Cargo.toml check
+cargo test   --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt    --all
+cargo deny   check
 ```
 
 CI runs fmt, clippy, build and tests on Linux, Windows and macOS for every PR, with warnings
