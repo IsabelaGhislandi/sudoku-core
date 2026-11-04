@@ -60,6 +60,36 @@ const fn build_units() -> [[usize; 9]; 27] {
     all_units
 }
 
+/// Para cada "linha" `l` (linha do tabuleiro com `first_unit` 0, coluna com 9), a máscara
+/// das posições onde `value` ainda é candidato. Base do X-Wing e do Swordfish.
+pub(crate) fn line_masks(candidates: &CandidateGrid, value: u8, first_unit: usize) -> [u16; 9] {
+    std::array::from_fn(|l| candidates.positions(first_unit + l, value))
+}
+
+/// Pares a remover das "linhas" fora de `pattern`, nas posições de `columns`: o que
+/// X-Wing e Swordfish eliminam. Em ordem crescente de célula.
+pub(crate) fn outside_lines(
+    masks: &[u16; 9],
+    pattern: &[usize],
+    columns: u16,
+    value: u8,
+    cell: fn(usize, usize) -> usize,
+) -> Vec<(usize, u8)> {
+    let mut pairs = Vec::new();
+    for (l, &mask) in masks.iter().enumerate() {
+        if pattern.contains(&l) {
+            continue;
+        }
+        let mut hits = mask & columns;
+        while hits != 0 {
+            pairs.push((cell(l, hits.trailing_zeros() as usize), value));
+            hits &= hits - 1; // desliga o bit mais baixo
+        }
+    }
+    pairs.sort_unstable();
+    pairs
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -88,7 +118,9 @@ mod naked_pair;
 mod naked_single;
 mod naked_triple;
 mod pointing_pair;
+mod swordfish;
 mod x_wing;
+mod xy_wing;
 
 pub use box_line_reduction::BoxLineReduction;
 pub use hidden_pair::HiddenPair;
@@ -98,4 +130,6 @@ pub use naked_pair::NakedPair;
 pub use naked_single::NakedSingle;
 pub use naked_triple::NakedTriple;
 pub use pointing_pair::PointingPair;
+pub use swordfish::Swordfish;
 pub use x_wing::XWing;
+pub use xy_wing::XYWing;

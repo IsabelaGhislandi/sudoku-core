@@ -19,8 +19,11 @@ impl Technique for HiddenSingle {
         for (u, unit) in all_units.iter().enumerate() {
             for (pos, &i) in unit.iter().enumerate() {
                 if let Cell::Empty = grid.get(i) {
-                    for v in candidates.get(i).digits() {
-                        positions[u][v as usize] |= 1 << pos;
+                    // Percorre só os bits ligados, em vez de testar os 9 dígitos.
+                    let mut bits = candidates.get(i).bits();
+                    while bits != 0 {
+                        positions[u][bits.trailing_zeros() as usize] |= 1 << pos;
+                        bits &= bits - 1; // desliga o bit mais baixo
                     }
                 }
             }

@@ -13,6 +13,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 11 a 15](fundamentos/rust-base-tarefas-11-a-15.md)
 - [Fundamentos de Rust — Tarefas 16 a 20](fundamentos/rust-base-tarefas-16-a-20.md)
 - [Fundamentos de Rust — Tarefas 21 a 25](fundamentos/rust-base-tarefas-21-a-25.md)
+- [Fundamentos de Rust — Tarefas 26 a 30](fundamentos/rust-base-tarefas-26-a-30.md)
 
 ## Índice por task
 
@@ -45,5 +46,9 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [27 — Nomes em inglês: uma regra de idioma e um renomeio seguro](27-nomes-em-ingles.md)
 - [28 — Segurança de dependências: `cargo-deny`, features e uma skill para a IA](28-seguranca-de-dependencias.md)
 - [29 — Licença MIT: o que ela permite e como o Cargo a declara](29-licenca-mit.md)
+- [30 — Swordfish: generalizar o X-Wing e extrair um helper comum](30-swordfish.md)
+- [31 — XY-Wing: `let ... else`, pré-filtrar e uma função `sees`](31-xy-wing.md)
+- [32 — Gerador de Muito Difícil: refinar em vez de recomeçar, e um `match` exaustivo](32-gerador-muito-dificil.md)
+- [33 — Desempenho do Muito Difícil: medir, cachear com invariante e constantes como contrato](33-desempenho-do-muito-dificil.md)
 
 > Cada nova task ganha uma página aqui.

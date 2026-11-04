@@ -3,11 +3,13 @@
 > Visão de **design** do projeto. Para os aprendizados de Rust durante a implementação,
 > veja a [wiki](wiki/README.md). Para o detalhe completo de cada decisão, veja a
 > [spec do Core/Engine](superpowers/specs/2026-06-14-sudoku-engine-design.md), a
-> specs das fatias [Médio](superpowers/specs/2026-11-01-engine-medio-design.md) e
-> [Difícil](superpowers/specs/2026-11-02-engine-dificil-design.md), e os planos das fatias
+> specs das fatias [Médio](superpowers/specs/2026-11-01-engine-medio-design.md),
+> [Difícil](superpowers/specs/2026-11-02-engine-dificil-design.md) e
+> [Muito Difícil](superpowers/specs/2026-11-03-engine-muito-dificil-design.md), e os planos das fatias
 > [Fácil](superpowers/plans/2026-06-14-engine-facil-vertical-slice.md),
-> [Médio](superpowers/plans/2026-11-01-engine-medio.md) e
-> [Difícil](superpowers/plans/2026-11-02-engine-dificil.md).
+> [Médio](superpowers/plans/2026-11-01-engine-medio.md),
+> [Difícil](superpowers/plans/2026-11-02-engine-dificil.md) e
+> [Muito Difícil](superpowers/plans/2026-11-03-engine-muito-dificil.md).
 
 ## 1. Visão geral
 
@@ -19,7 +21,7 @@ o ciclo `spec → plano → implementação` com **TDD**.
 
 | # | Módulo | Responsabilidade | Status |
 |---|--------|------------------|--------|
-| 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **fatias Fácil, Médio e Difícil concluídas** |
+| 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **concluído: os quatro níveis** |
 | 2 | Game/Sessão | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. | futuro |
 | 3 | Frontend/UI | Tabuleiro, input, seleção de dificuldade, telas (Svelte). | futuro |
 | 4 | Tauri/Empacotamento | Ponte Rust↔Svelte e build do APK. | futuro |
@@ -37,7 +39,7 @@ Isso a torna testável isoladamente com `cargo test` e reaproveitável por todos
 | Geração | Determinística por seed | Testes reprodutíveis + futuro "puzzle por código" |
 | Licença | MIT (`LICENSE` na raiz) | Portfólio e estudo: uso livre, mantendo o aviso de copyright |
 | Critério de dificuldade | Técnicas de resolução (solver "humano") | Mais justo que contar pistas |
-| Muito Difícil | Pode exigir backtracking | Quando a lógica pura não basta |
+| Muito Difícil | Sempre resolvível por lógica, no máximo 22 números | Difícil sem exigir chute; poucos números o fazem parecer mais vazio |
 | Organização | Crate único `sudoku-core` | Simples, testável, fácil de evoluir (YAGNI sobre workspace) |
 | Dependências | `rand` (sem features padrão) + `rand_chacha` | Mínimo necessário; nada de Tauri/IO/UI nem aleatoriedade do SO |
 
@@ -56,9 +58,9 @@ sudoku-core/
     ├── lib.rs          declara os módulos e re-exporta a API pública
     ├── difficulty.rs   enum Difficulty (Facil < Medio < Dificil < MuitoDificil)
     ├── grid.rs         Grid, Cell; parsing/serialização; can_place; validate; helpers de unidade
-    ├── candidates.rs   CandidateSet (bitmask u16), candidates_for, CandidateGrid
+    ├── candidates.rs   CandidateSet (bitmask u16), candidates_for, CandidateGrid (+ posições por unidade)
     ├── techniques/
-    │   ├── mod.rs          trait Technique, Deduction, Action, units() (tabela fixa)
+    │   ├── mod.rs          trait Technique, Deduction, Action, units() (tabela fixa), helpers de linha
     │   ├── naked_single.rs     Fácil
     │   ├── hidden_single.rs    Fácil
     │   ├── naked_pair.rs       Médio
@@ -67,15 +69,17 @@ sudoku-core/
     │   ├── box_line_reduction.rs  Difícil
     │   ├── naked_triple.rs     Difícil
     │   ├── hidden_triple.rs    Difícil
-    │   └── x_wing.rs           Difícil
-    ├── solver.rs       LogicalSolver (new, up_to, solve, next_step)
+    │   ├── x_wing.rs           Difícil
+    │   ├── swordfish.rs        Muito Difícil
+    │   └── xy_wing.rs          Muito Difícil
+    ├── solver.rs       LogicalSolver (new, up_to, solve, next_step; hardest_step interno)
     ├── backtracking.rs count_solutions (unicidade por força bruta)
     ├── rating.rs       rate (classifica pela técnica mais avançada exigida)
     └── generator.rs    generate, Puzzle, GenError (grade completa → cava células)
 ```
 
-Testes de integração em `sudoku-core/tests/`: `api.rs` (fluxos Fácil, Médio e Difícil pela API pública) e
-`desempenho.rs` (medição dos geradores de Médio e Difícil, `#[ignore]`, só em release).
+Testes de integração em `sudoku-core/tests/`: `api.rs` (fluxos dos quatro níveis pela API pública) e
+`desempenho.rs` (medição dos geradores de Médio, Difícil e Muito Difícil, `#[ignore]`, só em release).
 
 Responsabilidades:
 
@@ -83,7 +87,9 @@ Responsabilidades:
   (string de 81 chars, `.` = vazio), `can_place`, detecção de conflitos linha/coluna/box.
 - **`candidates`** — candidatos de uma célula como bitmask `u16` (bit *n* = dígito *n* possível).
   `CandidateGrid` guarda os candidatos de todas as células durante uma resolução, porque as
-  eliminações das técnicas de Médio e Difícil não aparecem na grade.
+  eliminações das técnicas de Médio e Difícil não aparecem na grade. Guarda também, por unidade e
+  dígito, a máscara das posições onde o dígito ainda cabe, atualizada em `place` e `eliminate`:
+  as técnicas de unidade a leem em vez de recalculá-la a cada chamada.
 - **`techniques`** — cada técnica implementa o trait `Technique` e devolve uma `Deduction`
   (uma `Action`, `Place` ou `Eliminate`, mais o nome da técnica e o nível). Uma técnica só
   devolve `Eliminate` se remover ao menos um candidato presente, para o solver não entrar em
@@ -91,7 +97,9 @@ Responsabilidades:
 - **`solver`** — `LogicalSolver` aplica as técnicas em ordem, da mais simples para a mais
   difícil, e produz a **lista de passos** usada pelo rating. `up_to(nível)` limita as técnicas;
   cada gerador usa `up_to(nível)`, e as técnicas novas entram no **fim** da lista: é isso que
-  mantém inalterados os puzzles dos níveis já existentes.
+  mantém inalterados os puzzles dos níveis já existentes. O gerador usa `hardest_step`, interno:
+  a mesma resposta de `solve` (resolve? qual o nível mais alto?), mas colocando os singles em lote
+  e sem montar a lista de passos.
 - **`backtracking`** — `count_solutions` resolve por força bruta (ramificando na célula com
   menos candidatos — heurística MRV) e conta soluções até um
   limite (limite 2 ⇒ testa unicidade).
@@ -102,7 +110,9 @@ Responsabilidades:
   única. No Médio e no Difícil, repete com o mesmo RNG até o puzzle exigir o nível pedido, até
   um número fixo de tentativas (`MAX_ATTEMPTS_MEDIUM` = 50, `MAX_ATTEMPTS_HARD` = 250,
   parte do contrato de determinismo). O aceite equivale a `rate`, sem repetir a busca de
-  unicidade.
+  unicidade. No Muito Difícil, em vez de recomeçar, **refina**: devolve 8 números da solução e
+  recava, até 80 vezes por solução e 5 soluções (`REFILL_VERY_HARD`, `MAX_REFINEMENTS_VERY_HARD`,
+  `MAX_SOLUTIONS_VERY_HARD`, também contrato).
 
 ## 5. Mapeamento dificuldade → técnica
 
@@ -114,12 +124,13 @@ mais avançada necessária** para resolvê-lo.
 | **Fácil** | Naked Single, Hidden Single |
 | **Médio** | + Naked/Hidden Pairs, Pointing Pairs |
 | **Difícil** | + Naked/Hidden Triples, Box-Line Reduction, X-Wing |
-| **Muito Difícil** | + Swordfish, XY-Wing — e/ou backtracking quando a lógica não basta |
+| **Muito Difícil** | + Swordfish, XY-Wing; no máximo 22 números |
 
-> As fatias concluídas cobrem **Fácil, Médio e Difícil**. O Pointing Pair também vale para 3
-> células alinhadas no box. A Box/Line Reduction fica no Difícil, e não no Médio, porque no
-> Médio mudaria todos os puzzles Médios já gerados. Puzzles que exigem técnicas além do Difícil
-> aparecem como `MuitoDificil`, até a fatia Muito Difícil.
+> Os quatro níveis estão concluídos. O Pointing Pair também vale para 3 células alinhadas no
+> box. A Box/Line Reduction fica no Difícil, e não no Médio, porque no Médio mudaria todos os
+> puzzles Médios já gerados. O gerador de Muito Difícil só entrega puzzles que o solver lógico
+> resolve por completo; já o `rate` continua chamando de `MuitoDificil` um puzzle de solução
+> única que nem o solver completo resolve (só o backtracking).
 
 ## 6. API pública
 
@@ -136,15 +147,17 @@ fn candidates_for(grid: &Grid, index: usize) -> CandidateSet;
 
 pub enum Action { Place { index: usize, value: u8 }, Eliminate(Vec<(usize, u8)>) }
 pub struct Deduction { action: Action, technique: &'static str, level: Difficulty }
-pub enum GenError { Unsupported(Difficulty), AttemptsExhausted(Difficulty) }
+pub enum GenError { AttemptsExhausted(Difficulty) }
 ```
 
-`generate` aceita Fácil, Médio e Difícil; Muito Difícil devolve `GenError::Unsupported`.
+`generate` aceita os quatro níveis. O único erro é `AttemptsExhausted`, quando a seed esgota o
+teto de trabalho do nível (o Game sorteia outra).
 
 Tipos expostos: `Grid`, `Cell`, `Difficulty`, `Puzzle`, `Deduction`, `Action`, `Conflict`,
 `CandidateSet`, `CandidateGrid`, `ParseError`, `GenError`, `LogicalSolver`, `SolveResult`, e as
 técnicas `NakedSingle`, `HiddenSingle`, `NakedPair`, `HiddenPair`, `PointingPair`,
-`BoxLineReduction`, `NakedTriple`, `HiddenTriple` e `XWing` via trait `Technique`.
+`BoxLineReduction`, `NakedTriple`, `HiddenTriple`, `XWing`, `Swordfish` e `XYWing` via trait
+`Technique`.
 
 **A dica do jogo não fica no core.** Ela sorteia uma célula vazia e copia o valor de
 `Puzzle.solution`, então pertence ao módulo Game. O antigo `next_hint` foi removido.
@@ -156,6 +169,13 @@ seed → RNG → grade resolvida completa
            → remover células enquanto o solver do nível resolve (o que garante unicidade)
            → classificar o nível (mesmo resultado de rate)
            → bate o nível alvo? sim → Puzzle | não → nova tentativa, até o limite → GenError
+
+Muito Difícil (refina em vez de recomeçar):
+seed → RNG → grade resolvida → cavar
+           → ≤ 22 números e exige Swordfish/XY-Wing? sim → Puzzle
+           → não → devolver 8 números da solução, recavar (até 80 vezes)
+                   → ficou com ≤ números? vira o puzzle atual
+           → nova solução, até 5 → GenError
 ```
 
 Determinismo é contrato: **mesma seed + mesmo nível → puzzle idêntico, sempre** — inclusive
@@ -198,16 +218,71 @@ Artefatos de processo do Engine:
 - **Plano (fatia Médio):** `docs/superpowers/plans/2026-11-01-engine-medio.md`
 - **Spec (fatia Difícil):** `docs/superpowers/specs/2026-11-02-engine-dificil-design.md`
 - **Plano (fatia Difícil):** `docs/superpowers/plans/2026-11-02-engine-dificil.md`
+- **Spec (fatia Muito Difícil):** `docs/superpowers/specs/2026-11-03-engine-muito-dificil-design.md`
+- **Plano (fatia Muito Difícil):** `docs/superpowers/plans/2026-11-03-engine-muito-dificil.md`
 
-## 10. Evolução futura
+## 10. Visão do módulo Online (PvP)
 
-- A próxima fatia adiciona as técnicas de Muito Difícil (rating fica mais preciso).
-- Módulo Game trata `AttemptsExhausted` do Difícil (cerca de 1 seed em 5.000) sorteando outra seed.
+> Decisões de produto já tomadas, **ainda sem spec**. Quando o módulo começar, a spec parte
+> daqui. O módulo Game/Sessão deve ser desenhado para rodar também no servidor: lógica pura,
+> com o tempo entrando como parâmetro, nunca lido de um relógio interno.
+
+O jogo também roda no **navegador**: o `sudoku-core` compila para WebAssembly e a UI Svelte é
+a mesma do app. O PvP precisa de um **servidor autoritativo** (por exemplo, axum + WebSockets),
+que também usa o `sudoku-core`.
+
+| Tema | Decisão |
+|------|---------|
+| Sala | Exatamente 2 jogadores, entrada por código |
+| Configuração | **Quem cria a sala** escolhe o nível e o limite de erros; o convidado entra já sabendo |
+| Puzzle | O mesmo para os dois. O servidor gera, envia **só as pistas** e guarda a solução |
+| Vitória | Quem completar primeiro, pelo **relógio do servidor** |
+| Privacidade | Ninguém vê as jogadas do oponente: o servidor não as repassa |
+| Progresso do oponente | Barra com células corretas ÷ células vazias no início, calculada pelo servidor |
+| Erro | Número diferente da solução. Ao atingir o limite (ex.: 3), o jogador perde |
+| Feedback de erro | Aviso na hora, e o número errado é removido do tabuleiro |
+| Anotações (lápis) | Livres, nunca contam como erro. Na v1 ficam só no cliente; sincronizar depois |
+
+Máquina de estados da sala:
+
+```
+Aguardando (1 jogador) → Contagem regressiva → Jogando → Finalizada
+                                                  ↘ Abandonada (desconexão)
+```
+
+Em aberto: limpeza automática de anotações (opção do jogador?), tempo de espera por
+reconexão antes do W.O. e defesas contra trapaça (quem tem as pistas pode usar um solver).
+
+**Persistência.** A v1 não tem banco de dados: as salas vivem na memória do servidor e somem
+ao terminar. Contas, ranking e histórico online ficam para uma versão futura, e é só aí que
+entra um banco.
+
+**Observabilidade.** O servidor é instrumentado com logs estruturados, métricas e traces (por
+exemplo, o crate `tracing` exportando via OpenTelemetry). O `sudoku-core` continua puro, sem
+instrumentação: o servidor mede o que acontece *em volta* das chamadas ao core (por exemplo,
+o tempo de `generate` por nível).
+
+**Geração fora do loop assíncrono.** `generate` é trabalho pesado de CPU (o Muito Difícil é o
+mais caro). No servidor, ele roda em `tokio::task::spawn_blocking` (ou num pool dedicado), para
+que a geração de uma sala não atrase as jogadas das outras salas, que dividem as mesmas
+threads do runtime. Como a sala já gera o puzzle na criação, o convidado normalmente encontra
+o puzzle pronto ao entrar.
+
+## 11. Evolução futura
+
+- Módulo Game trata `AttemptsExhausted` sorteando outra seed: cerca de 1 seed em 5.000 no
+  Difícil e 1 em 200 no Muito Difícil.
 - Módulo Game consumirá `validate` e implementará a dica, sorteando uma célula vazia e usando
   `Puzzle.solution`. Como o valor vem da solução, jogadas erradas não afetam a dica.
 - A meta de tempo (até 5 s no celular, estimada como 1 s neste PC) foi medida só neste PC, em
-  200 seeds: pior caso de 44 ms no Médio; no Difícil, cerca de 1 s com o PC livre, limitado pelas
-  250 tentativas. Confirmar em um aparelho real quando o módulo Tauri existir.
+  200 seeds, build de release. Depois da otimização da fatia Muito Difícil: pior caso de 15 ms no
+  Médio e 431 ms no Difícil; no Muito Difícil, mediana de 119 ms e pior caso de 793 ms, que é o
+  custo do teto inteiro (a seed 15 o esgota). Confirmar em um aparelho real quando o módulo Tauri
+  existir.
+- **Ideia: encher Fácil e Médio.** Hoje os três primeiros níveis param em cerca de 25 números,
+  então visualmente quase não se distinguem. Devolver números da solução depois de cavar (como o
+  refinamento faz ao contrário) deixaria os níveis fáceis mais cheios. Muda a saída desses níveis,
+  então seria decisão consciente, com golden tests novos.
 - **Módulo Game — timer + histórico de partidas:** cronometrar quanto o usuário leva para
   resolver e manter um histórico de partidas concluídas, ex.:
   - `Jogo Médio — 10 min — 13/06/2026`

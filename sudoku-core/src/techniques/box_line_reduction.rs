@@ -17,32 +17,30 @@ impl Technique for BoxLineReduction {
         let all_units = units();
         for value in 1..=9u8 {
             // As 18 primeiras unidades são as linhas e depois as colunas.
-            for line in &all_units[..18] {
-                // Conta e confere o box sem montar a lista de células: esta técnica
-                // roda a cada passo do solver.
-                let mut cells = line
-                    .iter()
-                    .copied()
-                    .filter(|&i| candidates.get(i).contains(value));
-                let Some(first) = cells.next() else {
-                    continue;
-                };
-                let b = box_of(first);
-                let mut found = 1;
-                let mut same_box = true;
-                for i in cells {
-                    found += 1;
-                    same_box &= box_of(i) == b;
-                }
-                if !(2..=3).contains(&found) || !same_box {
+            for (u, line) in all_units[..18].iter().enumerate() {
+                // Conta e confere o box pela máscara, sem montar a lista de células: esta
+                // técnica roda a cada passo do solver. Numa linha ou coluna, as posições
+                // 0-2, 3-5 e 6-8 caem cada trio num box.
+                let spots = candidates.positions(u, value);
+                if !(2..=3).contains(&spots.count_ones()) {
                     continue;
                 }
-                let pairs: Vec<(usize, u8)> = (0..81)
-                    .filter(|&i| {
-                        box_of(i) == b && !line.contains(&i) && candidates.get(i).contains(value)
-                    })
-                    .map(|i| (i, value))
-                    .collect();
+                let first = spots.trailing_zeros() as usize;
+                if spots & !(0b111 << (first / 3 * 3)) != 0 {
+                    continue;
+                }
+                let b = box_of(line[first]);
+                // As células do box em `units()` estão em ordem crescente: os pares saem
+                // em ordem de célula.
+                let mut pairs = Vec::new();
+                let mut in_box = candidates.positions(18 + b, value);
+                while in_box != 0 {
+                    let i = all_units[18 + b][in_box.trailing_zeros() as usize];
+                    in_box &= in_box - 1; // desliga o bit mais baixo
+                    if !line.contains(&i) {
+                        pairs.push((i, value));
+                    }
+                }
                 // Sem nada a remover, repetir esta dedução travaria o solver.
                 if !pairs.is_empty() {
                     return Some(Deduction {

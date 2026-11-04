@@ -114,6 +114,9 @@ Quando as próximas fatias implementarem o Médio, `Unsupported` deixa de ocorre
 o enum continua útil. Uma variante futura provável é "não consegui atingir o nível alvo em N
 tentativas".
 
+> **Nota posterior:** essa variante veio no Médio, como `AttemptsExhausted(Difficulty)`. Na fatia
+> Muito Difícil, com os quatro níveis suportados, `Unsupported` saiu da API (página 32).
+
 ## A lição de performance: MRV
 
 A primeira versão rodou os testes do gerador em **~220 segundos**. A medição mostrou onde:

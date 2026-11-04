@@ -13,15 +13,10 @@ impl Technique for HiddenPair {
     }
 
     fn apply(&self, _grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction> {
-        for unit in units() {
-            // posicoes[d]: máscara das posições da unidade onde o dígito d cabe.
-            // Comparar máscaras evita montar e comparar listas de células.
-            let mut positions = [0u16; 10];
-            for (pos, &i) in unit.iter().enumerate() {
-                for v in candidates.get(i).digits() {
-                    positions[v as usize] |= 1 << pos;
-                }
-            }
+        for (u, unit) in units().iter().enumerate() {
+            // posicoes[d]: máscara das posições da unidade onde o dígito d cabe, já mantida
+            // pelo CandidateGrid. Comparar máscaras evita montar e comparar listas de células.
+            let positions: [u16; 10] = std::array::from_fn(|d| candidates.positions(u, d as u8));
             for a in 1..=9u8 {
                 let spots = positions[a as usize];
                 if spots.count_ones() != 2 {

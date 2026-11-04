@@ -13,14 +13,10 @@ impl Technique for HiddenTriple {
     }
 
     fn apply(&self, _grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction> {
-        for unit in units() {
-            // posicoes[d]: máscara das posições da unidade onde o dígito d cabe.
-            let mut positions = [0u16; 10];
-            for (pos, &i) in unit.iter().enumerate() {
-                for v in candidates.get(i).digits() {
-                    positions[v as usize] |= 1 << pos;
-                }
-            }
+        for (u, unit) in units().iter().enumerate() {
+            // posicoes[d]: máscara das posições da unidade onde o dígito d cabe, já mantida
+            // pelo CandidateGrid. Comparar máscaras evita montar e comparar listas de células.
+            let positions: [u16; 10] = std::array::from_fn(|d| candidates.positions(u, d as u8));
             // Só dígitos com 1 a 3 posições podem formar um triple. Com mais de 3, a
             // união nunca teria 3 bits; pular antes poupa combinações. Com 0, o dígito
             // já foi colocado na unidade: contá-lo faria um par parecer triple e
