@@ -62,12 +62,12 @@ Só a reorganização. Nenhum código Rust muda.
 - Produces: workspace com `members = ["sudoku-core"]`; `[workspace.package]` com `edition`,
   `rust-version`, `license` e `repository`, herdados pelos crates com `<campo>.workspace = true`.
 
-- [ ] **Step 1: Criar a branch.** Use `feat/game-partida`, que já existe com a spec commitada.
+- [x] **Step 1: Criar a branch.** Use `feat/game-partida`, que já existe com a spec commitada.
 
-- [ ] **Step 2: Gravar a referência.** Rode `cargo test --manifest-path sudoku-core/Cargo.toml --locked`
+- [x] **Step 2: Gravar a referência.** Rode `cargo test --manifest-path sudoku-core/Cargo.toml --locked`
   e anote os totais (hoje: 123 unitários, 4 de API, 3 ignorados de desempenho).
 
-- [ ] **Step 3: Criar o `Cargo.toml` da raiz**
+- [x] **Step 3: Criar o `Cargo.toml` da raiz**
 
 ```toml
 [workspace]
@@ -85,11 +85,11 @@ Mova para cá o comentário sobre o MSRV que hoje está em `sudoku-core/Cargo.to
 troque esses quatro campos por `edition.workspace = true` e equivalentes. `description`,
 `readme`, `keywords`, `categories` e `publish = false` continuam no crate.
 
-- [ ] **Step 4: Mover o lock e o deny, e trocar o `.gitignore`.** `git mv` dos dois arquivos para a
+- [x] **Step 4: Mover o lock e o deny, e trocar o `.gitignore`.** `git mv` dos dois arquivos para a
   raiz. A raiz ganha um `.gitignore` com `/target`. Apague `sudoku-core/.gitignore` e a pasta
   `sudoku-core/target`.
 
-- [ ] **Step 5: Atualizar os comandos.** Em todo lugar listado em Files, os comandos passam a ser
+- [x] **Step 5: Atualizar os comandos.** Em todo lugar listado em Files, os comandos passam a ser
   estes. O Cargo acha o workspace a partir de qualquer subpasta, então `--manifest-path` deixa de
   ser necessário:
 
@@ -108,20 +108,20 @@ No CI: `cargo fmt --all --check`; clippy, build e testes com `--workspace --lock
 `cargo llvm-cov --workspace --locked --summary-only`; o `dependencias.yml` roda `cargo deny check`.
 No Dependabot, o `directory` do cargo vira `/`.
 
-- [ ] **Step 6: Verificar.**
+- [x] **Step 6: Verificar.**
   - `cargo test --workspace --locked`: os mesmos totais do Step 2, golden tests incluídos.
   - `cargo clippy --workspace --all-targets --locked -- -D warnings` e `cargo fmt --all --check`: limpos.
   - `cargo deny check`: `advisories ok, bans ok, licenses ok, sources ok`.
   - `git status`: nenhum arquivo de `target/`; o `Cargo.lock` aparece como renomeado, sem diff de conteúdo.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
 git commit -m "chore: turn the repository into a Cargo workspace"
 ```
 
-- [ ] **Step 8: Wiki 34 e commit.** Página `34-cargo-workspace.md`: workspace, membros, um
+- [x] **Step 8: Wiki 34 e commit.** Página `34-cargo-workspace.md`: workspace, membros, um
   `Cargo.lock` e um `target/` compartilhados, `[workspace.package]` e herança de campos,
   `-p`/`--workspace`, resolver 3, e por que a necessidade real apareceu agora. Indexe no README da wiki.
 
@@ -160,7 +160,7 @@ git commit -m "docs: add wiki page on Cargo workspaces"
 `publish = false`, `description`, e `sudoku-core = { path = "../sudoku-core" }` como única
 dependência. O `deny.toml` aceita dependência por caminho sem mudança.
 
-- [ ] **Step 1: Testes que falham** (inline em `game.rs` e `config.rs`)
+- [x] **Step 1: Testes que falham** (inline em `game.rs` e `config.rs`)
 
 ```rust
 #[test]
@@ -200,24 +200,24 @@ fn seed_esgotada_passa_para_a_seguinte() {
 }
 ```
 
-- [ ] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: falha de compilação (tipos não existem).
+- [x] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: falha de compilação (tipos não existem).
 
-- [ ] **Step 3: Implementar.** `Game::new` chama `generate(difficulty, seed)` e, em
+- [x] **Step 3: Implementar.** `Game::new` chama `generate(difficulty, seed)` e, em
   `AttemptsExhausted`, tenta `seed.wrapping_add(1)`, até conseguir. Documente essa regra no `///`
   de `new`, porque ela faz parte do determinismo: mesma seed e mesmo nível dão sempre a mesma
   partida. `from_puzzle` monta as células a partir de `puzzle.givens`. O estado guarda
   `[CellState; 81]`, vidas e dicas restantes, erros, dicas usadas e `Status`.
 
-- [ ] **Step 4: Rodar e ver passar.** `cargo test --workspace`: tudo verde; clippy e fmt limpos.
+- [x] **Step 4: Rodar e ver passar.** `cargo test --workspace`: tudo verde; clippy e fmt limpos.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Cargo.toml Cargo.lock sudoku-game
 git commit -m "feat: add sudoku-game crate with game setup"
 ```
 
-- [ ] **Step 6: Wiki 35, consolidado 31 a 35 e commit.** A página 35 cobre: crate de biblioteca
+- [x] **Step 6: Wiki 35, consolidado 31 a 35 e commit.** A página 35 cobre: crate de biblioteca
   dependendo de outro por `path`, re-export (`pub use`) entre crates, `NonZeroU8` (tornar estados
   inválidos irrepresentáveis) e `Default`. O consolidado `rust-base-tarefas-31-a-35.md` segue o
   formato dos anteriores. Indexe os dois.
@@ -251,7 +251,7 @@ Nos testes, use um helper `fn solution_value(game: &Game, index: usize) -> u8` e
 `fn wrong_value(game: &Game, index: usize) -> u8` (qualquer dígito ≠ solução), e um
 `fn first_empty(game: &Game) -> usize`.
 
-- [ ] **Step 1: Testes que falham**
+- [x] **Step 1: Testes que falham**
 
 ```rust
 #[test]
@@ -294,20 +294,20 @@ fn indice_ou_valor_invalido_nao_conta_erro() {
 }
 ```
 
-- [ ] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila (`place` não existe).
+- [x] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila (`place` não existe).
 
-- [ ] **Step 3: Implementar `place`** em `game.rs` e re-exportar `PlaceOutcome` e `MoveError` em `lib.rs`.
+- [x] **Step 3: Implementar `place`** em `game.rs` e re-exportar `PlaceOutcome` e `MoveError` em `lib.rs`.
 
-- [ ] **Step 4: Rodar e ver passar.** `cargo test --workspace`; clippy e fmt limpos.
+- [x] **Step 4: Rodar e ver passar.** `cargo test --workspace`; clippy e fmt limpos.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sudoku-game
 git commit -m "feat: add number placement with lives, win and loss"
 ```
 
-- [ ] **Step 6: Wiki 36 e commit.** Assunto: `Result` como valor de retorno de uma ação do jogo
+- [x] **Step 6: Wiki 36 e commit.** Assunto: `Result` como valor de retorno de uma ação do jogo
   (erro de regra não é pânico), enums com dados (`Wrong { index, value }`), `&mut self` e a ordem
   das validações.
 
@@ -337,7 +337,7 @@ Mesma ordem de verificações de `place`. `toggle_note` só vale em célula `Emp
 **certa** limpa as anotações da própria célula; uma jogada **errada** não mexe nelas. As outras
 células nunca mudam.
 
-- [ ] **Step 1: Testes que falham**
+- [x] **Step 1: Testes que falham**
 
 ```rust
 #[test]
@@ -360,21 +360,21 @@ fn anotacao_invalida_ou_depois_do_fim_eh_recusada() {
 }
 ```
 
-- [ ] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila.
+- [x] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila.
 
-- [ ] **Step 3: Implementar** `Notes` em `notes.rs` (testes unitários dela inline), guardar
+- [x] **Step 3: Implementar** `Notes` em `notes.rs` (testes unitários dela inline), guardar
   `[Notes; 81]` em `Game` e ajustar `place`.
 
-- [ ] **Step 4: Rodar e ver passar.** `cargo test --workspace`; clippy e fmt limpos.
+- [x] **Step 4: Rodar e ver passar.** `cargo test --workspace`; clippy e fmt limpos.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sudoku-game
 git commit -m "feat: add per-cell pencil notes"
 ```
 
-- [ ] **Step 6: Wiki 37 e commit.** Assunto: newtype sobre `u16`, `Copy`/`Default` derivados,
+- [x] **Step 6: Wiki 37 e commit.** Assunto: newtype sobre `u16`, `Copy`/`Default` derivados,
   visibilidade `pub(crate)` para manter a regra (só a `Game` liga e desliga), e a comparação com o
   `CandidateSet` do core: mesma máscara, papel diferente.
 
@@ -411,7 +411,7 @@ mistura com `z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9`, `z = (z ^ (z >> 27)) * 0
 e devolve `z ^ (z >> 31)`. Um teste de vetor conhecido trava a implementação:
 `splitmix64(0) == 0xE220A8397B1DCDAF`.
 
-- [ ] **Step 1: Testes que falham**
+- [x] **Step 1: Testes que falham**
 
 ```rust
 #[test]
@@ -450,20 +450,20 @@ fn dica_na_ultima_celula_vence() { /* preenche todas menos uma com place certo; 
 fn dica_depois_do_fim_eh_recusada() { /* partida Lost → Err(GameOver), hints_left igual */ }
 ```
 
-- [ ] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila.
+- [x] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila.
 
-- [ ] **Step 3: Implementar** `hint.rs` e `Game::hint`.
+- [x] **Step 3: Implementar** `hint.rs` e `Game::hint`.
 
-- [ ] **Step 4: Rodar e ver passar.** Grave o golden e rode `cargo test --workspace`; clippy e fmt limpos.
+- [x] **Step 4: Rodar e ver passar.** Grave o golden e rode `cargo test --workspace`; clippy e fmt limpos.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sudoku-game
 git commit -m "feat: add deterministic hints"
 ```
 
-- [ ] **Step 6: Wiki 38 e commit.** Assunto: por que não usar `rand` aqui (zero dependência para
+- [x] **Step 6: Wiki 38 e commit.** Assunto: por que não usar `rand` aqui (zero dependência para
   cinco linhas), aritmética `wrapping_*` e overflow em Rust, vetor conhecido como teste, e o golden
   da dica como extensão do contrato de determinismo.
 
@@ -487,7 +487,7 @@ git commit -m "docs: add wiki page on deterministic hints"
 **Interfaces:**
 - Consumes: só o que `sudoku_game` exporta (`use sudoku_game::...`), sem `use sudoku_core`.
 
-- [ ] **Step 1: Testes de integração**
+- [x] **Step 1: Testes de integração**
 
 ```rust
 #[test]
@@ -503,21 +503,21 @@ fn partida_completa_ate_a_derrota() {
 
 O valor da solução vem de `game.puzzle().solution`, pelo re-export.
 
-- [ ] **Step 2: Rodar.** `cargo test -p sudoku-game --test api`: deve passar de primeira, porque
+- [x] **Step 2: Rodar.** `cargo test -p sudoku-game --test api`: deve passar de primeira, porque
   a API já existe. Se não compilar, falta algum re-export em `lib.rs`: corrija ali.
 
-- [ ] **Step 3: Verificação final do workspace.** `cargo fmt --all --check`,
+- [x] **Step 3: Verificação final do workspace.** `cargo fmt --all --check`,
   `cargo clippy --workspace --all-targets --locked -- -D warnings`,
   `cargo test --workspace --locked` (golden tests do core intactos) e `cargo deny check`.
 
-- [ ] **Step 4: Commit dos testes**
+- [x] **Step 4: Commit dos testes**
 
 ```bash
 git add sudoku-game/tests
 git commit -m "test: add sudoku-game public API integration tests"
 ```
 
-- [ ] **Step 5: Documentação, wiki 39 e commit.** Atualize os arquivos listados. A wiki 39 cobre
+- [x] **Step 5: Documentação, wiki 39 e commit.** Atualize os arquivos listados. A wiki 39 cobre
   testes de integração por crate, `-p`/`--test`, e por que a casca só precisa de `sudoku_game`.
 
 ```bash
