@@ -14,6 +14,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 16 a 20](fundamentos/rust-base-tarefas-16-a-20.md)
 - [Fundamentos de Rust — Tarefas 21 a 25](fundamentos/rust-base-tarefas-21-a-25.md)
 - [Fundamentos de Rust — Tarefas 26 a 30](fundamentos/rust-base-tarefas-26-a-30.md)
+- [Fundamentos de Rust — Tarefas 31 a 35](fundamentos/rust-base-tarefas-31-a-35.md)
 
 ## Índice por task
 
@@ -51,5 +52,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [32 — Gerador de Muito Difícil: refinar em vez de recomeçar, e um `match` exaustivo](32-gerador-muito-dificil.md)
 - [33 — Desempenho do Muito Difícil: medir, cachear com invariante e constantes como contrato](33-desempenho-do-muito-dificil.md)
 - [34 — Cargo workspace: vários crates num repositório só](34-cargo-workspace.md)
+- [35 — O crate `sudoku-game`: dependência por caminho, re-export e `NonZeroU8`](35-crate-sudoku-game-e-nonzero.md)
 
 > Cada nova task ganha uma página aqui.
