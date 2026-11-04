@@ -24,9 +24,23 @@ A fronteira ficou assim:
 |---|---|---|
 | Jogada recusada | `Err(MoveError::...)` | Entrada de quem joga: esperada e recuperável |
 | `game.cell(500)` | pânico (índice de array) | Erro de programação de quem lê o estado, como `Grid::get` |
-| Solução com célula vazia | `unreachable!` | Impossível: o `Puzzle` sempre traz a solução completa |
+| Solução com célula vazia | `unreachable!` | Impossível: `Game::from_puzzle` recusa um `Puzzle` assim (ver abaixo) |
 
 Na web, é a diferença entre responder `400 Bad Request` e deixar uma exceção derrubar o servidor.
+
+## Conferir na porta de entrada: `from_puzzle -> Result`
+
+A primeira versão de `Game::from_puzzle` aceitava qualquer `Puzzle`. A revisão da branch mostrou o
+problema: os campos de `Puzzle` são públicos, então dá para montar um à mão, ou recebê-lo de um
+arquivo ou da rede. Com um enunciado sem célula vazia, a partida nunca terminava e a dica dividia
+por zero. Com uma solução incompleta, o `unreachable!` acima seria alcançável.
+
+A correção foi conferir **uma vez, na entrada**: `from_puzzle` devolve
+`Result<Game, PuzzleError>` e recusa solução incompleta, solução com conflito, número dado
+diferente da solução e enunciado sem célula vazia. Depois disso, o resto do código pode confiar no
+puzzle. `Game::new` usa um construtor interno sem a conferência, porque o gerador sempre entrega
+um puzzle válido. É o padrão *parse, don't validate*: em vez de checar em todo lugar, o tipo
+`Game` só existe para puzzles que passaram pela porta.
 
 ## Duas camadas de resposta: `Result` com um enum dentro
 

@@ -16,7 +16,7 @@ The first release (`0.1.0`) will be tagged together with the first browser versi
 ### Added
 
 - **`sudoku-game` crate** with the rules of a match, on top of `sudoku-core`: `Game::new` and
-  `Game::from_puzzle`, `place` (a correct number locks; a wrong one costs a life and leaves the
+  `Game::from_puzzle` (which validates the puzzle and returns a `PuzzleError` otherwise), `place` (a correct number locks; a wrong one costs a life and leaves the
   board), `toggle_note` (per-cell pencil notes), `hint` (reveals a cell from the solution), win and
   loss. `GameConfig` defaults to 3 lives and 2 hints. Refused actions return a `MoveError` and
   change nothing.

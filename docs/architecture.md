@@ -137,7 +137,7 @@ sudoku-game/
 │   ├── lib.rs          re-exporta a API e os tipos do core que ela usa (Difficulty, Puzzle, Grid, Cell)
 │   ├── config.rs       GameConfig { lives: NonZeroU8, hints: u8 }, padrão 3 vidas e 2 dicas
 │   ├── game.rs         Game (new, from_puzzle, place, toggle_note, hint), CellState, Status,
-│   │                   PlaceOutcome, HintOutcome, MoveError
+│   │                   PlaceOutcome, HintOutcome, MoveError, PuzzleError
 │   ├── notes.rs        Notes: anotações de uma célula (bitmask u16)
 │   └── hint.rs         splitmix64 e pick: sorteio determinístico da célula da dica
 └── tests/api.rs        partidas completas pela API pública
@@ -147,7 +147,8 @@ Regras da fatia 1: número certo trava; número errado tira uma vida e **sai do 
 regra do PvP); sem desfazer; zero vidas termina em derrota; tabuleiro completo termina em vitória;
 2 dicas, sorteadas de forma determinística (`splitmix64(seed ^ número da dica) % vazias`); anotações
 só em célula vazia, apagadas quando um número trava nela. Seed esgotada no gerador: o Game tenta a
-seguinte. Ações recusadas devolvem `MoveError` e não mudam nada.
+seguinte. Ações recusadas devolvem `MoveError` e não mudam nada. `from_puzzle` confere o puzzle (solução
+completa e válida, dados iguais à solução, pelo menos uma vazia) e devolve `PuzzleError` se não passar.
 
 ## 5. Mapeamento dificuldade → técnica
 

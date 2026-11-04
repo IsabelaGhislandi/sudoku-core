@@ -86,4 +86,5 @@ let index = empties[hint::pick(self.puzzle.seed, self.hints_used, empties.len())
 A wiki 26 recomendava evitar `Vec` no caminho quente do gerador. Aqui não é caminho quente: uma
 dica acontece no máximo duas vezes por partida, por um toque da pessoa. Uma `Vec` de até 81
 índices deixa o código direto. A divisão por `empties.len()` nunca é por zero: uma partida em
-andamento sempre tem célula vazia, porque a última célula preenchida termina a partida em vitória.
+andamento sempre tem célula vazia. Ela começa com pelo menos uma (`from_puzzle` recusa enunciado
+sem célula vazia, wiki 36), e a última célula preenchida termina a partida em vitória.

@@ -1,4 +1,4 @@
-use sudoku_core::{Cell, Difficulty, GenError, Puzzle, generate};
+use sudoku_core::{Cell, Difficulty, GenError, Puzzle, generate, validate};
 
 use crate::config::GameConfig;
 use crate::hint;
@@ -43,6 +43,19 @@ pub enum PlaceOutcome {
     /// O número estava errado: custou uma vida e não ficou no tabuleiro. Volta a célula e o
     /// número tentados, para a tela mostrar o vermelho no lugar certo.
     Wrong { index: usize, value: u8 },
+}
+
+/// Por que um `Puzzle` foi recusado por `Game::from_puzzle`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PuzzleError {
+    /// A solução tem célula vazia.
+    IncompleteSolution,
+    /// A solução repete um número numa linha, coluna ou box.
+    InvalidSolution,
+    /// Um número do enunciado é diferente do da solução.
+    GivenMismatch,
+    /// O enunciado não tem célula vazia: não haveria o que jogar.
+    NoEmptyCell,
 }
 
 /// A célula que uma dica revelou e o número certo dela.
@@ -92,14 +105,45 @@ impl Game {
         let mut seed = seed;
         loop {
             match generate(difficulty, seed) {
-                Ok(puzzle) => return Game::from_puzzle(puzzle, config),
+                // O gerador sempre entrega puzzle válido, com solução única e células vazias.
+                Ok(puzzle) => return Game::start(puzzle, config),
                 Err(GenError::AttemptsExhausted(_)) => seed = seed.wrapping_add(1),
             }
         }
     }
 
-    /// Começa uma partida a partir de um puzzle já gerado (por exemplo, recebido do servidor).
-    pub fn from_puzzle(puzzle: Puzzle, config: GameConfig) -> Game {
+    /// Começa uma partida a partir de um puzzle já gerado.
+    ///
+    /// Os campos de `Puzzle` são públicos, então ele pode chegar montado à mão ou de fora (de um
+    /// arquivo, da rede). Por isso o puzzle é conferido antes de virar partida, nesta ordem:
+    /// solução completa, solução sem conflito, números dados iguais à solução e pelo menos uma
+    /// célula vazia. Sem isso, uma entrada ruim poderia derrubar a partida (dica dividindo por
+    /// zero) ou deixá-la sem fim.
+    pub fn from_puzzle(puzzle: Puzzle, config: GameConfig) -> Result<Game, PuzzleError> {
+        if !puzzle.solution.is_complete() {
+            return Err(PuzzleError::IncompleteSolution);
+        }
+        if !validate(&puzzle.solution).is_empty() {
+            return Err(PuzzleError::InvalidSolution);
+        }
+        let mut has_empty = false;
+        for i in 0..81 {
+            match puzzle.givens.get(i) {
+                Cell::Empty => has_empty = true,
+                given if given != puzzle.solution.get(i) => {
+                    return Err(PuzzleError::GivenMismatch);
+                }
+                _ => {}
+            }
+        }
+        if !has_empty {
+            return Err(PuzzleError::NoEmptyCell);
+        }
+        Ok(Game::start(puzzle, config))
+    }
+
+    /// Monta a partida de um puzzle já conferido.
+    fn start(puzzle: Puzzle, config: GameConfig) -> Game {
         let cells = std::array::from_fn(|i| match puzzle.givens.get(i) {
             Cell::Filled(v) => CellState::Given(v),
             Cell::Empty => CellState::Empty,
@@ -536,6 +580,71 @@ mod tests {
         let h = game.hint().unwrap();
         assert_eq!(h.index, open[0]);
         assert_eq!(game.status(), Status::Won);
+    }
+
+    fn easy_puzzle() -> Puzzle {
+        generate(Difficulty::Facil, 42).unwrap()
+    }
+
+    #[test]
+    fn puzzle_gerado_eh_aceito() {
+        let game = Game::from_puzzle(easy_puzzle(), GameConfig::default()).unwrap();
+        assert_eq!(game, easy_game());
+    }
+
+    #[test]
+    fn puzzle_com_solucao_incompleta_eh_recusado() {
+        let mut puzzle = easy_puzzle();
+        puzzle.solution.set(0, Cell::Empty);
+        assert_eq!(
+            Game::from_puzzle(puzzle, GameConfig::default()),
+            Err(PuzzleError::IncompleteSolution)
+        );
+    }
+
+    #[test]
+    fn puzzle_com_solucao_que_quebra_as_regras_eh_recusado() {
+        let mut puzzle = easy_puzzle();
+        let i = (0..81)
+            .find(|&i| puzzle.givens.get(i) == Cell::Empty)
+            .unwrap();
+        // Duas células da mesma linha com o mesmo número.
+        let neighbor = if i % 9 == 0 { i + 1 } else { i - 1 };
+        let copied = puzzle.solution.get(neighbor);
+        puzzle.solution.set(i, copied);
+        assert_eq!(
+            Game::from_puzzle(puzzle, GameConfig::default()),
+            Err(PuzzleError::InvalidSolution)
+        );
+    }
+
+    #[test]
+    fn puzzle_com_numero_dado_diferente_da_solucao_eh_recusado() {
+        let mut puzzle = easy_puzzle();
+        let g = (0..81)
+            .find(|&i| puzzle.givens.get(i) != Cell::Empty)
+            .unwrap();
+        let Cell::Filled(v) = puzzle.givens.get(g) else {
+            unreachable!()
+        };
+        puzzle
+            .givens
+            .set(g, Cell::Filled(if v == 9 { 1 } else { v + 1 }));
+        assert_eq!(
+            Game::from_puzzle(puzzle, GameConfig::default()),
+            Err(PuzzleError::GivenMismatch)
+        );
+    }
+
+    #[test]
+    fn puzzle_sem_celula_vazia_eh_recusado() {
+        // Sem a recusa, a partida nunca terminaria e a dica dividiria por zero.
+        let mut puzzle = easy_puzzle();
+        puzzle.givens = puzzle.solution.clone();
+        assert_eq!(
+            Game::from_puzzle(puzzle, GameConfig::default()),
+            Err(PuzzleError::NoEmptyCell)
+        );
     }
 
     #[test]
