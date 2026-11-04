@@ -85,14 +85,17 @@ for &i in unit {
 }
 let mut hidden = once & !twice; // apareceu exatamente uma vez
 while hidden != 0 {
-    let digit = hidden & hidden.wrapping_neg(); // isola o bit mais baixo
-    hidden &= hidden - 1;                       // desliga o bit mais baixo
+    let digit = hidden.isolate_lowest_one(); // só o bit mais baixo
+    hidden &= hidden - 1;                    // desliga o bit mais baixo
     // ...
 }
 ```
 
-- **`x & x.wrapping_neg()`** isola o bit mais baixo. `wrapping_neg` é o negativo em complemento de dois sem
-  checagem de overflow (num `u16`, `-x` nem compilaria).
+- **`isolate_lowest_one()`** devolve só o bit mais baixo ligado. A primeira versão usava o truque clássico
+  `x & x.wrapping_neg()` (o negativo em complemento de dois, sem checagem de overflow; num `u16`, `-x` nem
+  compilaria). O clippy do Rust 1.99 passou a recusar o truque (`manual_isolate_lowest_one`) e a sugerir o
+  método, que diz a intenção no nome. O CI usa o Rust `stable` mais novo e pegou isso, mas o PC local ainda
+  estava no 1.91, cujo clippy não conhecia o lint: "passou local" só vale com a mesma versão do CI.
 - **`x & (x - 1)`** desliga o bit mais baixo; **`trailing_zeros()`** diz qual é a posição dele.
 - O laço `while bits != 0` percorre só os bits ligados, em ordem crescente. É o que mantém a ordem dos pares
   igual à das varreduras antigas.
