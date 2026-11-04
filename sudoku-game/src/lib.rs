@@ -11,5 +11,6 @@ pub use config::GameConfig;
 pub use game::{CellState, Game, HintOutcome, MoveError, PlaceOutcome, Status};
 pub use notes::Notes;
 
-// A casca só precisa depender deste crate: os tipos do core que aparecem na API vêm junto.
-pub use sudoku_core::{Difficulty, Puzzle};
+// A casca só precisa depender deste crate: os tipos do core que aparecem na API vêm junto
+// (`Puzzle` traz duas `Grid`, e ler uma célula da `Grid` devolve um `Cell`).
+pub use sudoku_core::{Cell, Difficulty, Grid, Puzzle};
