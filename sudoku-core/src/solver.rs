@@ -173,7 +173,7 @@ fn place_singles(work: &mut Grid, candidates: &mut CandidateGrid) {
             }
             let mut hidden = once & !twice;
             while hidden != 0 {
-                let digit = hidden & hidden.wrapping_neg(); // o bit mais baixo
+                let digit = hidden.isolate_lowest_one(); // só o bit mais baixo
                 hidden &= hidden - 1;
                 // A célula pode ter perdido o dígito para outro single desta unidade.
                 if let Some(&i) = unit
