@@ -36,16 +36,23 @@ const MAX_ATTEMPTS_HARD: usize = 250;
 /// menos números é o que faz o Muito Difícil parecer mais vazio.
 const MAX_GIVENS_VERY_HARD: usize = 22;
 
-/// Quantos números da solução o refinamento devolve antes de recavar.
-const REFILL_VERY_HARD: usize = 6;
+/// Quantos números da solução o refinamento devolve antes de recavar. Escolhido por
+/// medição em 200 seeds: com 4 ou 6 a busca demora mais a sair do lugar, com 10 cada
+/// recavação desfaz progresso demais. Com 8, metade das seeds acha o puzzle em até 59
+/// cavações.
+const REFILL_VERY_HARD: usize = 8;
 
-/// Quantas vezes cada solução é refinada antes de o gerador montar outra.
+/// Quantas vezes cada solução é refinada antes de o gerador montar outra. Com 30 ou menos
+/// o gerador abandona soluções que estavam perto; acima de 80 o ganho é pequeno e o teto
+/// de trabalho fica grosso demais para ajustar.
 const MAX_REFINEMENTS_VERY_HARD: usize = 80;
 
 /// Quantas soluções o gerador tenta. É o teto de trabalho do Muito Difícil: cada chamada
-/// cava no máximo `MAX_SOLUTIONS_VERY_HARD × (1 + MAX_REFINEMENTS_VERY_HARD)` vezes. Os
-/// três valores fazem parte do contrato de determinismo, como `MAX_ATTEMPTS_HARD`.
-const MAX_SOLUTIONS_VERY_HARD: usize = 20;
+/// cava no máximo `MAX_SOLUTIONS_VERY_HARD × (1 + MAX_REFINEMENTS_VERY_HARD)` = 405 vezes,
+/// cerca de 0,8 s neste PC. Em troca, 1 seed em 200 devolve `AttemptsExhausted` e o Game
+/// sorteia outra. Os três valores fazem parte do contrato de determinismo, como
+/// `MAX_ATTEMPTS_HARD`: aumentar este só transforma erro em puzzle.
+const MAX_SOLUTIONS_VERY_HARD: usize = 5;
 
 /// Gera um puzzle determinístico no nível pedido.
 ///
@@ -96,8 +103,7 @@ fn generate_with_attempts(
     for _ in 0..max {
         let solution = full_solution(rng);
         let givens = dig(&solution, &solver, rng);
-        let required = solver.solve(&givens).steps.iter().map(|s| s.level).max();
-        if required.unwrap_or(Difficulty::Facil) == difficulty {
+        if solver.hardest_step(&givens) == Some(difficulty) {
             return Ok(Puzzle {
                 givens,
                 solution,
@@ -167,7 +173,7 @@ fn remove_where_possible(
         // Não é preciso testar a unicidade aqui: se o solver resolve só com deduções
         // forçadas, a solução já é única. A checagem por busca custava cerca de 80% do
         // tempo de gerar um Médio.
-        if !solver.solve(puzzle).solved {
+        if solver.hardest_step(puzzle).is_none() {
             puzzle.set(index, removed); // restaura
         }
     }
@@ -192,12 +198,7 @@ fn accepts_very_hard(givens: &Grid, solver: &LogicalSolver) -> bool {
     if given_count(givens) > MAX_GIVENS_VERY_HARD {
         return false;
     }
-    let result = solver.solve(givens);
-    result.solved
-        && result
-            .steps
-            .iter()
-            .any(|s| s.level == Difficulty::MuitoDificil)
+    solver.hardest_step(givens) == Some(Difficulty::MuitoDificil)
 }
 
 fn given_count(grid: &Grid) -> usize {
@@ -310,8 +311,29 @@ mod tests {
         assert_ne!(a.solution, b.solution);
     }
 
+    #[test]
+    fn puzzle_muito_dificil_da_seed_42_e_reproduzivel() {
+        // Golden test do Muito Difícil. Também trava REFILL_VERY_HARD,
+        // MAX_REFINEMENTS_VERY_HARD, MAX_SOLUTIONS_VERY_HARD e a ordem das técnicas.
+        let puzzle = generate(Difficulty::MuitoDificil, 42).unwrap();
+        assert_eq!(
+            puzzle.givens.to_line(),
+            "94...267....9...8........59..7.36...8.........952.......6...3....2.4.......5....8"
+        );
+    }
+
+    #[test]
+    fn muito_dificil_desiste_depois_do_teto_de_trabalho() {
+        // Das 200 primeiras seeds, a 15 é a única que esgota o teto: devolve o erro para o
+        // Game sortear outra, em vez de cavar sem limite.
+        assert_eq!(
+            generate(Difficulty::MuitoDificil, 15),
+            Err(GenError::AttemptsExhausted(Difficulty::MuitoDificil))
+        );
+    }
+
     /// Seed de Muito Difícil rápida o bastante para o CI, que roda em debug.
-    const VERY_HARD_SEED: u64 = 15;
+    const VERY_HARD_SEED: u64 = 19;
 
     #[test]
     fn gera_puzzle_muito_dificil_valido() {

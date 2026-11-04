@@ -1,4 +1,4 @@
-use super::{Action, Deduction, Technique, line_masks};
+use super::{Action, Deduction, Technique, line_masks, outside_lines};
 use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::Grid;
@@ -14,11 +14,11 @@ impl Technique for Swordfish {
     }
 
     fn apply(&self, _grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction> {
-        let by_row = |line: usize, pos: usize| line * 9 + pos;
+        let by_row: fn(usize, usize) -> usize = |line, pos| line * 9 + pos;
         let by_column = |column: usize, pos: usize| pos * 9 + column;
         for value in 1..=9u8 {
-            for cell in [by_row, by_column] {
-                if let Some(pairs) = search(candidates, value, cell) {
+            for (cell, first_unit) in [(by_row, 0), (by_column, 9)] {
+                if let Some(pairs) = search(candidates, value, first_unit, cell) {
                     return Some(Deduction {
                         action: Action::Eliminate(pairs),
                         technique: "Swordfish",
@@ -37,9 +37,10 @@ impl Technique for Swordfish {
 fn search(
     candidates: &CandidateGrid,
     value: u8,
+    first_unit: usize,
     cell: fn(usize, usize) -> usize,
 ) -> Option<Vec<(usize, u8)>> {
-    let masks = line_masks(candidates, value, cell);
+    let masks = line_masks(candidates, value, first_unit);
     // Uma posição só é Hidden Single; mais de 3 não cabe em 3 colunas.
     let fits = |m: u16| (2..=3).contains(&m.count_ones());
     for a in (0..9).filter(|&a| fits(masks[a])) {
@@ -52,15 +53,7 @@ fn search(
                 if columns.count_ones() != 3 {
                     continue;
                 }
-                let mut pairs: Vec<(usize, u8)> = (0..9)
-                    .filter(|&l| l != a && l != b && l != c)
-                    .flat_map(|l| (0..9).map(move |p| (l, p)))
-                    .filter(|&(_, p)| columns & (1 << p) != 0)
-                    .map(|(l, p)| cell(l, p))
-                    .filter(|&i| candidates.get(i).contains(value))
-                    .map(|i| (i, value))
-                    .collect();
-                pairs.sort_unstable();
+                let pairs = outside_lines(&masks, &[a, b, c], columns, value, cell);
                 // Sem nada a remover, repetir esta dedução travaria o solver.
                 if !pairs.is_empty() {
                     return Some(pairs);

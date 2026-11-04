@@ -20,6 +20,12 @@ impl CandidateSet {
         (1..=9).filter(move |&v| self.contains(v))
     }
 
+    /// A máscara crua: bit n ligado quer dizer dígito n candidato. Para técnicas que
+    /// combinam conjuntos com operações de bit no caminho quente.
+    pub(crate) fn bits(self) -> u16 {
+        self.0
+    }
+
     pub fn count(&self) -> u32 {
         self.0.count_ones()
     }
@@ -39,15 +45,57 @@ impl CandidateSet {
 /// `candidates_for` só enxerga o que está na grade. As técnicas de Médio removem
 /// candidatos sem colocar valor nenhum, e essa informação não existe na grade: se
 /// não for guardada aqui, se perde no passo seguinte.
+///
+/// Guarda também, para cada unidade e dígito, a máscara das posições da unidade onde o
+/// dígito ainda cabe. As técnicas de unidade (Hidden Pair, Pointing Pair, X-Wing...)
+/// precisam dela a cada chamada, e montá-la de novo era a maior parte do tempo delas.
+/// Ela é sempre consequência de `cells`: só muda junto, em `place` e `eliminate`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CandidateGrid {
     cells: [CandidateSet; 81],
+    /// `positions[u][d]`: bit `p` ligado quer dizer que `units()[u][p]` tem `d` candidato.
+    positions: [[u16; 10]; 27],
+}
+
+/// As três unidades de cada célula, com a posição da célula dentro de cada uma, na mesma
+/// numeração de `units()`: linha `r`, coluna `9 + c`, box `18 + b`.
+static SLOTS: [[(usize, usize); 3]; 81] = build_slots();
+
+const fn build_slots() -> [[(usize, usize); 3]; 81] {
+    let mut slots = [[(0, 0); 3]; 81];
+    let mut i = 0;
+    while i < 81 {
+        let (r, c) = (i / 9, i % 9);
+        slots[i] = [
+            (r, c),
+            (9 + c, r),
+            (18 + r / 3 * 3 + c / 3, r % 3 * 3 + c % 3),
+        ];
+        i += 1;
+    }
+    slots
 }
 
 impl CandidateGrid {
     /// Dá o mesmo resultado que `candidates_for` em cada célula, mas lê a grade uma vez
     /// só: o gerador monta candidatos a cada solve, milhares de vezes por puzzle.
     pub fn from_grid(grid: &Grid) -> Self {
+        let cells = Self::cells_from_grid(grid);
+        let mut positions = [[0u16; 10]; 27];
+        for (i, set) in cells.iter().enumerate() {
+            let mut bits = set.0;
+            while bits != 0 {
+                let value = bits.trailing_zeros() as usize;
+                bits &= bits - 1; // desliga o bit mais baixo
+                for (u, pos) in SLOTS[i] {
+                    positions[u][value] |= 1 << pos;
+                }
+            }
+        }
+        CandidateGrid { cells, positions }
+    }
+
+    fn cells_from_grid(grid: &Grid) -> [CandidateSet; 81] {
         // usados[u]: dígitos já presentes na unidade u (linhas, colunas, boxes).
         let mut used = [0u16; 27];
         for i in 0..81 {
@@ -57,35 +105,51 @@ impl CandidateGrid {
                 }
             }
         }
-        CandidateGrid {
-            cells: std::array::from_fn(|i| match grid.get(i) {
-                Cell::Filled(_) => CandidateSet(0),
-                Cell::Empty => {
-                    let seen = used[row_of(i)] | used[9 + col_of(i)] | used[18 + box_of(i)];
-                    CandidateSet(ALL_DIGITS & !seen)
-                }
-            }),
-        }
+        std::array::from_fn(|i| match grid.get(i) {
+            Cell::Filled(_) => CandidateSet(0),
+            Cell::Empty => {
+                let seen = used[row_of(i)] | used[9 + col_of(i)] | used[18 + box_of(i)];
+                CandidateSet(ALL_DIGITS & !seen)
+            }
+        })
     }
 
     pub fn get(&self, index: usize) -> CandidateSet {
         self.cells[index]
     }
 
+    /// Máscara das posições da unidade `unit` (numeração de `units()`) onde `value` ainda
+    /// é candidato.
+    pub(crate) fn positions(&self, unit: usize, value: u8) -> u16 {
+        self.positions[unit][value as usize]
+    }
+
     /// Registra um valor colocado: a célula fica sem candidatos, e o dígito sai
     /// da linha, da coluna e do box dela.
     pub fn place(&mut self, index: usize, value: u8) {
         let all_units = units();
-        for u in [row_of(index), 9 + col_of(index), 18 + box_of(index)] {
+        for (u, _) in SLOTS[index] {
             for &i in &all_units[u] {
-                self.cells[i].remove(value);
+                self.eliminate(i, value);
             }
         }
-        self.cells[index] = CandidateSet(0);
+        let mut rest = self.cells[index].0;
+        while rest != 0 {
+            let digit = rest.trailing_zeros() as u8;
+            rest &= rest - 1;
+            self.eliminate(index, digit);
+        }
     }
 
+    /// Remove o candidato, mantendo a tabela de posições em dia. Remover um candidato que
+    /// já não está lá não muda nada.
     pub fn eliminate(&mut self, index: usize, value: u8) {
-        self.cells[index].remove(value);
+        if self.cells[index].contains(value) {
+            self.cells[index].remove(value);
+            for (u, pos) in SLOTS[index] {
+                self.positions[u][value as usize] &= !(1 << pos);
+            }
+        }
     }
 }
 
@@ -179,6 +243,38 @@ mod tests {
         grid.set(27, Cell::Filled(7));
         candidates.place(27, 7);
         assert_eq!(candidates, CandidateGrid::from_grid(&grid));
+    }
+
+    /// Confere a tabela de posições contra as células, unidade por unidade.
+    fn assert_positions_match(c: &CandidateGrid) {
+        for (u, unit) in units().iter().enumerate() {
+            for value in 1..=9u8 {
+                let expected = unit
+                    .iter()
+                    .enumerate()
+                    .filter(|&(_, &i)| c.get(i).contains(value))
+                    .fold(0u16, |m, (pos, _)| m | (1 << pos));
+                assert_eq!(
+                    c.positions(u, value),
+                    expected,
+                    "unidade {u}, dígito {value}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn posicoes_acompanham_construcao_colocacao_e_eliminacao() {
+        let mut grid = grid_with_givens();
+        let mut c = CandidateGrid::from_grid(&grid);
+        assert_positions_match(&c);
+        grid.set(27, Cell::Filled(7));
+        c.place(27, 7);
+        assert_positions_match(&c);
+        c.eliminate(30, 4);
+        c.eliminate(30, 4); // eliminar de novo não pode desfazer nada
+        c.eliminate(80, 1);
+        assert_positions_match(&c);
     }
 
     #[test]

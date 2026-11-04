@@ -60,18 +60,34 @@ const fn build_units() -> [[usize; 9]; 27] {
     all_units
 }
 
-/// Para cada "linha" `l` (linha ou coluna do tabuleiro, conforme `cell(l, posição)`), a
-/// máscara das posições onde `value` ainda é candidato. Base do X-Wing e do Swordfish.
-pub(crate) fn line_masks(
-    candidates: &CandidateGrid,
+/// Para cada "linha" `l` (linha do tabuleiro com `first_unit` 0, coluna com 9), a máscara
+/// das posições onde `value` ainda é candidato. Base do X-Wing e do Swordfish.
+pub(crate) fn line_masks(candidates: &CandidateGrid, value: u8, first_unit: usize) -> [u16; 9] {
+    std::array::from_fn(|l| candidates.positions(first_unit + l, value))
+}
+
+/// Pares a remover das "linhas" fora de `pattern`, nas posições de `columns`: o que
+/// X-Wing e Swordfish eliminam. Em ordem crescente de célula.
+pub(crate) fn outside_lines(
+    masks: &[u16; 9],
+    pattern: &[usize],
+    columns: u16,
     value: u8,
     cell: fn(usize, usize) -> usize,
-) -> [u16; 9] {
-    std::array::from_fn(|l| {
-        (0..9)
-            .filter(|&p| candidates.get(cell(l, p)).contains(value))
-            .fold(0, |m, p| m | (1 << p))
-    })
+) -> Vec<(usize, u8)> {
+    let mut pairs = Vec::new();
+    for (l, &mask) in masks.iter().enumerate() {
+        if pattern.contains(&l) {
+            continue;
+        }
+        let mut hits = mask & columns;
+        while hits != 0 {
+            pairs.push((cell(l, hits.trailing_zeros() as usize), value));
+            hits &= hits - 1; // desliga o bit mais baixo
+        }
+    }
+    pairs.sort_unstable();
+    pairs
 }
 
 #[cfg(test)]

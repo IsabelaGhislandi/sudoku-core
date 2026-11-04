@@ -3,7 +3,7 @@ use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
 use crate::techniques::{
     Action, BoxLineReduction, Deduction, HiddenPair, HiddenSingle, HiddenTriple, NakedPair,
-    NakedSingle, NakedTriple, PointingPair, Swordfish, Technique, XWing, XYWing,
+    NakedSingle, NakedTriple, PointingPair, Swordfish, Technique, XWing, XYWing, units,
 };
 
 pub struct LogicalSolver {
@@ -22,6 +22,7 @@ pub struct SolveResult {
 /// empacam. É isso que faz o nível do puzzle refletir o que ele realmente exige.
 fn all_techniques() -> Vec<Box<dyn Technique>> {
     vec![
+        // Os dois singles abrem a lista em todo nível: `hardest_step` depende disso.
         Box::new(NakedSingle),
         Box::new(HiddenSingle),
         Box::new(NakedPair),
@@ -101,6 +102,91 @@ impl LogicalSolver {
                     };
                 }
             }
+        }
+    }
+}
+
+impl LogicalSolver {
+    /// O nível da técnica mais difícil que `solve` usaria, ou `None` se ele empacaria. É o
+    /// que o gerador pergunta milhares de vezes por puzzle, então responde sem montar a
+    /// lista de passos e colocando os singles em lote.
+    ///
+    /// Dá sempre a mesma resposta que `solve`, desde que a grade seja parte de uma solução
+    /// válida (é o caso de tudo que o gerador cava). Nessa condição, um single disponível
+    /// continua disponível até ser colocado, então qualquer ordem de colocar os singles
+    /// chega à mesma grade. E `solve` só passa da terceira técnica quando os dois singles
+    /// empacam: as técnicas mais difíceis veem aqui exatamente as grades que veriam lá.
+    pub(crate) fn hardest_step(&self, grid: &Grid) -> Option<Difficulty> {
+        let mut work = grid.clone();
+        let mut candidates = CandidateGrid::from_grid(&work);
+        let mut hardest = Difficulty::Facil;
+        loop {
+            place_singles(&mut work, &mut candidates);
+            if work.is_complete() {
+                return Some(hardest);
+            }
+            // As duas primeiras técnicas são os singles, que acabaram de empacar.
+            let deduction = self.techniques[2..]
+                .iter()
+                .find_map(|t| t.apply(&work, &candidates))?;
+            hardest = hardest.max(deduction.level);
+            match deduction.action {
+                Action::Place { index, value } => {
+                    work.set(index, Cell::Filled(value));
+                    candidates.place(index, value);
+                }
+                Action::Eliminate(pairs) => {
+                    for (index, value) in pairs {
+                        candidates.eliminate(index, value);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Coloca Naked Singles e Hidden Singles até não sobrar nenhum, em qualquer ordem. Só serve
+/// para grades que são parte de uma solução válida (veja `hardest_step`).
+fn place_singles(work: &mut Grid, candidates: &mut CandidateGrid) {
+    let place = |work: &mut Grid, candidates: &mut CandidateGrid, i: usize, bits: u16| {
+        let value = bits.trailing_zeros() as u8;
+        work.set(i, Cell::Filled(value));
+        candidates.place(i, value);
+    };
+    loop {
+        let mut progress = false;
+        for i in 0..81 {
+            let bits = candidates.get(i).bits();
+            if bits.count_ones() == 1 {
+                place(work, candidates, i, bits);
+                progress = true;
+            }
+        }
+        for unit in units() {
+            // Dígitos que cabem em exatamente uma célula da unidade: `once` junta os que
+            // apareceram ao menos uma vez, `twice` os que apareceram de novo.
+            let (mut once, mut twice) = (0u16, 0u16);
+            for &i in unit {
+                let bits = candidates.get(i).bits();
+                twice |= once & bits;
+                once |= bits;
+            }
+            let mut hidden = once & !twice;
+            while hidden != 0 {
+                let digit = hidden & hidden.wrapping_neg(); // o bit mais baixo
+                hidden &= hidden - 1;
+                // A célula pode ter perdido o dígito para outro single desta unidade.
+                if let Some(&i) = unit
+                    .iter()
+                    .find(|&&i| candidates.get(i).bits() & digit != 0)
+                {
+                    place(work, candidates, i, digit);
+                    progress = true;
+                }
+            }
+        }
+        if !progress {
+            return;
         }
     }
 }
@@ -267,6 +353,64 @@ mod tests {
                     .all(|s| s.level != Difficulty::MuitoDificil)
             );
         }
+    }
+
+    /// O que `hardest_step` precisa devolver, calculado pelo `solve` completo.
+    fn expected_hardest(solver: &LogicalSolver, grid: &Grid) -> Option<Difficulty> {
+        let result = solver.solve(grid);
+        result.solved.then(|| {
+            result
+                .steps
+                .iter()
+                .map(|s| s.level)
+                .max()
+                .unwrap_or(Difficulty::Facil)
+        })
+    }
+
+    #[test]
+    fn hardest_step_concorda_com_solve() {
+        // Os dois puzzles de Muito Difícil e, de cada um, as grades com um número a menos:
+        // umas ainda resolvem, outras empacam, em todos os níveis de solver.
+        let mut grids = Vec::new();
+        for line in [NEEDS_XY_WING, NEEDS_SWORDFISH] {
+            let grid = Grid::from_line(line).unwrap();
+            for i in (0..81).filter(|&i| grid.get(i) != Cell::Empty) {
+                let mut fewer = grid.clone();
+                fewer.set(i, Cell::Empty);
+                grids.push(fewer);
+            }
+            grids.push(grid);
+        }
+        let mut solved = 0;
+        for level in [
+            Difficulty::Facil,
+            Difficulty::Medio,
+            Difficulty::Dificil,
+            Difficulty::MuitoDificil,
+        ] {
+            let solver = LogicalSolver::up_to(level);
+            for grid in &grids {
+                let expected = expected_hardest(&solver, grid);
+                solved += usize::from(expected.is_some());
+                assert_eq!(
+                    solver.hardest_step(grid),
+                    expected,
+                    "{level:?} {}",
+                    grid.to_line()
+                );
+            }
+        }
+        assert!(solved > 0, "nenhuma grade resolvida: o teste não diz nada");
+    }
+
+    #[test]
+    fn hardest_step_de_grade_completa_eh_facil() {
+        let grid = Grid::from_line(solution()).unwrap();
+        assert_eq!(
+            LogicalSolver::new().hardest_step(&grid),
+            Some(Difficulty::Facil)
+        );
     }
 
     #[test]
