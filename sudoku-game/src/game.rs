@@ -239,30 +239,55 @@ impl Game {
         };
         let mut game = Game::from_puzzle(puzzle, config).map_err(RestoreError::Puzzle)?;
 
+        // Tabuleiro: os dados no lugar, e todo outro número igual ao da solução.
         for i in 0..81 {
-            if let (CellState::Empty, Cell::Filled(v)) = (game.cells[i], board.get(i)) {
-                game.cells[i] = CellState::Placed(v);
+            match (game.cells[i], board.get(i)) {
+                (CellState::Given(g), Cell::Filled(v)) if g == v => {}
+                (CellState::Empty, Cell::Empty) => {}
+                (CellState::Empty, Cell::Filled(v)) if v == game.solution_value(i) => {
+                    game.cells[i] = CellState::Placed(v);
+                }
+                _ => return Err(RestoreError::BoardMismatch),
             }
         }
+        // Dicas: índices em ordem estritamente crescente (sem repetição), cada um numa célula
+        // preenchida por jogada. A faixa é conferida antes de indexar o array.
+        let mut previous = None;
         for &i in &saved.hinted {
             let i = usize::from(i);
-            game.cells[i] = CellState::Hinted(game.solution_value(i));
-        }
-        for (i, digits) in saved.notes.iter().enumerate().take(81) {
-            for ch in digits.chars() {
-                let value = match ch.to_digit(10) {
-                    Some(d @ 1..=9) => d as u8,
-                    _ => return Err(RestoreError::InvalidNotes),
-                };
-                game.notes[i].toggle(value);
+            if i >= 81 || previous.is_some_and(|p| i <= p) {
+                return Err(RestoreError::InvalidHints);
             }
+            let CellState::Placed(v) = game.cells[i] else {
+                return Err(RestoreError::InvalidHints);
+            };
+            game.cells[i] = CellState::Hinted(v);
+            previous = Some(i);
         }
+        game.notes = parse_notes(&saved.notes, &game.cells)?;
+
+        // Cada erro custa uma vida, e o `&&` impede a subtração de dar underflow.
+        let lives_ok = saved.lives_left <= saved.lives
+            && saved.mistakes == u32::from(saved.lives - saved.lives_left);
+        if !lives_ok {
+            return Err(RestoreError::InvalidLives);
+        }
+        if saved.hinted.len() != usize::from(saved.hints_used)
+            || u16::from(saved.hints_left) + u16::from(saved.hints_used) != u16::from(saved.hints)
+        {
+            return Err(RestoreError::InvalidHints);
+        }
+        let complete = !game.cells.contains(&CellState::Empty);
+        if complete && saved.lives_left == 0 {
+            return Err(RestoreError::InconsistentStatus);
+        }
+
         game.lives_left = saved.lives_left;
         game.hints_left = saved.hints_left;
         game.mistakes = saved.mistakes;
         game.hints_used = saved.hints_used;
         game.elapsed_ms = saved.elapsed_ms;
-        game.status = if !game.cells.contains(&CellState::Empty) {
+        game.status = if complete {
             Status::Won
         } else if game.lives_left == 0 {
             Status::Lost
@@ -445,6 +470,30 @@ impl Game {
             self.end(Status::Won, now);
         }
     }
+}
+
+/// Lê as anotações da foto: exatamente 81 entradas, cada uma com dígitos de 1 a 9 em ordem
+/// estritamente crescente (o formato que `save` escreve), e nenhuma em célula com número.
+fn parse_notes(entries: &[String], cells: &[CellState; 81]) -> Result<[Notes; 81], RestoreError> {
+    if entries.len() != 81 {
+        return Err(RestoreError::InvalidNotes);
+    }
+    let mut notes = [Notes::default(); 81];
+    for (i, digits) in entries.iter().enumerate() {
+        if !digits.is_empty() && cells[i] != CellState::Empty {
+            return Err(RestoreError::InvalidNotes);
+        }
+        let mut previous = 0;
+        for ch in digits.chars() {
+            let value = match ch.to_digit(10) {
+                Some(d @ 1..=9) if d > previous => d,
+                _ => return Err(RestoreError::InvalidNotes),
+            };
+            notes[i].toggle(value as u8);
+            previous = value;
+        }
+    }
+    Ok(notes)
 }
 
 #[cfg(test)]
@@ -1028,5 +1077,187 @@ mod tests {
         let mut saved = good.clone();
         saved.givens.pop();
         assert_eq!(Game::restore(&saved), Err(RestoreError::InvalidGrid));
+    }
+
+    fn valid_save() -> SavedGame {
+        played_game().save(9_000)
+    }
+
+    /// Primeira célula da foto com o estado pedido, olhando a partida restaurada.
+    fn find_cell(saved: &SavedGame, pred: impl Fn(CellState) -> bool) -> usize {
+        let game = Game::restore(saved).unwrap();
+        (0..81)
+            .find(|&i| pred(game.cell(i)))
+            .expect("há célula assim")
+    }
+
+    fn set_char(line: &mut String, index: usize, ch: char) {
+        line.replace_range(index..index + 1, &ch.to_string());
+    }
+
+    /// Um dígito diferente de `ch`.
+    fn other_digit(ch: char) -> char {
+        if ch == '9' {
+            '1'
+        } else {
+            (ch as u8 + 1) as char
+        }
+    }
+
+    fn assert_rejected(saved: &SavedGame, error: RestoreError) {
+        assert_eq!(Game::restore(saved), Err(error));
+    }
+
+    #[test]
+    fn foto_valida_restaura_sem_erro() {
+        assert!(Game::restore(&valid_save()).is_ok());
+    }
+
+    #[test]
+    fn numero_errado_travado_eh_recusado() {
+        let mut saved = valid_save();
+        let i = find_cell(&saved, |c| matches!(c, CellState::Placed(_)));
+        let wrong = other_digit(saved.board.as_bytes()[i] as char);
+        set_char(&mut saved.board, i, wrong);
+        assert_rejected(&saved, RestoreError::BoardMismatch);
+    }
+
+    #[test]
+    fn numero_dado_trocado_ou_apagado_eh_recusado() {
+        let good = valid_save();
+        let g = find_cell(&good, |c| matches!(c, CellState::Given(_)));
+        let mut saved = good.clone();
+        let wrong = other_digit(saved.board.as_bytes()[g] as char);
+        set_char(&mut saved.board, g, wrong);
+        assert_rejected(&saved, RestoreError::BoardMismatch);
+        let mut saved = good.clone();
+        set_char(&mut saved.board, g, '.');
+        assert_rejected(&saved, RestoreError::BoardMismatch);
+    }
+
+    #[test]
+    fn dica_fora_do_tabuleiro_eh_recusada() {
+        let mut saved = valid_save();
+        saved.hinted = vec![81];
+        assert_rejected(&saved, RestoreError::InvalidHints);
+        saved.hinted = vec![255];
+        assert_rejected(&saved, RestoreError::InvalidHints);
+    }
+
+    #[test]
+    fn dica_em_celula_vazia_ou_dada_eh_recusada() {
+        let good = valid_save();
+        let e = find_cell(&good, |c| c == CellState::Empty);
+        let g = find_cell(&good, |c| matches!(c, CellState::Given(_)));
+        for i in [e, g] {
+            let mut saved = good.clone();
+            saved.hinted = vec![i as u8];
+            assert_rejected(&saved, RestoreError::InvalidHints);
+        }
+    }
+
+    #[test]
+    fn dica_repetida_eh_recusada() {
+        let mut saved = valid_save();
+        let h = saved.hinted[0];
+        saved.hinted = vec![h, h];
+        saved.hints_used = 2;
+        saved.hints_left = 0;
+        assert_rejected(&saved, RestoreError::InvalidHints);
+    }
+
+    #[test]
+    fn dicas_que_nao_somam_sao_recusadas() {
+        let good = valid_save();
+        let mut saved = good.clone();
+        saved.hints_left += 1;
+        assert_rejected(&saved, RestoreError::InvalidHints);
+        let mut saved = good.clone();
+        saved.hints_used += 1;
+        saved.hints_left -= 1;
+        assert_rejected(&saved, RestoreError::InvalidHints);
+    }
+
+    #[test]
+    fn anotacoes_com_tamanho_errado_sao_recusadas() {
+        let mut saved = valid_save();
+        saved.notes.pop();
+        assert_rejected(&saved, RestoreError::InvalidNotes);
+        saved.notes.push(String::new());
+        saved.notes.push(String::new());
+        assert_rejected(&saved, RestoreError::InvalidNotes);
+    }
+
+    #[test]
+    fn anotacao_com_digito_invalido_eh_recusada() {
+        let good = valid_save();
+        let e = find_cell(&good, |c| c == CellState::Empty);
+        for bad in ["0", "a", "1 2"] {
+            let mut saved = good.clone();
+            saved.notes[e] = bad.to_string();
+            assert_rejected(&saved, RestoreError::InvalidNotes);
+        }
+    }
+
+    #[test]
+    fn anotacao_repetida_ou_fora_de_ordem_eh_recusada() {
+        let good = valid_save();
+        let e = find_cell(&good, |c| c == CellState::Empty);
+        for bad in ["33", "73"] {
+            let mut saved = good.clone();
+            saved.notes[e] = bad.to_string();
+            assert_rejected(&saved, RestoreError::InvalidNotes);
+        }
+    }
+
+    #[test]
+    fn anotacao_em_celula_preenchida_eh_recusada() {
+        let mut saved = valid_save();
+        let g = find_cell(&saved, |c| matches!(c, CellState::Given(_)));
+        saved.notes[g] = "5".to_string();
+        assert_rejected(&saved, RestoreError::InvalidNotes);
+    }
+
+    #[test]
+    fn vida_recuperada_eh_recusada() {
+        let mut saved = valid_save();
+        saved.lives_left += 1;
+        assert_rejected(&saved, RestoreError::InvalidLives);
+    }
+
+    #[test]
+    fn erros_alem_das_vidas_sao_recusados() {
+        let mut saved = valid_save();
+        saved.mistakes = 4;
+        saved.lives_left = 0;
+        assert_rejected(&saved, RestoreError::InvalidLives);
+    }
+
+    #[test]
+    fn configuracao_sem_vidas_eh_recusada() {
+        let mut saved = valid_save();
+        saved.lives = 0;
+        assert_rejected(&saved, RestoreError::InvalidLives);
+    }
+
+    #[test]
+    fn derrota_com_tabuleiro_completo_eh_recusada() {
+        let mut saved = valid_save();
+        saved.board = saved.solution.clone();
+        saved.hinted.clear();
+        saved.hints_used = 0;
+        saved.hints_left = saved.hints;
+        saved.notes = vec![String::new(); 81];
+        saved.mistakes = u32::from(saved.lives);
+        saved.lives_left = 0;
+        assert_rejected(&saved, RestoreError::InconsistentStatus);
+    }
+
+    #[test]
+    fn puzzle_invalido_na_foto_eh_recusado() {
+        let mut saved = valid_save();
+        let first = saved.solution.as_bytes()[0] as char;
+        set_char(&mut saved.solution, 1, first);
+        assert_rejected(&saved, RestoreError::Puzzle(PuzzleError::InvalidSolution));
     }
 }
