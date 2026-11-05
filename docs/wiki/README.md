@@ -62,5 +62,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [41 — Foto da partida: um DTO, `parse` com `Result` e o limite de 2^53](41-foto-da-partida-e-dto.md)
 - [42 — Validar o que vem de fora: "parse, don't validate", índices conferidos e `let ... else`](42-validar-entrada-de-fora.md)
 - [43 — Features do Cargo, `serde` opcional e golden test de formato](43-features-opcionais-e-serde.md)
+- [44 — Reiniciar: `#[non_exhaustive]`, `&self` que devolve um valor novo e o fim da fatia 2](44-reiniciar-e-non-exhaustive.md)
 
 > Cada nova task ganha uma página aqui.

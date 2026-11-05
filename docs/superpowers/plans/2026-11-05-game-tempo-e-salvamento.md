@@ -88,13 +88,13 @@ e `serde_json` (só `dev-dependencies`), ambas pela skill `adding-dependencies`.
 - Ao virar `Won` ou `Lost`, a `Game` soma o trecho até `now` em `elapsed_ms` e zera
   `running_since`. Depois do fim, `elapsed_ms(qualquer now)` devolve sempre o mesmo valor.
 
-- [ ] **Step 1: Ajustar os testes existentes.** Todos os testes da fatia 1 (inline e `tests/api.rs`)
+- [x] **Step 1: Ajustar os testes existentes.** Todos os testes da fatia 1 (inline e `tests/api.rs`)
   passam a chamar `game.resume(0)` logo depois de criar a partida e `now` nas chamadas de
   `place`/`hint` (use `0` quando o tempo não importa). Crie nos testes inline um helper
   `fn started(difficulty: Difficulty, seed: u64) -> Game` que cria com `GameConfig::default()` e
   já chama `resume(0)`.
 
-- [ ] **Step 2: Testes novos que falham**
+- [x] **Step 2: Testes novos que falham**
 
 ```rust
 #[test]
@@ -148,23 +148,23 @@ fn dica_que_vence_para_o_relogio() {
 }
 ```
 
-- [ ] **Step 3: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila (`resume`,
+- [x] **Step 3: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila (`resume`,
   `elapsed_ms`, `Paused` e as assinaturas novas não existem).
 
-- [ ] **Step 4: Implementar** em `game.rs` conforme o bloco Interfaces. A transição para o fim fica
+- [x] **Step 4: Implementar** em `game.rs` conforme o bloco Interfaces. A transição para o fim fica
   num lugar só (por exemplo, `fn end(&mut self, status: Status, now: u64)`), usado por `place` e
   pelo `finish_if_complete`, que passa a receber `now`.
 
-- [ ] **Step 5: Rodar e ver passar.** `cargo test --workspace`; fmt e clippy limpos.
+- [x] **Step 5: Rodar e ver passar.** `cargo test --workspace`; fmt e clippy limpos.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add sudoku-game
 git commit -m "feat: add pause, resume and elapsed time to Game"
 ```
 
-- [ ] **Step 7: Wiki 40, consolidado 36–40 e commit.** Página 40: relógio injetado (por que o
+- [x] **Step 7: Wiki 40, consolidado 36–40 e commit.** Página 40: relógio injetado (por que o
   núcleo não lê `Instant::now()`, e como isso permite testar tempo sem esperar), `Option<u64>`
   como estado "rodando desde", `saturating_sub` vs. `-`, e mudar uma assinatura pública com o
   compilador apontando cada chamada. Consolidado `rust-base-tarefas-36-a-40.md` no formato dos
@@ -226,7 +226,7 @@ pub struct SavedGame {
   (ver "Decisões do plano"); `running_since = None`.
 - Re-export em `lib.rs`: `SavedGame`, `RestoreError`, `SAVE_VERSION`.
 
-- [ ] **Step 1: Testes que falham** (inline em `save.rs` ou `game.rs`)
+- [x] **Step 1: Testes que falham** (inline em `save.rs` ou `game.rs`)
 
 ```rust
 #[test]
@@ -278,22 +278,22 @@ fn versao_nivel_ou_seed_desconhecidos_sao_recusados() {
 }
 ```
 
-- [ ] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila.
+- [x] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila.
 
-- [ ] **Step 3: Implementar** `save.rs` (tipo, versão, erro, conversões de nível) e `save`/`restore`
+- [x] **Step 3: Implementar** `save.rs` (tipo, versão, erro, conversões de nível) e `save`/`restore`
   em `game.rs` (que enxerga os campos privados). A conversão nível↔texto é um `match` exaustivo
   nos dois sentidos, para que um nível novo no core quebre a compilação aqui.
 
-- [ ] **Step 4: Rodar e ver passar.** `cargo test --workspace`; fmt e clippy limpos.
+- [x] **Step 4: Rodar e ver passar.** `cargo test --workspace`; fmt e clippy limpos.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sudoku-game
 git commit -m "feat: add SavedGame snapshot with save and restore"
 ```
 
-- [ ] **Step 6: Wiki 41 e commit.** Assunto: o padrão DTO (um tipo só para transporte, separado do
+- [x] **Step 6: Wiki 41 e commit.** Assunto: o padrão DTO (um tipo só para transporte, separado do
   tipo com regras), por que o `Game` não vira público campo a campo, `to_string`/`parse` e
   `Result` em conversões, e o limite de 2^53 do JSON em JavaScript.
 
@@ -327,7 +327,7 @@ git commit -m "docs: add wiki page on game snapshots and DTOs"
   - `InvalidLives`: `lives == 0`; `mistakes > lives`; `lives_left != lives - mistakes`.
   - `InconsistentStatus`: `lives_left == 0` e `board` completo.
 
-- [ ] **Step 1: Testes que falham.** Um helper `fn valid_save() -> SavedGame` (partida Médio seed 7
+- [x] **Step 1: Testes que falham.** Um helper `fn valid_save() -> SavedGame` (partida Médio seed 7
   com jogada certa, erro, anotação e dica), e um teste por regra que adultera um campo e confere o
   erro exato:
 
@@ -356,22 +356,22 @@ fn vida_recuperada_eh_recusada() {
   `puzzle_invalido_na_foto_eh_recusado` (solução com conflito → `Puzzle(InvalidSolution)`).
   E um teste de que `valid_save()` restaura sem erro.
 
-- [ ] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game restore`: as adulterações passam
+- [x] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game restore`: as adulterações passam
   sem erro ou dão pânico.
 
-- [ ] **Step 3: Implementar** as checagens na ordem do bloco Interfaces. Toda leitura de índice
+- [x] **Step 3: Implementar** as checagens na ordem do bloco Interfaces. Toda leitura de índice
   vindo da foto passa pela checagem de faixa antes de indexar um array.
 
-- [ ] **Step 4: Rodar e ver passar.** `cargo test --workspace`; fmt e clippy limpos.
+- [x] **Step 4: Rodar e ver passar.** `cargo test --workspace`; fmt e clippy limpos.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sudoku-game
 git commit -m "feat: reject inconsistent snapshots on restore"
 ```
 
-- [ ] **Step 6: Wiki 42 e commit.** Assunto: "parse, don't validate" (a `Game` só existe se a foto
+- [x] **Step 6: Wiki 42 e commit.** Assunto: "parse, don't validate" (a `Game` só existe se a foto
   passou), por que dado de fora nunca indexa array sem checagem, erros como enum com variante que
   embrulha outro erro (`Puzzle(PuzzleError)`), e testes de adulteração campo a campo.
 
@@ -396,18 +396,18 @@ git commit -m "docs: add wiki page on validating untrusted input"
 - Produces: feature `serde = ["dep:serde"]` no `sudoku-game`; com ela, `SavedGame` tem
   `#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]`. Nada mais muda.
 
-- [ ] **Step 1: Verificar e pedir aprovação.** Siga a skill `adding-dependencies` para `serde`
+- [x] **Step 1: Verificar e pedir aprovação.** Siga a skill `adding-dependencies` para `serde`
   (`[dependencies]`, `optional = true`, `default-features = false`, features `derive` e `alloc`
   — confirme no docs.rs quais são necessárias para `String`/`Vec`) e para `serde_json`
   (`[dev-dependencies]`). Mostre os dois resumos de aprovação e **pare até a pessoa aprovar**.
   Atenção: a skill ainda cita `sudoku-core/Cargo.toml` e `sudoku-core/deny.toml`; aqui os caminhos
   são `sudoku-game/Cargo.toml` e `deny.toml` na raiz.
 
-- [ ] **Step 2: Adicionar** com `cargo add -p sudoku-game serde@<versão> --optional --no-default-features --features ...`
+- [x] **Step 2: Adicionar** com `cargo add -p sudoku-game serde@<versão> --optional --no-default-features --features ...`
   e `cargo add -p sudoku-game --dev serde_json@<versão>`. Declare `[features] serde = ["dep:serde"]`.
   Revise o diff do `Cargo.lock` e rode `cargo deny check`.
 
-- [ ] **Step 3: Testes que falham** em `sudoku-game/tests/save_json.rs`, com
+- [x] **Step 3: Testes que falham** em `sudoku-game/tests/save_json.rs`, com
   `#![cfg(feature = "serde")]` no topo:
 
 ```rust
@@ -436,29 +436,29 @@ fn formato_da_foto_versao_1_nao_muda() {
   Um comentário acima explica que mudar este texto quebra partidas salvas: ou é bug, ou é versão
   nova com leitura da antiga.
 
-- [ ] **Step 4: Rodar e ver falhar.** `cargo test -p sudoku-game --features serde --test save_json`:
+- [x] **Step 4: Rodar e ver falhar.** `cargo test -p sudoku-game --features serde --test save_json`:
   não compila (`SavedGame` sem `Serialize`). Confira também que `cargo test -p sudoku-game --test save_json`
   (sem a feature) compila e roda zero testes.
 
-- [ ] **Step 5: Implementar** o `cfg_attr` no `SavedGame`.
+- [x] **Step 5: Implementar** o `cfg_attr` no `SavedGame`.
 
-- [ ] **Step 6: CI e comandos.** No `ci.yml`, clippy e testes com `--all-features` (mantenha também
+- [x] **Step 6: CI e comandos.** No `ci.yml`, clippy e testes com `--all-features` (mantenha também
   um `cargo test --workspace --locked` sem features, para provar que o crate compila sem `serde`).
   No `CLAUDE.md`, `CONTRIBUTING.md` e `README.md`, acrescente `--all-features` aos comandos de
   clippy e teste, com uma linha dizendo por quê.
 
-- [ ] **Step 7: Rodar e ver passar.** `cargo test --workspace`, `cargo test --workspace --all-features`,
+- [x] **Step 7: Rodar e ver passar.** `cargo test --workspace`, `cargo test --workspace --all-features`,
   `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo deny check`,
   `cargo fmt --all --check`.
 
-- [ ] **Step 8: Commit** (corpo com o motivo das dependências, como pede a skill)
+- [x] **Step 8: Commit** (corpo com o motivo das dependências, como pede a skill)
 
 ```bash
 git add sudoku-game Cargo.lock .github CLAUDE.md CONTRIBUTING.md README.md deny.toml
 git commit -m "feat: add optional serde feature for SavedGame"
 ```
 
-- [ ] **Step 9: Wiki 43 e commit.** Assunto: features do Cargo (`optional`, `dep:`, `cfg_attr`),
+- [x] **Step 9: Wiki 43 e commit.** Assunto: features do Cargo (`optional`, `dep:`, `cfg_attr`),
   proc-macros e o que roda na compilação, `dev-dependencies`, `#![cfg(...)]` num arquivo de teste
   e golden test de formato.
 
@@ -495,7 +495,7 @@ pub struct Restart {
     Vale em qualquer estado. A partida nova começa pausada.
   - Re-export de `Restart` em `lib.rs`.
 
-- [ ] **Step 1: Testes que falham**
+- [x] **Step 1: Testes que falham**
 
 ```rust
 #[test]
@@ -518,21 +518,21 @@ fn reiniciar_vale_depois_do_fim() { /* partida Lost → restart(9).game.status()
   `save`, `restore`, `resume`, termina a partida restaurada até a vitória e confere o tempo total
   somando os dois trechos) e `reiniciar_pela_api_publica`.
 
-- [ ] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila.
+- [x] **Step 2: Rodar e ver falhar.** `cargo test -p sudoku-game`: não compila.
 
-- [ ] **Step 3: Implementar** `Restart` e `restart`.
+- [x] **Step 3: Implementar** `Restart` e `restart`.
 
-- [ ] **Step 4: Rodar e ver passar.** `cargo test --workspace` e com `--all-features`; fmt, clippy
+- [x] **Step 4: Rodar e ver passar.** `cargo test --workspace` e com `--all-features`; fmt, clippy
   e `cargo deny check` limpos.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sudoku-game
 git commit -m "feat: add restart with a new seed at the same level"
 ```
 
-- [ ] **Step 6: Docs, wiki 44 e commit.** `architecture.md`: módulo 2 "fatia 2 concluída", tempo e
+- [x] **Step 6: Docs, wiki 44 e commit.** `architecture.md`: módulo 2 "fatia 2 concluída", tempo e
   salvamento descritos. Spec: status da fatia 2 implementada. Plano: checkboxes marcadas. Wiki 44:
   `#[non_exhaustive]` e evolução de API sem quebrar quem chama, e `&self` que devolve um valor
   novo em vez de mutar.
