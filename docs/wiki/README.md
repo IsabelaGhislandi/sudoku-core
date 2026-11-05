@@ -60,5 +60,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [39 — Testes de integração entre crates: a API vista de fora](39-testes-de-integracao-entre-crates.md)
 - [40 — Relógio injetado: `Option<u64>` como estado, `saturating_sub` e uma assinatura que muda](40-relogio-injetado-e-saturating.md)
 - [41 — Foto da partida: um DTO, `parse` com `Result` e o limite de 2^53](41-foto-da-partida-e-dto.md)
+- [42 — Validar o que vem de fora: "parse, don't validate", índices conferidos e `let ... else`](42-validar-entrada-de-fora.md)
 
 > Cada nova task ganha uma página aqui.
