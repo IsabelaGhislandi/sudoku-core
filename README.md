@@ -4,13 +4,20 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Rust edition 2024](https://img.shields.io/badge/rust-edition%202024-orange.svg)
 
-A pure Rust engine that **generates, solves, validates and rates** 9×9 Sudoku puzzles.
+The pure Rust core of a Sudoku game built in Rust + Svelte and shipped as an Android APK through
+Tauri. It is a Cargo workspace with two library crates:
 
-It's the core of a Sudoku game built in Rust + Svelte and shipped as an Android APK through
-Tauri. The engine is a standalone library with no UI, no IO and no clock. That keeps it easy to
-test and lets the same code run in the app, on a server, and in a future online mode.
+| Crate | What it does |
+|---|---|
+| [`sudoku-core`](sudoku-core) | The engine: **generates, solves, validates and rates** 9×9 puzzles |
+| [`sudoku-game`](sudoku-game) | The match rules: moves, lives, hints, notes, timer, save/restore and restart |
 
-## Features
+Both are standalone libraries with no UI, no IO and no clock. The shell (the app, a browser build,
+the future PvP server) reads the clock, writes to disk and talks to the network. The core only
+takes data and returns data. That keeps it easy to test and lets the same rules run in the app, on
+a server, and in a future online mode.
+
+## Engine features (`sudoku-core`)
 
 - **Four difficulty levels**, each defined by the hardest technique needed to solve the puzzle:
 
@@ -32,7 +39,25 @@ test and lets the same code run in the app, on a server, and in a future online 
 - **Rating** of any grid, plus a backtracking solver that counts solutions to check uniqueness.
 - **Two dependencies**: `rand` (default features off) and `rand_chacha`.
 
-## Quick start
+## Game features (`sudoku-game`)
+
+- **A match on top of the engine.** Each number is checked against the solution right away. A
+  correct number locks in place. A wrong one costs a life and leaves the board. There is no undo.
+  Zero lives is a loss, and a full board is a win.
+- **Configurable rules**: 3 lives and 2 hints by default (`GameConfig`). A hint reveals a cell
+  picked deterministically from the seed, so the phone and a server always agree.
+- **Per-cell pencil notes**, only on empty cells. They are never changed automatically.
+- **Injected clock.** The shell passes instants in milliseconds to `resume`, `pause`, `place` and
+  `hint`, and the game adds up the time played. A new or restored game starts paused, and winning
+  or losing stops the clock.
+- **Save and restore.** `save(now)` returns a `SavedGame` snapshot with plain fields (format v1,
+  seed as text so JavaScript keeps its precision). `Game::restore` rejects any corrupted or
+  tampered snapshot with a `RestoreError` and never panics.
+- **Restart** with a new seed at the same level and with the same rules.
+- **No required dependency** besides `sudoku-core`. The optional `serde` feature makes
+  `SavedGame` serializable, and a golden test locks its JSON form.
+
+## Quick start: engine
 
 The crate isn't on crates.io yet. Add it as a git dependency:
 
@@ -73,7 +98,52 @@ Place { index: 20, value: 4 } via Hidden Single
 Place { index: 19, value: 5 } via Hidden Single
 ```
 
-## Public API
+## Quick start: a match
+
+```toml
+[dependencies]
+sudoku-game = { git = "https://github.com/IsabelaGhislandi/sudoku-core", features = ["serde"] }
+```
+
+```rust
+use sudoku_game::{Difficulty, Game, GameConfig, PlaceOutcome, SavedGame};
+
+fn main() {
+    // 3 lives and 2 hints by default. A new game starts paused.
+    let mut game = Game::new(Difficulty::Medio, 7, GameConfig::default());
+    game.resume(0); // instants are milliseconds from the shell's monotonic clock
+
+    match game.place(2, 5, 1_200) {
+        Ok(PlaceOutcome::Correct) => println!("locked in"),
+        Ok(PlaceOutcome::Wrong { index, value }) => println!("{value} at {index} costs a life"),
+        Err(e) => println!("refused: {e:?}"), // occupied cell, paused, game over...
+    }
+    let hint = game.hint(2_000).unwrap(); // deterministic: same game, same hint cell
+    println!("hint: {} at {}", hint.value, hint.index);
+
+    // The app goes to the background: pause and store the snapshot.
+    game.pause(3_000);
+    let saved: SavedGame = game.save(3_000); // serde_json::to_string(&saved) with the feature
+
+    // Later: restore (rejects corrupted or tampered snapshots) and keep playing.
+    let mut restored = Game::restore(&saved).expect("valid snapshot");
+    restored.resume(0);
+    println!("{} lives, {} ms played", restored.lives_left(), restored.elapsed_ms(500));
+}
+```
+
+Output:
+
+```text
+5 at 2 costs a life
+hint: 1 at 3
+2 lives, 3500 ms played
+```
+
+`sudoku-game` re-exports the engine types it uses (`Difficulty`, `Puzzle`, `Grid`, `Cell`), so an
+app only needs this one dependency.
+
+## Engine public API
 
 ```rust
 pub enum Difficulty { Facil, Medio, Dificil, MuitoDificil }
@@ -96,6 +166,28 @@ Each technique is a type that implements the `Technique` trait (`NakedSingle`, `
 `generate` has a single error, `GenError::AttemptsExhausted`. It means the seed used up the
 level's work budget (about 1 seed in 5,000 on Hard, 1 in 200 on Very Hard). The caller should
 just try another seed.
+
+## Game public API
+
+```rust
+pub struct GameConfig { pub lives: NonZeroU8, pub hints: u8 } // Default: 3 lives, 2 hints
+
+Game::new(difficulty, seed, config) -> Game;                   // retries the next seed if one is exhausted
+Game::from_puzzle(puzzle, config) -> Result<Game, PuzzleError>;
+game.place(index, value, now) -> Result<PlaceOutcome, MoveError>; // Correct | Wrong { index, value }
+game.toggle_note(index, value) -> Result<(), MoveError>;
+game.hint(now) -> Result<HintOutcome, MoveError>;              // { index, value }
+game.resume(now); game.pause(now); game.elapsed_ms(now) -> u64; game.is_paused() -> bool;
+game.save(now) -> SavedGame;
+Game::restore(&saved) -> Result<Game, RestoreError>;
+game.restart(seed) -> Restart;                                  // { game, .. }
+game.cell(index) -> CellState;  // Empty | Given(v) | Placed(v) | Hinted(v)
+game.notes(index) -> Notes; game.status() -> Status;           // Playing | Won | Lost
+```
+
+A refused action returns a `MoveError` (`GameOver`, `Paused`, `InvalidIndex`, `InvalidValue`,
+`CellNotEmpty`, `NoHintsLeft`) and changes nothing: it costs no life and is not counted as a
+mistake.
 
 ## How generation works
 
@@ -132,7 +224,7 @@ again every week.
 | # | Module | Status |
 |---|---|---|
 | 1 | **Core/Engine** (`sudoku-core`): generate, solve, validate, rate | ✅ done (all four levels) |
-| 2 | Game/Session (`sudoku-game`): moves, lives, hints, notes, timer, game history | 🚧 in progress (slice 1 done: basic game) |
+| 2 | Game/Session (`sudoku-game`): moves, lives, hints, notes, timer, game history | 🚧 in progress (slices 1–2 done: basic game, time and saving; next: results, history and stats) |
 | 3 | Frontend (Svelte): board, input, screens | planned |
 | 4 | Tauri packaging: Rust ↔ Svelte bridge, Android APK | planned |
 | 5 | Online: two-player race via a shared puzzle code | future |
