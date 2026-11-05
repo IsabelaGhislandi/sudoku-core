@@ -15,6 +15,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 21 a 25](fundamentos/rust-base-tarefas-21-a-25.md)
 - [Fundamentos de Rust — Tarefas 26 a 30](fundamentos/rust-base-tarefas-26-a-30.md)
 - [Fundamentos de Rust — Tarefas 31 a 35](fundamentos/rust-base-tarefas-31-a-35.md)
+- [Fundamentos de Rust — Tarefas 36 a 40](fundamentos/rust-base-tarefas-36-a-40.md)
 
 ## Índice por task
 
@@ -57,5 +58,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [37 — Anotações: newtype sobre `u16`, XOR e `pub(crate)`](37-anotacoes-e-bitmask.md)
 - [38 — Dica determinística: SplitMix64, `wrapping_*` e golden test](38-dica-deterministica.md)
 - [39 — Testes de integração entre crates: a API vista de fora](39-testes-de-integracao-entre-crates.md)
+- [40 — Relógio injetado: `Option<u64>` como estado, `saturating_sub` e uma assinatura que muda](40-relogio-injetado-e-saturating.md)
 
 > Cada nova task ganha uma página aqui.
