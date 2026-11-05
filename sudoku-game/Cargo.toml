@@ -11,5 +11,17 @@ readme = "../README.md"
 publish = false
 
 [dependencies]
+# Opcional: só entra com a feature `serde`, para a casca gravar a foto da partida (SavedGame).
+# Sem features padrão; `alloc` cobre String e Vec, e `derive` gera o código na compilação.
+serde = { version = "1.0.229", default-features = false, features = ["derive", "alloc"], optional = true }
 # Dependência por caminho, dentro do workspace: sem download e sem versão a escolher.
 sudoku-core = { path = "../sudoku-core" }
+
+[features]
+# Liga `Serialize`/`Deserialize` no SavedGame. Desligada por padrão: quem só quer as regras não
+# compila o serde.
+serde = ["dep:serde"]
+
+[dev-dependencies]
+# Só nos testes: ida e volta em JSON e o golden test do formato da foto.
+serde_json = "1.0.154"

@@ -116,8 +116,9 @@ The project is **spec-driven and test-driven**. Each module goes from design spe
 implementation plan to TDD (see [`docs/superpowers/`](docs/superpowers)).
 
 ```bash
-cargo test   --workspace
-cargo clippy --workspace --all-targets -- -D warnings
+cargo test   --workspace                  # without optional features
+cargo test   --workspace --all-features   # with the serde feature of sudoku-game
+cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo fmt    --all
 cargo deny   check
 ```

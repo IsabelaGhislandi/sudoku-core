@@ -17,8 +17,10 @@ ignore = []
 
 [licenses]
 version = 2
-# rand e rand_chacha são "MIT OR Apache-2.0". Uma licença nova pede decisão consciente.
-allow = ["MIT", "Apache-2.0"]
+# rand, rand_chacha e serde são "MIT OR Apache-2.0". Uma licença nova pede decisão consciente.
+# Unicode-3.0 (aprovada em 2026-11-05): licença permissiva dos dados de Unicode, exigida pelo
+# unicode-ident, que o syn usa para compilar o serde_derive. Detalhes na wiki 43.
+allow = ["MIT", "Apache-2.0", "Unicode-3.0"]
 confidence-threshold = 0.9
 
 [bans]

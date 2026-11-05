@@ -43,9 +43,12 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       # --locked falha se o Cargo.lock estiver desatualizado em relação ao Cargo.toml.
-      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      # --all-features liga a feature serde do sudoku-game; o build e o primeiro teste sem ela
+      # provam que o crate também compila sem o serde.
+      - run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
       - run: cargo build --workspace --locked
       - run: cargo test --workspace --locked
+      - run: cargo test --workspace --all-features --locked
 
   # Cobertura de testes com o cargo-llvm-cov. Só informa: o relatório vai para o resumo do job
   # (aba Summary da execução), sem serviço externo, sem token e sem porcentagem mínima. Um SO
@@ -64,7 +67,7 @@ jobs:
           tool: cargo-llvm-cov
       - uses: Swatinem/rust-cache@v2
       # Gera o relatório antes de escrever o resumo: se os testes falharem, o step falha.
-      - run: cargo llvm-cov --workspace --locked --summary-only > coverage.txt
+      - run: cargo llvm-cov --workspace --all-features --locked --summary-only > coverage.txt
       - run: |
           {
             echo '## Cobertura de testes'

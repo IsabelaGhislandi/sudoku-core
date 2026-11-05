@@ -15,7 +15,11 @@ pub const SAVE_VERSION: u32 = 1;
 /// Foto de uma partida, em campos simples para virar texto legível. Os campos são públicos
 /// porque a foto vem de fora (disco, rede) e não carrega garantia nenhuma: quem garante é
 /// `Game::restore`.
+///
+/// Com a feature `serde`, a foto ganha `Serialize` e `Deserialize`, e a casca escolhe o formato
+/// (o app usa JSON). Sem a feature, o crate não depende do `serde`.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SavedGame {
     /// Sempre `SAVE_VERSION` numa foto nova.
     pub version: u32,
