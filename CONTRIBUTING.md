@@ -21,8 +21,9 @@ treats warnings as errors and uses `--locked`.
 
 ```bash
 cargo fmt    --all
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test   --workspace
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test   --workspace                  # without optional features
+cargo test   --workspace --all-features   # with the serde feature of sudoku-game
 cargo deny   check
 ```
 

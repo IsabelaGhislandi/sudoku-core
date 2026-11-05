@@ -15,6 +15,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 21 a 25](fundamentos/rust-base-tarefas-21-a-25.md)
 - [Fundamentos de Rust — Tarefas 26 a 30](fundamentos/rust-base-tarefas-26-a-30.md)
 - [Fundamentos de Rust — Tarefas 31 a 35](fundamentos/rust-base-tarefas-31-a-35.md)
+- [Fundamentos de Rust — Tarefas 36 a 40](fundamentos/rust-base-tarefas-36-a-40.md)
 
 ## Índice por task
 
@@ -57,5 +58,10 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [37 — Anotações: newtype sobre `u16`, XOR e `pub(crate)`](37-anotacoes-e-bitmask.md)
 - [38 — Dica determinística: SplitMix64, `wrapping_*` e golden test](38-dica-deterministica.md)
 - [39 — Testes de integração entre crates: a API vista de fora](39-testes-de-integracao-entre-crates.md)
+- [40 — Relógio injetado: `Option<u64>` como estado, `saturating_sub` e uma assinatura que muda](40-relogio-injetado-e-saturating.md)
+- [41 — Foto da partida: um DTO, `parse` com `Result` e o limite de 2^53](41-foto-da-partida-e-dto.md)
+- [42 — Validar o que vem de fora: "parse, don't validate", índices conferidos e `let ... else`](42-validar-entrada-de-fora.md)
+- [43 — Features do Cargo, `serde` opcional e golden test de formato](43-features-opcionais-e-serde.md)
+- [44 — Reiniciar: `#[non_exhaustive]`, `&self` que devolve um valor novo e o fim da fatia 2](44-reiniciar-e-non-exhaustive.md)
 
 > Cada nova task ganha uma página aqui.

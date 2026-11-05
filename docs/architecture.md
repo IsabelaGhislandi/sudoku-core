@@ -22,7 +22,7 @@ o ciclo `spec → plano → implementação` com **TDD**.
 | # | Módulo | Responsabilidade | Status |
 |---|--------|------------------|--------|
 | 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **concluído: os quatro níveis** |
-| 2 | **Game/Sessão** (`sudoku-game`) | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. Lógica pura. | **em andamento: fatia 1 concluída** (partida básica) |
+| 2 | **Game/Sessão** (`sudoku-game`) | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. Lógica pura. | **em andamento: fatias 1 e 2 concluídas** (partida básica; tempo e salvamento) |
 | 3 | Frontend/UI | Tabuleiro, input, seleção de dificuldade, telas (Svelte). | futuro |
 | 4 | Tauri/Empacotamento | Ponte Rust↔Svelte e build do APK. | futuro |
 | 5 | Online | Partida por código com outro player. | futuro distante |
@@ -132,15 +132,19 @@ servidor PvP         ─┘     (regras)         (gerar, resolver)
 
 ```
 sudoku-game/
-├── Cargo.toml          publish = false, deps: sudoku-core (path)
+├── Cargo.toml          publish = false, deps: sudoku-core (path); serde opcional (feature `serde`)
 ├── src/
 │   ├── lib.rs          re-exporta a API e os tipos do core que ela usa (Difficulty, Puzzle, Grid, Cell)
 │   ├── config.rs       GameConfig { lives: NonZeroU8, hints: u8 }, padrão 3 vidas e 2 dicas
-│   ├── game.rs         Game (new, from_puzzle, place, toggle_note, hint), CellState, Status,
+│   ├── game.rs         Game (new, from_puzzle, place, toggle_note, hint, pause, resume,
+│   │                   elapsed_ms, save, restore, restart), CellState, Status, Restart,
 │   │                   PlaceOutcome, HintOutcome, MoveError, PuzzleError
 │   ├── notes.rs        Notes: anotações de uma célula (bitmask u16)
+│   ├── save.rs         SavedGame (foto versão 1, campos simples), RestoreError, SAVE_VERSION
 │   └── hint.rs         splitmix64 e pick: sorteio determinístico da célula da dica
-└── tests/api.rs        partidas completas pela API pública
+└── tests/
+    ├── api.rs          partidas completas pela API pública, inclusive sair e voltar
+    └── save_json.rs    ida e volta em JSON e golden test do formato (só com a feature serde)
 ```
 
 Regras da fatia 1: número certo trava; número errado tira uma vida e **sai do tabuleiro** (a mesma
@@ -149,6 +153,17 @@ regra do PvP); sem desfazer; zero vidas termina em derrota; tabuleiro completo t
 só em célula vazia, apagadas quando um número trava nela. Seed esgotada no gerador: o Game tenta a
 seguinte. Ações recusadas devolvem `MoveError` e não mudam nada. `from_puzzle` confere o puzzle (solução
 completa e válida, dados iguais à solução, pelo menos uma vazia) e devolve `PuzzleError` se não passar.
+
+Regras da fatia 2: o tempo entra como `now: u64` (milissegundos de um relógio monotônico da casca).
+Uma partida nova começa pausada, e "começar" é o primeiro `resume`. Pausada, ela recusa jogadas,
+anotações e dicas com `MoveError::Paused`. `place` e `hint` recebem `now` para que a vitória ou a
+derrota parem o relógio sozinhas. `save(now)` tira uma foto (`SavedGame`, versão 1) com campos
+simples: a seed vai em texto, por causa do limite de 2^53 do JSON em JavaScript, e o status não vai,
+porque é derivado. `restore` confere a foto inteira e devolve `RestoreError` se ela for incoerente, e
+a partida restaurada volta pausada. Ele **não** confere se o puzzle vem da seed: no solo, quem edita o
+arquivo só engana a si mesmo, e no PvP quem confere é o servidor. `restart(seed)` começa outro puzzle
+do mesmo nível e com a mesma configuração. A feature opcional `serde` deixa o `SavedGame` serializável,
+e um golden test trava o JSON da versão 1.
 
 ## 5. Mapeamento dificuldade → técnica
 
@@ -261,6 +276,7 @@ Artefatos de processo do Engine:
 Artefatos de processo do Game:
 - **Spec:** `docs/superpowers/specs/2026-11-04-game-design.md`
 - **Plano (fatia 1, partida básica):** `docs/superpowers/plans/2026-11-04-game-partida.md`
+- **Plano (fatia 2, tempo e salvamento):** `docs/superpowers/plans/2026-11-05-game-tempo-e-salvamento.md`
 
 ## 10. Visão do módulo Online (PvP)
 

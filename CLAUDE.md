@@ -42,11 +42,12 @@ O repositório é um **Cargo workspace** (`Cargo.toml` na raiz). Os comandos fun
 pasta do repositório, porque o Cargo sobe até achar o workspace:
 
 ```bash
-cargo test   --workspace                        # tudo
+cargo test   --workspace                        # tudo, sem features opcionais
+cargo test   --workspace --all-features         # tudo, com a feature serde (JSON da foto)
 cargo test   -p sudoku-core rating              # um módulo de um crate
 cargo test   -p sudoku-core --test api          # testes de integração de um crate
 cargo build  --workspace                        # deve ficar sem warnings
-cargo clippy --workspace --all-targets -- -D warnings
+cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo fmt    --all                              # antes de cada commit
 cargo deny   check
 ```
@@ -60,7 +61,8 @@ acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`]
 - Rust **edition 2024**. Preferir sempre as versões mais novas de edition e dependências.
 - `sudoku-core` é uma **biblioteca pura**: sem UI, sem IO, sem Tauri, sem relógio. Timer,
   persistência e histórico pertencem ao módulo Game (futuro).
-- Dependências mínimas: hoje só `rand` (sem features padrão) e `rand_chacha`. Cada nova dependência
+- Dependências mínimas: no `sudoku-core`, só `rand` (sem features padrão) e `rand_chacha`; no
+  `sudoku-game`, só o `serde` opcional (feature `serde`) e o `serde_json` nos testes. Cada nova dependência
   precisa de motivo e segue a skill `adding-dependencies` (`.claude/skills/`): verificar o crate e pedir
   aprovação antes do `cargo add`. `cargo deny check` precisa passar.
 - **Nomes no código em inglês**: tipos, funções, constantes, variáveis e helpers de teste

@@ -1,7 +1,7 @@
 # Spec — Módulo Game/Sessão
 
 - **Data:** 2026-11-04
-- **Status:** aprovada. Fatia 1 (workspace e partida básica) implementada; fatias 2 e 3 pendentes.
+- **Status:** aprovada. Fatias 1 (workspace e partida básica) e 2 (tempo e salvamento, seção 11) implementadas; fatia 3 pendente.
 - **Módulo:** 2 de 5 (Game/Sessão). Depende do [módulo 1, engine](2026-06-14-sudoku-engine-design.md).
 - **Visão relacionada:** [`docs/architecture.md`](../../architecture.md), seções 10 (PvP) e 11.
 
@@ -197,7 +197,137 @@ Como no engine, a implementação vem em fatias, cada uma com o seu plano:
 - O formato de salvamento, dentro da restrição da seção 8.
 - A página de wiki de cada task e o consolidado das tasks 31 a 35, que cai durante este módulo.
 
-## 11. Ainda em aberto no projeto
+## 11. Fatia 2 em detalhe: tempo e salvamento
+
+Decidido em conversa em 2026-11-05, salvo onde está marcado como *escolha do autor da spec*.
+
+### 11.1 Intenção
+
+Fechar o app no meio de uma partida não pode custar nada: ao voltar, a partida está **exatamente
+como estava**, com o tempo parado no ponto em que a pessoa saiu. Salvar e restaurar acontecem só
+ao pausar ou fechar, nunca a cada jogada, e não podem deixar o jogo mais lento.
+
+### 11.2 Formato do salvamento (decidido em conversa)
+
+- **`serde` como feature opcional** do `sudoku-game`, chamada `serde`, desligada por padrão.
+  Sem a feature, o crate continua sem dependência além do `sudoku-core`. O app e a ponte do Tauri
+  ligam a feature. Quem só quer as regras, inclusive os testes comuns, não paga a compilação.
+- **O `sudoku-game` não escolhe o formato.** Ele só marca os tipos como serializáveis, e a casca
+  escolhe o formato. O app deve usar JSON, que é legível.
+- A dependência segue a skill `adding-dependencies` (verificar o crate e pedir aprovação antes
+  do `cargo add`), com `default-features = false` e só as features necessárias. O
+  `cargo deny check` precisa passar.
+- **Motivo da escolha:** um formato próprio seria tão rápido quanto, mas deixaria todo o código
+  de salvar, ler e validar por nossa conta, e o Tauri vai precisar do `serde` de qualquer jeito.
+  Deixar a feature opcional mantém o núcleo leve.
+
+### 11.3 Comportamento
+
+**Tempo** (o mecanismo está na seção 7: a casca informa os instantes, o Game acumula).
+
+- A casca informa instantes como um número de milissegundos de um relógio monotônico. O Game
+  nunca lê relógio.
+- O Game expõe o **tempo jogado** até um instante informado, e esse tempo não conta os
+  intervalos de pausa.
+- *Escolha do autor da spec:* **jogadas, anotações e dicas são recusadas com a partida
+  pausada**, com um erro novo (por exemplo, `MoveError::Paused`). Uma recusa não muda nada,
+  como as outras.
+- **Uma partida terminada para o relógio.** O tempo total de uma vitória ou derrota não pode
+  depender de a casca lembrar de pausar depois do fim. Como isso é garantido fica com o builder
+  (ver 11.5).
+- Pausar uma partida já pausada, ou retomar uma que já está rodando, não é erro e não muda nada
+  (*escolha do autor da spec*: a casca pode chamar pausa em todo `onPause` do sistema sem
+  conferir antes).
+
+**Salvar.** De uma partida sai uma "foto" com tudo o que o progresso exige: o puzzle (nível,
+seed, enunciado, solução), o estado de cada célula (vazia, dada, certa por jogada, certa por
+dica), as anotações, vidas, dicas restantes e usadas, erros, a configuração da partida, o status
+e o tempo acumulado. Dá para salvar em qualquer momento, inclusive depois do fim.
+
+**Restaurar.**
+
+- Da foto sai uma partida **idêntica**: as mesmas respostas para tudo, inclusive as próximas
+  dicas, que dependem só da seed e de quantas dicas já foram usadas.
+- *Escolha do autor da spec:* a partida restaurada vem sempre **pausada**. Quem decide
+  continuar é a pessoa, no aviso "continuar ou reiniciar".
+- **Uma foto inconsistente é recusada com erro**, nunca vira partida. O motivo: o arquivo vem de
+  fora (disco, rede) e pode estar corrompido ou adulterado. Recusar no mínimo:
+  - tudo o que `from_puzzle` já recusa;
+  - célula dada onde o enunciado está vazio, ou vazia/diferente onde ele tem número;
+  - número de jogada ou de dica diferente da solução;
+  - anotação em célula com número;
+  - vidas que não batem com a configuração e os erros (vidas restantes = vidas iniciais −
+    erros);
+  - dicas restantes + usadas diferente das dicas da configuração, ou células de dica em
+    quantidade diferente das dicas usadas;
+  - status que não bate com o tabuleiro (vitória com célula vazia, derrota com vidas, partida em
+    andamento sem vidas ou sem célula vazia);
+  - versão de formato desconhecida.
+- O erro diz qual regra falhou, no estilo do `PuzzleError`.
+- *Escolha do autor da spec:* a restauração **não confere se o puzzle vem mesmo da seed e do
+  nível** (rodando `generate` de novo). Motivos: regenerar custa tempo perceptível no Muito
+  Difícil; partidas de `from_puzzle` têm seed arbitrária e seriam recusadas; e, no solo, editar o
+  arquivo só engana a própria pessoa. A proteção contra esse tipo de adulteração é o servidor do
+  PvP e do ranking online, que pode refazer a partida pela seed (seção 7). "Foto adulterada" na
+  seção 11.4 quer dizer foto **inconsistente**, não foto com puzzle trocado.
+
+**Versão do formato** (*escolha do autor da spec*). A foto carrega um número de versão, que começa
+em 1. Uma partida salva por uma versão antiga do app precisa continuar abrindo. Por isso um
+**golden test** trava a forma serializada (em JSON, num teste) de uma partida fixa. Mudou a forma?
+Ou é bug, ou é versão nova com leitura da antiga, no mesmo espírito do golden test da seed 42.
+
+**Reiniciar.** Começa outro puzzle **do mesmo nível e com a mesma configuração**, com uma seed
+nova que vem da casca. *Escolha do autor da spec:* um atalho na própria partida, que devolve a
+partida nova, evita que a casca tenha de remontar nível e configuração. **Reiniciar conta como
+derrota por abandono** (seção 2), mas registrar essa derrota é da fatia 3. Nesta fatia, o atalho
+não precisa devolver resultado nenhum.
+
+*Escolhas do autor da spec*, para a fatia 3 não precisar mudar o formato nem a assinatura:
+
+- **O abandono nunca fica numa foto.** A partida abandonada deixa de existir (vira resultado na
+  fatia 3), então o `Status` da foto continua `Playing`/`Won`/`Lost`, e a regra "derrota com
+  vidas é inconsistente" vale. O motivo da derrota mora só no resultado.
+- **Reiniciar vale em qualquer estado:** em andamento, pausada ou terminada ("jogar de novo").
+  Só conta como abandono se a partida **não tinha terminado**. Uma terminada já tem o seu
+  resultado. A assinatura do atalho deve deixar espaço para a fatia 3 devolver o resultado do
+  abandono sem quebrar quem chama.
+
+### 11.4 Metas, não-metas e o que não pode acontecer
+
+- **Metas:** pausar e retomar, tempo jogado correto, salvar e restaurar sem perder nada, recusar
+  fotos inconsistentes, reiniciar no mesmo nível.
+- **Não-metas:** gravar em disco, escolher onde guardar, o aviso de "continuar ou reiniciar" (é
+  UI), histórico, resultado e estatísticas (fatia 3), criptografia ou assinatura contra
+  adulteração (no PvP, quem confere é o servidor).
+- **Não pode acontecer:**
+  - mudar o `sudoku-core`: a API pública e a saída do gerador ficam iguais, e ele não ganha
+    `serde`;
+  - o `sudoku-game` passar a ter dependência obrigatória;
+  - uma foto adulterada virar partida;
+  - uma partida restaurada responder diferente da original;
+  - salvar ou restaurar ficar perceptível para quem joga.
+
+### 11.5 Com o builder
+
+- Os nomes da API: os métodos de tempo, o tipo da foto, o erro de restauração e o atalho de
+  reiniciar.
+- **Como o relógio para no fim.** Uma opção é as ações (`place`, `hint`, talvez `toggle_note`)
+  receberem o instante. A outra é o Game guardar o fim de outro jeito. Mudar a assinatura das
+  ações da fatia 1 é aceitável: o crate não é publicado e só os testes o usam.
+- *Escolha do autor da spec:* nesta fatia, a feature `serde` cobre **só a foto** e o que ela
+  contém. Serializar os outros tipos que a ponte do Tauri vai passar ao Svelte (`PlaceOutcome`,
+  `MoveError`...) fica para o módulo da ponte, e só a forma da foto é congelada pelo golden test.
+- Se a foto é um tipo próprio, com campos simples, ou o próprio `Game` com `serde`. Em qualquer
+  caso, a restauração passa pela validação, e os tipos do `sudoku-core` não ganham `serde`. Se
+  precisar, o puzzle vai na foto como texto ou números.
+- A validação de restauração existe **também sem a feature `serde`**, para ser testável nos
+  testes comuns.
+- O formato do teste de ida e volta: provavelmente `serde_json` como `dev-dependency`, também
+  pela skill `adding-dependencies`. O CI e os comandos do `CLAUDE.md` precisam testar com a
+  feature ligada (por exemplo, `--all-features` no clippy e nos testes).
+- Página da wiki por task e o consolidado das tasks 36 a 40, que cai durante esta fatia.
+
+## 12. Ainda em aberto no projeto
 
 - **Nome do repositório.** Ele se chama `sudoku-core`, mas vai abrigar o app inteiro. Renomear (por
   exemplo, para `sudoku`) é decisão da pessoa responsável, fora desta spec.
