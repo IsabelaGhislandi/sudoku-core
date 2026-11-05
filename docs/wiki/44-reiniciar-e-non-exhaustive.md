@@ -67,7 +67,7 @@ outros, queremos poder crescer.
 | Crate | Unitários | Integração | Ignorados |
 |---|---|---|---|
 | `sudoku-core` | 123 | 4 | 3 (desempenho) |
-| `sudoku-game` | 66 | 4 (`api.rs`) + 3 (`save_json.rs`, com a feature `serde`) | 0 |
+| `sudoku-game` | 67 | 4 (`api.rs`) + 3 (`save_json.rs`, com a feature `serde`) | 0 |
 
 A partida agora tem relógio, foto salvável e conferida, JSON opcional e reinício. Os números do core
 são os mesmos de antes, golden tests incluídos. Falta a fatia 3, **resultados**: o registro de cada

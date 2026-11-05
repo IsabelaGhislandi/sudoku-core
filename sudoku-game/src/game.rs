@@ -376,10 +376,11 @@ impl Game {
     }
 
     /// Tempo jogado até `now`, sem contar as pausas. Se o relógio da casca voltar (`now` antes
-    /// do último `resume`), aquele trecho conta zero em vez de dar underflow.
+    /// do último `resume`), aquele trecho conta zero em vez de dar underflow. A soma também
+    /// satura: o tempo acumulado pode vir de uma foto adulterada, e somar não pode estourar.
     pub fn elapsed_ms(&self, now: u64) -> u64 {
         match self.running_since {
-            Some(since) => self.elapsed_ms + now.saturating_sub(since),
+            Some(since) => self.elapsed_ms.saturating_add(now.saturating_sub(since)),
             None => self.elapsed_ms,
         }
     }
@@ -1308,5 +1309,16 @@ mod tests {
         let new_game = game.restart(9).game;
         assert_eq!(new_game.status(), Status::Playing);
         assert_eq!(new_game.lives_left(), 3);
+    }
+
+    #[test]
+    fn tempo_enorme_na_foto_nao_estoura() {
+        let mut saved = valid_save();
+        saved.elapsed_ms = u64::MAX;
+        let mut game = Game::restore(&saved).unwrap();
+        game.resume(0);
+        assert_eq!(game.elapsed_ms(1_000), u64::MAX);
+        game.pause(2_000);
+        assert_eq!(game.save(3_000).elapsed_ms, u64::MAX);
     }
 }
