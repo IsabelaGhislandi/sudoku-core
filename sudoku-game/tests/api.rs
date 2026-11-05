@@ -20,14 +20,15 @@ fn empties(game: &Game) -> Vec<usize> {
 #[test]
 fn partida_completa_ate_a_vitoria() {
     let mut game = Game::new(Difficulty::Medio, 7, GameConfig::default());
-    let first = game.hint().unwrap();
-    let second = game.hint().unwrap();
+    game.resume(0);
+    let first = game.hint(0).unwrap();
+    let second = game.hint(0).unwrap();
     assert_eq!(game.cell(first.index), CellState::Hinted(first.value));
     assert_eq!(game.cell(second.index), CellState::Hinted(second.value));
 
     for i in empties(&game) {
         let v = solution_value(&game, i);
-        assert_eq!(game.place(i, v), Ok(PlaceOutcome::Correct));
+        assert_eq!(game.place(i, v, 0), Ok(PlaceOutcome::Correct));
     }
     assert_eq!(game.status(), Status::Won);
     assert_eq!((game.mistakes(), game.hints_used()), (0, 2));
@@ -36,13 +37,14 @@ fn partida_completa_ate_a_vitoria() {
 #[test]
 fn partida_completa_ate_a_derrota() {
     let mut game = Game::new(Difficulty::Dificil, 7, GameConfig::default());
+    game.resume(0);
     let i = empties(&game)[0];
     game.toggle_note(i, 4).unwrap();
     let right = solution_value(&game, i);
     let wrong = if right == 9 { 1 } else { right + 1 };
     for lives in [2, 1, 0] {
         assert_eq!(
-            game.place(i, wrong),
+            game.place(i, wrong, 0),
             Ok(PlaceOutcome::Wrong {
                 index: i,
                 value: wrong
@@ -52,7 +54,7 @@ fn partida_completa_ate_a_derrota() {
     }
     assert_eq!(game.status(), Status::Lost);
     assert_eq!(game.notes(i).values(), vec![4]);
-    assert_eq!(game.place(i, right), Err(MoveError::GameOver));
-    assert_eq!(game.hint(), Err(MoveError::GameOver));
+    assert_eq!(game.place(i, right, 0), Err(MoveError::GameOver));
+    assert_eq!(game.hint(0), Err(MoveError::GameOver));
     assert_eq!(game.toggle_note(i, 5), Err(MoveError::GameOver));
 }

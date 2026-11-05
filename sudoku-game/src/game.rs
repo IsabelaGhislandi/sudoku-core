@@ -79,6 +79,8 @@ pub enum MoveError {
     CellNotEmpty,
     /// Não sobrou dica.
     NoHintsLeft,
+    /// A partida está pausada (ou ainda não começou): o relógio não está rodando.
+    Paused,
 }
 
 /// Uma partida em andamento: o puzzle e tudo o que a pessoa fez nele.
@@ -92,6 +94,11 @@ pub struct Game {
     mistakes: u32,
     hints_used: u8,
     status: Status,
+    /// Tempo jogado até a última pausa (ou até o fim), em milissegundos.
+    elapsed_ms: u64,
+    /// `Some(t)`: o relógio está rodando desde o instante `t` da casca. `None`: pausada, ainda
+    /// não começada ou terminada.
+    running_since: Option<u64>,
 }
 
 impl Game {
@@ -157,6 +164,8 @@ impl Game {
             mistakes: 0,
             hints_used: 0,
             status: Status::Playing,
+            elapsed_ms: 0,
+            running_since: None,
         }
     }
 
@@ -197,23 +206,55 @@ impl Game {
         self.status
     }
 
-    /// Coloca `value` na célula `index`, conferindo na hora com a solução.
+    /// A partida está em andamento com o relógio parado. Uma partida nova começa assim:
+    /// "começar" é o primeiro `resume`. Uma partida terminada não está pausada.
+    pub fn is_paused(&self) -> bool {
+        self.status == Status::Playing && self.running_since.is_none()
+    }
+
+    /// Liga o relógio no instante `now` (milissegundos de um relógio monotônico da casca). Sem
+    /// efeito se já estiver rodando ou se a partida terminou, para a casca poder chamar sem
+    /// conferir antes.
+    pub fn resume(&mut self, now: u64) {
+        if self.is_paused() {
+            self.running_since = Some(now);
+        }
+    }
+
+    /// Para o relógio no instante `now`, guardando o trecho jogado. Sem efeito se já estiver
+    /// parado.
+    pub fn pause(&mut self, now: u64) {
+        self.elapsed_ms = self.elapsed_ms(now);
+        self.running_since = None;
+    }
+
+    /// Tempo jogado até `now`, sem contar as pausas. Se o relógio da casca voltar (`now` antes
+    /// do último `resume`), aquele trecho conta zero em vez de dar underflow.
+    pub fn elapsed_ms(&self, now: u64) -> u64 {
+        match self.running_since {
+            Some(since) => self.elapsed_ms + now.saturating_sub(since),
+            None => self.elapsed_ms,
+        }
+    }
+
+    /// Coloca `value` na célula `index`, conferindo na hora com a solução. `now` é o instante
+    /// da jogada: se ela terminar a partida, o relógio para ali.
     ///
     /// Certo: o número trava, e a partida termina em vitória se era a última célula vazia.
     /// Errado: perde uma vida, a célula continua vazia, e a partida termina em derrota se as
-    /// vidas acabaram. As recusas são conferidas nesta ordem: partida terminada, índice,
-    /// número e célula ocupada.
-    pub fn place(&mut self, index: usize, value: u8) -> Result<PlaceOutcome, MoveError> {
+    /// vidas acabaram. As recusas são conferidas nesta ordem: partida terminada, pausada,
+    /// índice, número e célula ocupada.
+    pub fn place(&mut self, index: usize, value: u8, now: u64) -> Result<PlaceOutcome, MoveError> {
         self.check_empty_cell(index, value)?;
         if value == self.solution_value(index) {
             self.lock(index, CellState::Placed(value));
-            self.finish_if_complete();
+            self.finish_if_complete(now);
             Ok(PlaceOutcome::Correct)
         } else {
             self.mistakes += 1;
             self.lives_left -= 1;
             if self.lives_left == 0 {
-                self.status = Status::Lost;
+                self.end(Status::Lost, now);
             }
             Ok(PlaceOutcome::Wrong { index, value })
         }
@@ -230,12 +271,11 @@ impl Game {
     /// Revela o número certo de uma célula vazia, sorteada pelo jogo, e o trava como `Hinted`.
     ///
     /// O sorteio é determinístico (ver `hint::pick`): depende só da seed do puzzle e de
-    /// quantas dicas já foram usadas. Recusa com `GameOver` depois do fim e com `NoHintsLeft`
-    /// quando as dicas acabaram, nessa ordem. Revelar a última célula vazia vence a partida.
-    pub fn hint(&mut self) -> Result<HintOutcome, MoveError> {
-        if self.status != Status::Playing {
-            return Err(MoveError::GameOver);
-        }
+    /// quantas dicas já foram usadas. Recusa com `GameOver` depois do fim, com `Paused` com o
+    /// relógio parado e com `NoHintsLeft` quando as dicas acabaram, nessa ordem. Revelar a
+    /// última célula vazia vence a partida, e o relógio para em `now`.
+    pub fn hint(&mut self, now: u64) -> Result<HintOutcome, MoveError> {
+        self.check_running()?;
         if self.hints_left == 0 {
             return Err(MoveError::NoHintsLeft);
         }
@@ -247,8 +287,26 @@ impl Game {
         self.lock(index, CellState::Hinted(value));
         self.hints_left -= 1;
         self.hints_used += 1;
-        self.finish_if_complete();
+        self.finish_if_complete(now);
         Ok(HintOutcome { index, value })
+    }
+
+    /// Termina a partida e congela o relógio em `now`. É o único lugar onde a partida acaba,
+    /// para que o tempo total não dependa de a casca lembrar de pausar depois do fim.
+    fn end(&mut self, status: Status, now: u64) {
+        self.pause(now);
+        self.status = status;
+    }
+
+    /// As recusas comuns a toda ação: partida terminada, depois partida pausada.
+    fn check_running(&self) -> Result<(), MoveError> {
+        if self.status != Status::Playing {
+            return Err(MoveError::GameOver);
+        }
+        if self.running_since.is_none() {
+            return Err(MoveError::Paused);
+        }
+        Ok(())
     }
 
     /// Trava um número certo na célula e apaga as anotações dela (só dela).
@@ -259,9 +317,7 @@ impl Game {
 
     /// As recusas comuns a toda ação numa célula vazia, na ordem documentada em `place`.
     fn check_empty_cell(&self, index: usize, value: u8) -> Result<(), MoveError> {
-        if self.status != Status::Playing {
-            return Err(MoveError::GameOver);
-        }
+        self.check_running()?;
         if index >= 81 {
             return Err(MoveError::InvalidIndex);
         }
@@ -281,9 +337,9 @@ impl Game {
         }
     }
 
-    fn finish_if_complete(&mut self) {
+    fn finish_if_complete(&mut self, now: u64) {
         if !self.cells.contains(&CellState::Empty) {
-            self.status = Status::Won;
+            self.end(Status::Won, now);
         }
     }
 }
@@ -324,8 +380,15 @@ mod tests {
         assert_eq!(game.puzzle().seed, 16);
     }
 
+    /// Partida já começada: relógio rodando desde 0.
+    fn started(difficulty: Difficulty, seed: u64) -> Game {
+        let mut game = Game::new(difficulty, seed, GameConfig::default());
+        game.resume(0);
+        game
+    }
+
     fn easy_game() -> Game {
-        Game::new(Difficulty::Facil, 42, GameConfig::default())
+        started(Difficulty::Facil, 42)
     }
 
     fn solution_value(game: &Game, index: usize) -> u8 {
@@ -356,7 +419,7 @@ mod tests {
         let i = first_empty(game);
         for _ in 0..count {
             let w = wrong_value(game, i);
-            game.place(i, w).unwrap();
+            game.place(i, w, 0).unwrap();
         }
     }
 
@@ -365,9 +428,9 @@ mod tests {
         let mut game = easy_game();
         let i = first_empty(&game);
         let v = solution_value(&game, i);
-        assert_eq!(game.place(i, v), Ok(PlaceOutcome::Correct));
+        assert_eq!(game.place(i, v, 0), Ok(PlaceOutcome::Correct));
         assert_eq!(game.cell(i), CellState::Placed(v));
-        assert_eq!(game.place(i, v), Err(MoveError::CellNotEmpty));
+        assert_eq!(game.place(i, v, 0), Err(MoveError::CellNotEmpty));
         assert_eq!(game.lives_left(), 3);
     }
 
@@ -377,7 +440,7 @@ mod tests {
         let i = first_empty(&game);
         let w = wrong_value(&game, i);
         assert_eq!(
-            game.place(i, w),
+            game.place(i, w, 0),
             Ok(PlaceOutcome::Wrong { index: i, value: w })
         );
         assert_eq!(game.cell(i), CellState::Empty);
@@ -393,7 +456,7 @@ mod tests {
         assert_eq!((game.lives_left(), game.mistakes()), (0, 3));
         let i = first_empty(&game);
         let v = solution_value(&game, i);
-        assert_eq!(game.place(i, v), Err(MoveError::GameOver));
+        assert_eq!(game.place(i, v, 0), Err(MoveError::GameOver));
         assert_eq!(game.cell(i), CellState::Empty);
     }
 
@@ -404,6 +467,7 @@ mod tests {
             hints: 2,
         };
         let mut game = Game::new(Difficulty::Facil, 42, config);
+        game.resume(0);
         make_mistakes(&mut game, 1);
         assert_eq!(game.status(), Status::Lost);
     }
@@ -414,13 +478,13 @@ mod tests {
         for i in 0..81 {
             if game.cell(i) == CellState::Empty {
                 let v = solution_value(&game, i);
-                assert_eq!(game.place(i, v), Ok(PlaceOutcome::Correct));
+                assert_eq!(game.place(i, v, 0), Ok(PlaceOutcome::Correct));
             }
         }
         assert_eq!(game.status(), Status::Won);
         assert_eq!(game.mistakes(), 0);
         let g = first_given(&game);
-        assert_eq!(game.place(g, 1), Err(MoveError::GameOver));
+        assert_eq!(game.place(g, 1, 0), Err(MoveError::GameOver));
     }
 
     #[test]
@@ -428,7 +492,7 @@ mod tests {
         let mut game = easy_game();
         let g = first_given(&game);
         for v in 1..=9 {
-            assert_eq!(game.place(g, v), Err(MoveError::CellNotEmpty));
+            assert_eq!(game.place(g, v, 0), Err(MoveError::CellNotEmpty));
         }
         assert_eq!((game.lives_left(), game.mistakes()), (3, 0));
     }
@@ -437,9 +501,9 @@ mod tests {
     fn indice_ou_valor_invalido_nao_conta_erro() {
         let mut game = easy_game();
         let i = first_empty(&game);
-        assert_eq!(game.place(81, 1), Err(MoveError::InvalidIndex));
-        assert_eq!(game.place(i, 0), Err(MoveError::InvalidValue));
-        assert_eq!(game.place(i, 10), Err(MoveError::InvalidValue));
+        assert_eq!(game.place(81, 1, 0), Err(MoveError::InvalidIndex));
+        assert_eq!(game.place(i, 0, 0), Err(MoveError::InvalidValue));
+        assert_eq!(game.place(i, 10, 0), Err(MoveError::InvalidValue));
         assert_eq!((game.lives_left(), game.mistakes()), (3, 0));
         assert_eq!(game.cell(i), CellState::Empty);
     }
@@ -468,7 +532,7 @@ mod tests {
         game.toggle_note(a, 5).unwrap();
         game.toggle_note(b, 5).unwrap();
         let v = solution_value(&game, a);
-        game.place(a, v).unwrap();
+        game.place(a, v, 0).unwrap();
         assert!(game.notes(a).is_empty());
         assert_eq!(game.notes(b).values(), vec![5]);
     }
@@ -480,7 +544,7 @@ mod tests {
         game.toggle_note(i, 2).unwrap();
         game.toggle_note(i, 4).unwrap();
         let w = wrong_value(&game, i);
-        game.place(i, w).unwrap();
+        game.place(i, w, 0).unwrap();
         assert_eq!(game.notes(i).values(), vec![2, 4]);
     }
 
@@ -491,7 +555,7 @@ mod tests {
         assert_eq!(game.toggle_note(g, 1), Err(MoveError::CellNotEmpty));
         let i = first_empty(&game);
         let v = solution_value(&game, i);
-        game.place(i, v).unwrap();
+        game.place(i, v, 0).unwrap();
         assert_eq!(game.toggle_note(i, 1), Err(MoveError::CellNotEmpty));
         assert!(game.notes(i).is_empty());
     }
@@ -511,19 +575,22 @@ mod tests {
     #[test]
     fn dica_revela_o_valor_da_solucao_e_trava() {
         let mut game = easy_game();
-        let h = game.hint().unwrap();
+        let h = game.hint(0).unwrap();
         assert_eq!(game.cell(h.index), CellState::Hinted(h.value));
         assert_eq!(h.value, solution_value(&game, h.index));
         assert_eq!((game.hints_left(), game.hints_used()), (1, 1));
         assert_eq!((game.lives_left(), game.mistakes()), (3, 0));
-        assert_eq!(game.place(h.index, h.value), Err(MoveError::CellNotEmpty));
+        assert_eq!(
+            game.place(h.index, h.value, 0),
+            Err(MoveError::CellNotEmpty)
+        );
     }
 
     #[test]
     fn dica_eh_deterministica() {
         let (mut a, mut b) = (easy_game(), easy_game());
-        let first = (a.hint().unwrap(), a.hint().unwrap());
-        let second = (b.hint().unwrap(), b.hint().unwrap());
+        let first = (a.hint(0).unwrap(), a.hint(0).unwrap());
+        let second = (b.hint(0).unwrap(), b.hint(0).unwrap());
         assert_eq!(first, second);
         assert_ne!(first.0.index, first.1.index);
     }
@@ -533,7 +600,7 @@ mod tests {
         // Golden: mudou? É bug ou decisão consciente, registrada no mesmo commit.
         let mut game = easy_game();
         assert_eq!(
-            game.hint(),
+            game.hint(0),
             Ok(HintOutcome {
                 index: 40,
                 value: 9
@@ -547,7 +614,7 @@ mod tests {
         for i in empties(&game) {
             game.toggle_note(i, 1).unwrap();
         }
-        let h = game.hint().unwrap();
+        let h = game.hint(0).unwrap();
         assert!(game.notes(h.index).is_empty());
         let other = first_empty(&game);
         assert_eq!(game.notes(other).values(), vec![1]);
@@ -556,9 +623,9 @@ mod tests {
     #[test]
     fn sem_dicas_restantes_recusa() {
         let mut game = easy_game();
-        game.hint().unwrap();
-        game.hint().unwrap();
-        assert_eq!(game.hint(), Err(MoveError::NoHintsLeft));
+        game.hint(0).unwrap();
+        game.hint(0).unwrap();
+        assert_eq!(game.hint(0), Err(MoveError::NoHintsLeft));
         assert_eq!(game.hints_used(), 2);
 
         let config = GameConfig {
@@ -566,7 +633,8 @@ mod tests {
             hints: 0,
         };
         let mut no_hints = Game::new(Difficulty::Facil, 42, config);
-        assert_eq!(no_hints.hint(), Err(MoveError::NoHintsLeft));
+        no_hints.resume(0);
+        assert_eq!(no_hints.hint(0), Err(MoveError::NoHintsLeft));
     }
 
     #[test]
@@ -575,9 +643,9 @@ mod tests {
         let open = empties(&game);
         for &i in &open[1..] {
             let v = solution_value(&game, i);
-            game.place(i, v).unwrap();
+            game.place(i, v, 0).unwrap();
         }
-        let h = game.hint().unwrap();
+        let h = game.hint(0).unwrap();
         assert_eq!(h.index, open[0]);
         assert_eq!(game.status(), Status::Won);
     }
@@ -589,7 +657,10 @@ mod tests {
     #[test]
     fn puzzle_gerado_eh_aceito() {
         let game = Game::from_puzzle(easy_puzzle(), GameConfig::default()).unwrap();
-        assert_eq!(game, easy_game());
+        assert_eq!(
+            game,
+            Game::new(Difficulty::Facil, 42, GameConfig::default())
+        );
     }
 
     #[test]
@@ -651,7 +722,100 @@ mod tests {
     fn dica_depois_do_fim_eh_recusada() {
         let mut game = easy_game();
         make_mistakes(&mut game, 3);
-        assert_eq!(game.hint(), Err(MoveError::GameOver));
+        assert_eq!(game.hint(0), Err(MoveError::GameOver));
         assert_eq!(game.hints_left(), 2);
+    }
+
+    #[test]
+    fn partida_nova_comeca_pausada_e_recusa_acoes() {
+        let mut game = Game::new(Difficulty::Facil, 42, GameConfig::default());
+        let i = first_empty(&game);
+        assert!(game.is_paused());
+        assert_eq!(game.place(i, 1, 0), Err(MoveError::Paused));
+        assert_eq!(game.toggle_note(i, 1), Err(MoveError::Paused));
+        assert_eq!(game.hint(0), Err(MoveError::Paused));
+        assert_eq!((game.lives_left(), game.hints_left()), (3, 2));
+        assert!(game.notes(i).is_empty());
+    }
+
+    #[test]
+    fn partida_pausada_no_meio_recusa_acoes() {
+        let mut game = easy_game();
+        game.pause(500);
+        assert!(game.is_paused());
+        let i = first_empty(&game);
+        let v = solution_value(&game, i);
+        assert_eq!(game.place(i, v, 600), Err(MoveError::Paused));
+        assert_eq!(game.cell(i), CellState::Empty);
+    }
+
+    #[test]
+    fn tempo_jogado_nao_conta_as_pausas() {
+        let mut game = Game::new(Difficulty::Facil, 42, GameConfig::default());
+        game.resume(1_000);
+        assert_eq!(game.elapsed_ms(4_000), 3_000);
+        game.pause(4_000);
+        assert_eq!(game.elapsed_ms(60_000), 3_000);
+        game.resume(60_000);
+        assert_eq!(game.elapsed_ms(61_500), 4_500);
+    }
+
+    #[test]
+    fn pausar_ou_retomar_duas_vezes_nao_muda_nada() {
+        let mut game = Game::new(Difficulty::Facil, 42, GameConfig::default());
+        game.resume(1_000);
+        game.resume(5_000);
+        assert_eq!(game.elapsed_ms(6_000), 5_000);
+        game.pause(6_000);
+        game.pause(9_000);
+        assert_eq!(game.elapsed_ms(20_000), 5_000);
+    }
+
+    #[test]
+    fn relogio_que_volta_nao_quebra_o_tempo() {
+        let mut game = Game::new(Difficulty::Facil, 42, GameConfig::default());
+        game.resume(10_000);
+        assert_eq!(game.elapsed_ms(4_000), 0);
+        game.pause(4_000);
+        assert_eq!(game.elapsed_ms(4_000), 0);
+    }
+
+    #[test]
+    fn vitoria_para_o_relogio() {
+        let mut game = easy_game();
+        for i in empties(&game) {
+            let v = solution_value(&game, i);
+            game.place(i, v, 7_000).unwrap();
+        }
+        assert_eq!(game.status(), Status::Won);
+        assert_eq!(game.elapsed_ms(7_000), 7_000);
+        assert_eq!(game.elapsed_ms(99_000), 7_000);
+        assert!(!game.is_paused(), "partida terminada não está pausada");
+        game.resume(100_000);
+        assert_eq!(game.elapsed_ms(200_000), 7_000);
+    }
+
+    #[test]
+    fn derrota_para_o_relogio() {
+        let mut game = easy_game();
+        let i = first_empty(&game);
+        for now in [1_000, 2_000, 2_500] {
+            let w = wrong_value(&game, i);
+            game.place(i, w, now).unwrap();
+        }
+        assert_eq!(game.status(), Status::Lost);
+        assert_eq!(game.elapsed_ms(50_000), 2_500);
+    }
+
+    #[test]
+    fn dica_que_vence_para_o_relogio() {
+        let mut puzzle = easy_puzzle();
+        puzzle.givens = puzzle.solution.clone();
+        puzzle.givens.set(0, Cell::Empty);
+        let mut game = Game::from_puzzle(puzzle, GameConfig::default()).unwrap();
+        game.resume(0);
+        game.hint(800).unwrap();
+        assert_eq!(game.status(), Status::Won);
+        assert_eq!(game.elapsed_ms(10_000), 800);
     }
 }
