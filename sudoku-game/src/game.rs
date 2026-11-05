@@ -1,8 +1,11 @@
-use sudoku_core::{Cell, Difficulty, GenError, Puzzle, generate, validate};
+use std::num::NonZeroU8;
+
+use sudoku_core::{Cell, Difficulty, GenError, Grid, Puzzle, generate, validate};
 
 use crate::config::GameConfig;
 use crate::hint;
 use crate::notes::Notes;
+use crate::save::{RestoreError, SAVE_VERSION, SavedGame, difficulty_name, parse_difficulty};
 
 /// O que a tela mostra numa célula. Não existe estado "errado": um número errado nunca fica
 /// no tabuleiro, só custa uma vida.
@@ -87,6 +90,8 @@ pub enum MoveError {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Game {
     puzzle: Puzzle,
+    /// Guardada para a foto e para reiniciar com as mesmas regras.
+    config: GameConfig,
     cells: [CellState; 81],
     notes: [Notes; 81],
     lives_left: u8,
@@ -157,6 +162,7 @@ impl Game {
         });
         Game {
             puzzle,
+            config,
             cells,
             notes: [Notes::default(); 81],
             lives_left: config.lives.get(),
@@ -167,6 +173,103 @@ impl Game {
             elapsed_ms: 0,
             running_since: None,
         }
+    }
+
+    /// Tira a foto da partida no instante `now`. Se o relógio estiver rodando, o trecho até
+    /// `now` entra no tempo salvo, mas a partida em si não muda nem pausa.
+    pub fn save(&self, now: u64) -> SavedGame {
+        // Mesmo formato de `Grid::to_line`: '.' para vazia, o dígito para as outras.
+        let board = self
+            .cells
+            .iter()
+            .map(|c| c.value().map_or('.', |v| (b'0' + v) as char))
+            .collect();
+        SavedGame {
+            version: SAVE_VERSION,
+            difficulty: difficulty_name(self.puzzle.difficulty).to_string(),
+            seed: self.puzzle.seed.to_string(),
+            givens: self.puzzle.givens.to_line(),
+            solution: self.puzzle.solution.to_line(),
+            board,
+            hinted: (0..81u8)
+                .filter(|&i| matches!(self.cells[usize::from(i)], CellState::Hinted(_)))
+                .collect(),
+            notes: self
+                .notes
+                .iter()
+                .map(|n| n.values().iter().map(|&v| (b'0' + v) as char).collect())
+                .collect(),
+            lives: self.config.lives.get(),
+            hints: self.config.hints,
+            lives_left: self.lives_left,
+            hints_left: self.hints_left,
+            mistakes: self.mistakes,
+            hints_used: self.hints_used,
+            elapsed_ms: self.elapsed_ms(now),
+        }
+    }
+
+    /// Restaura uma partida a partir da foto. A partida volta sempre pausada (ou terminada, se
+    /// a foto era de uma partida terminada); quem decide continuar é a pessoa.
+    ///
+    /// A foto vem de fora e pode estar corrompida ou adulterada, então é conferida antes de
+    /// virar partida. O status não vem da foto: é derivado do tabuleiro e das vidas.
+    pub fn restore(saved: &SavedGame) -> Result<Game, RestoreError> {
+        if saved.version != SAVE_VERSION {
+            return Err(RestoreError::UnknownVersion(saved.version));
+        }
+        let difficulty = parse_difficulty(&saved.difficulty)?;
+        let seed: u64 = saved.seed.parse().map_err(|_| RestoreError::InvalidSeed)?;
+        let grid = |line: &str| Grid::from_line(line).map_err(|_| RestoreError::InvalidGrid);
+        let (givens, solution, board) = (
+            grid(&saved.givens)?,
+            grid(&saved.solution)?,
+            grid(&saved.board)?,
+        );
+        let lives = NonZeroU8::new(saved.lives).ok_or(RestoreError::InvalidLives)?;
+        let config = GameConfig {
+            lives,
+            hints: saved.hints,
+        };
+        let puzzle = Puzzle {
+            givens,
+            solution,
+            difficulty,
+            seed,
+        };
+        let mut game = Game::from_puzzle(puzzle, config).map_err(RestoreError::Puzzle)?;
+
+        for i in 0..81 {
+            if let (CellState::Empty, Cell::Filled(v)) = (game.cells[i], board.get(i)) {
+                game.cells[i] = CellState::Placed(v);
+            }
+        }
+        for &i in &saved.hinted {
+            let i = usize::from(i);
+            game.cells[i] = CellState::Hinted(game.solution_value(i));
+        }
+        for (i, digits) in saved.notes.iter().enumerate().take(81) {
+            for ch in digits.chars() {
+                let value = match ch.to_digit(10) {
+                    Some(d @ 1..=9) => d as u8,
+                    _ => return Err(RestoreError::InvalidNotes),
+                };
+                game.notes[i].toggle(value);
+            }
+        }
+        game.lives_left = saved.lives_left;
+        game.hints_left = saved.hints_left;
+        game.mistakes = saved.mistakes;
+        game.hints_used = saved.hints_used;
+        game.elapsed_ms = saved.elapsed_ms;
+        game.status = if !game.cells.contains(&CellState::Empty) {
+            Status::Won
+        } else if game.lives_left == 0 {
+            Status::Lost
+        } else {
+            Status::Playing
+        };
+        Ok(game)
     }
 
     pub fn puzzle(&self) -> &Puzzle {
@@ -817,5 +920,113 @@ mod tests {
         game.hint(800).unwrap();
         assert_eq!(game.status(), Status::Won);
         assert_eq!(game.elapsed_ms(10_000), 800);
+    }
+
+    /// Partida Médio seed 7 com uma jogada certa, um erro, uma anotação e uma dica, até 9_000 ms.
+    fn played_game() -> Game {
+        let mut game = started(Difficulty::Medio, 7);
+        let open = empties(&game);
+        let v = solution_value(&game, open[0]);
+        game.place(open[0], v, 1_000).unwrap();
+        let w = wrong_value(&game, open[1]);
+        game.place(open[1], w, 2_000).unwrap();
+        game.toggle_note(open[2], 4).unwrap();
+        game.toggle_note(open[2], 8).unwrap();
+        game.hint(3_000).unwrap();
+        game
+    }
+
+    fn assert_same_game(a: &Game, b: &Game, now_a: u64, now_b: u64) {
+        assert_eq!(a.puzzle(), b.puzzle());
+        for i in 0..81 {
+            assert_eq!(a.cell(i), b.cell(i), "célula {i}");
+            assert_eq!(a.notes(i), b.notes(i), "anotações da célula {i}");
+        }
+        assert_eq!(
+            (a.lives_left(), a.hints_left(), a.mistakes(), a.hints_used()),
+            (b.lives_left(), b.hints_left(), b.mistakes(), b.hints_used()),
+        );
+        assert_eq!(a.status(), b.status());
+        assert_eq!(a.elapsed_ms(now_a), b.elapsed_ms(now_b));
+    }
+
+    #[test]
+    fn restaurar_devolve_a_mesma_partida_pausada() {
+        let game = played_game();
+        let restored = Game::restore(&game.save(9_000)).unwrap();
+        assert!(restored.is_paused());
+        assert_same_game(&restored, &game, 123_456, 9_000);
+    }
+
+    #[test]
+    fn salvar_rodando_inclui_o_trecho_atual_e_nao_pausa() {
+        let game = easy_game();
+        assert_eq!(game.save(5_000).elapsed_ms, 5_000);
+        assert!(!game.is_paused());
+        assert_eq!(game.elapsed_ms(6_000), 6_000);
+    }
+
+    #[test]
+    fn dica_depois_de_restaurar_cai_na_mesma_celula() {
+        let mut game = started(Difficulty::Dificil, 3);
+        game.hint(0).unwrap();
+        let mut copy = Game::restore(&game.save(0)).unwrap();
+        copy.resume(0);
+        assert_eq!(game.hint(0), copy.hint(0));
+    }
+
+    #[test]
+    fn partida_terminada_restaura_terminada() {
+        let mut won = easy_game();
+        for i in empties(&won) {
+            let v = solution_value(&won, i);
+            won.place(i, v, 4_000).unwrap();
+        }
+        let mut lost = easy_game();
+        make_mistakes(&mut lost, 3);
+        for game in [won, lost] {
+            let restored = Game::restore(&game.save(50_000)).unwrap();
+            assert!(!restored.is_paused());
+            assert_same_game(&restored, &game, 99_000, 50_000);
+        }
+    }
+
+    #[test]
+    fn foto_guarda_seed_e_nivel_em_texto() {
+        let game = Game::new(Difficulty::MuitoDificil, u64::MAX, GameConfig::default());
+        let saved = game.save(0);
+        assert_eq!(saved.version, SAVE_VERSION);
+        assert_eq!(saved.difficulty, "MuitoDificil");
+        assert_eq!(saved.seed, game.puzzle().seed.to_string());
+    }
+
+    #[test]
+    fn foto_guarda_a_configuracao() {
+        let config = GameConfig {
+            lives: NonZeroU8::new(5).unwrap(),
+            hints: 1,
+        };
+        let game = Game::new(Difficulty::Facil, 42, config);
+        let restored = Game::restore(&game.save(0)).unwrap();
+        assert_eq!(restored.config, config);
+    }
+
+    #[test]
+    fn versao_nivel_ou_seed_desconhecidos_sao_recusados() {
+        let good = played_game().save(0);
+        let mut saved = good.clone();
+        saved.version = 2;
+        assert_eq!(Game::restore(&saved), Err(RestoreError::UnknownVersion(2)));
+        let mut saved = good.clone();
+        saved.difficulty = "Impossivel".to_string();
+        assert_eq!(Game::restore(&saved), Err(RestoreError::UnknownDifficulty));
+        for seed in ["abc", "-1", ""] {
+            let mut saved = good.clone();
+            saved.seed = seed.to_string();
+            assert_eq!(Game::restore(&saved), Err(RestoreError::InvalidSeed));
+        }
+        let mut saved = good.clone();
+        saved.givens.pop();
+        assert_eq!(Game::restore(&saved), Err(RestoreError::InvalidGrid));
     }
 }
