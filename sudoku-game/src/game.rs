@@ -86,6 +86,16 @@ pub enum MoveError {
     Paused,
 }
 
+/// O que `Game::restart` devolve. `#[non_exhaustive]` porque a fatia 3 acrescenta o resultado
+/// do abandono (reiniciar uma partida em andamento conta como derrota), sem quebrar quem já lê
+/// `game`. Fora do crate, só dá para ler os campos, nunca montar o valor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct Restart {
+    /// A partida nova, pausada: "começar" é o primeiro `resume`.
+    pub game: Game,
+}
+
 /// Uma partida em andamento: o puzzle e tudo o que a pessoa fez nele.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Game {
@@ -172,6 +182,15 @@ impl Game {
             status: Status::Playing,
             elapsed_ms: 0,
             running_since: None,
+        }
+    }
+
+    /// Começa outro puzzle do mesmo nível e com a mesma configuração, a partir de uma seed nova
+    /// que vem da casca (o Game não sorteia seeds). Vale em qualquer estado: em andamento,
+    /// pausada ou terminada ("jogar de novo").
+    pub fn restart(&self, seed: u64) -> Restart {
+        Restart {
+            game: Game::new(self.puzzle.difficulty, seed, self.config),
         }
     }
 
@@ -1259,5 +1278,35 @@ mod tests {
         let first = saved.solution.as_bytes()[0] as char;
         set_char(&mut saved.solution, 1, first);
         assert_rejected(&saved, RestoreError::Puzzle(PuzzleError::InvalidSolution));
+    }
+
+    #[test]
+    fn reiniciar_comeca_outro_puzzle_do_mesmo_nivel_e_configuracao() {
+        let config = GameConfig {
+            lives: NonZeroU8::new(5).unwrap(),
+            hints: 0,
+        };
+        let mut game = Game::new(Difficulty::Dificil, 1, config);
+        game.resume(0);
+        let new_game = game.restart(2).game;
+        assert_eq!(new_game.puzzle().difficulty, Difficulty::Dificil);
+        assert_eq!((new_game.lives_left(), new_game.hints_left()), (5, 0));
+        assert_eq!(
+            new_game.puzzle(),
+            Game::new(Difficulty::Dificil, 2, config).puzzle()
+        );
+        assert_ne!(new_game.puzzle().givens, game.puzzle().givens);
+        assert!(new_game.is_paused());
+        assert_eq!(new_game.elapsed_ms(10_000), 0);
+    }
+
+    #[test]
+    fn reiniciar_vale_depois_do_fim() {
+        let mut game = easy_game();
+        make_mistakes(&mut game, 3);
+        assert_eq!(game.status(), Status::Lost);
+        let new_game = game.restart(9).game;
+        assert_eq!(new_game.status(), Status::Playing);
+        assert_eq!(new_game.lives_left(), 3);
     }
 }
