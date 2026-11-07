@@ -4,8 +4,6 @@
 //! Assim os tipos do `sudoku-core` não precisam saber serializar, a forma salva fica legível, e a
 //! `Game` só nasce de uma foto depois de `Game::restore` conferir tudo.
 
-use sudoku_core::Difficulty;
-
 use crate::game::PuzzleError;
 
 /// Versão do formato da foto. Uma partida salva por uma versão antiga do app precisa continuar
@@ -73,44 +71,4 @@ pub enum RestoreError {
     InvalidLives,
     /// Derrota com o tabuleiro completo: estado impossível.
     InconsistentStatus,
-}
-
-/// Nome do nível na foto. `match` exaustivo: um nível novo no core quebra a compilação aqui.
-pub(crate) fn difficulty_name(difficulty: Difficulty) -> &'static str {
-    match difficulty {
-        Difficulty::Facil => "Facil",
-        Difficulty::Medio => "Medio",
-        Difficulty::Dificil => "Dificil",
-        Difficulty::MuitoDificil => "MuitoDificil",
-    }
-}
-
-/// O contrário de `difficulty_name`. Devolve `Option` porque a foto e o resultado salvo usam o
-/// mesmo nome, e cada um transforma o `None` no seu próprio erro.
-pub(crate) fn parse_difficulty(name: &str) -> Option<Difficulty> {
-    match name {
-        "Facil" => Some(Difficulty::Facil),
-        "Medio" => Some(Difficulty::Medio),
-        "Dificil" => Some(Difficulty::Dificil),
-        "MuitoDificil" => Some(Difficulty::MuitoDificil),
-        _ => None,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn nome_do_nivel_vai_e_volta() {
-        for d in [
-            Difficulty::Facil,
-            Difficulty::Medio,
-            Difficulty::Dificil,
-            Difficulty::MuitoDificil,
-        ] {
-            assert_eq!(parse_difficulty(difficulty_name(d)), Some(d));
-        }
-        assert_eq!(parse_difficulty("facil"), None);
-    }
 }

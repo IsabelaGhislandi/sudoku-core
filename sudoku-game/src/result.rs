@@ -8,7 +8,7 @@ use std::num::NonZeroU8;
 use sudoku_core::Difficulty;
 
 use crate::config::GameConfig;
-use crate::save::{difficulty_name, parse_difficulty};
+use crate::names::{difficulty_name, parse_difficulty};
 
 /// Versão do formato do resultado salvo. Cada registro leva a sua: um histórico guarda meses de
 /// partidas, gravadas por versões diferentes do app, e um formato novo precisa conviver com os

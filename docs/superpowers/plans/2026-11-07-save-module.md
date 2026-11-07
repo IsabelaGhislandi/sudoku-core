@@ -69,35 +69,39 @@ e depois, e um teste movido que ainda pega erro quando o código é quebrado de 
   `crate::names::parse_difficulty(&str) -> Option<Difficulty>`, ambos `pub(crate)`, com o mesmo
   corpo de hoje. A Task 50 importa deles.
 
-- [ ] **Step 1: Linha de base**
+- [x] **Step 1: Linha de base**
 
 Run: `cargo test --workspace 2>&1 | grep "test result"` e
 `cargo test --workspace --all-features 2>&1 | grep "test result"`
 Expected: todas `ok`. Anotar as contagens aqui, logo abaixo deste passo, no próprio plano: são a
 referência da Task 49 e da Task 50, mesmo que a sessão caia no meio.
 
-- [ ] **Step 2: Mover os nomes**
+Linha de base (2026-11-07), uma contagem por `test result`, na ordem do Cargo: sem features,
+`123 · 4 · 0 (3 ignorados) · 83 · 6 · 0 · 0 · 0 · 0`; com `--all-features`,
+`123 · 4 · 0 (3 ignorados) · 83 · 6 · 1 · 3 · 0 · 0`.
+
+- [x] **Step 2: Mover os nomes**
 
 `names.rs` recebe as duas funções, com o `///` atual, e o module doc diz por que existe: o nome
 do nível é o mesmo na foto e no resultado salvo, e não pertence a nenhum dos dois. O teste
 `nome_do_nivel_vai_e_volta` vai junto, sem mudança. `lib.rs` declara `mod names;` (privado).
 `save.rs`, `result.rs` e `game.rs` importam de `crate::names`.
 
-- [ ] **Step 3: Provar que o teste movido pega erro**
+- [x] **Step 3: Provar que o teste movido pega erro**
 
 Trocar `"Medio"` por `"Medio2"` em `parse_difficulty`.
 Run: `cargo test -p sudoku-game nome_do_nivel`
 Expected: FAIL em `assert_eq!(parse_difficulty(difficulty_name(d)), Some(d))` para `Medio`.
 Desfazer e rodar de novo: PASS.
 
-- [ ] **Step 4: Refactor e verificação**
+- [x] **Step 4: Refactor e verificação**
 
 Run: `grep -n "save" sudoku-game/src/result.rs` → Expected: nenhum `use crate::save`.
 Run: as duas linhas do Step 1 → Expected: mesmas contagens.
 Run: `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all`,
 `cargo build --workspace` → limpos.
 
-- [ ] **Step 5: Commit do código**
+- [x] **Step 5: Commit do código**
 
 ```bash
 git add sudoku-game/src docs/superpowers/plans/2026-11-07-save-module.md

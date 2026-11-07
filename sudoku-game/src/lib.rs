@@ -6,6 +6,7 @@
 mod config;
 mod game;
 mod hint;
+mod names;
 mod notes;
 mod result;
 mod save;

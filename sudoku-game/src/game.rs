@@ -4,9 +4,10 @@ use sudoku_core::{Cell, Difficulty, GenError, Grid, Puzzle, generate, validate};
 
 use crate::config::GameConfig;
 use crate::hint;
+use crate::names::{difficulty_name, parse_difficulty};
 use crate::notes::Notes;
 use crate::result::{GameResult, Outcome};
-use crate::save::{RestoreError, SAVE_VERSION, SavedGame, difficulty_name, parse_difficulty};
+use crate::save::{RestoreError, SAVE_VERSION, SavedGame};
 
 /// O que a tela mostra numa célula. Não existe estado "errado": um número errado nunca fica
 /// no tabuleiro, só custa uma vida.
