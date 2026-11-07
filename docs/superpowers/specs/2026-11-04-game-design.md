@@ -1,7 +1,7 @@
 # Spec — Módulo Game/Sessão
 
 - **Data:** 2026-11-04
-- **Status:** aprovada. Fatias 1 (workspace e partida básica) e 2 (tempo e salvamento, seção 11) implementadas; fatia 3 pendente.
+- **Status:** aprovada. Fatias 1 (workspace e partida básica) e 2 (tempo e salvamento, seção 11) implementadas; fatia 3 (resultados, seção 12) especificada.
 - **Módulo:** 2 de 5 (Game/Sessão). Depende do [módulo 1, engine](2026-06-14-sudoku-engine-design.md).
 - **Visão relacionada:** [`docs/architecture.md`](../../architecture.md), seções 10 (PvP) e 11.
 
@@ -327,7 +327,145 @@ não precisa devolver resultado nenhum.
   feature ligada (por exemplo, `--all-features` no clippy e nos testes).
 - Página da wiki por task e o consolidado das tasks 36 a 40, que cai durante esta fatia.
 
-## 12. Ainda em aberto no projeto
+## 12. Fatia 3 em detalhe: resultados
+
+Decidido em conversa em 2026-11-06: o histórico fica **só** com o que a seção 2 já descreve. O
+resto desta seção aplica as regras das seções 2 e 7, e o que vai além delas está marcado como
+*escolha do autor da spec*.
+
+### 12.1 Intenção
+
+Toda partida que a pessoa começa termina num **registro**, e fugir de uma partida ruim não protege
+a estatística. A partir dessa lista de registros, a tela mostra o histórico
+(`Jogo Médio — 10 min — 13/06/2026`), as estatísticas por nível e o ranking pessoal. O Game monta
+o registro e faz as contas; a casca guarda a lista e grava no disco.
+
+### 12.2 O resultado
+
+**Quando nasce.** Um resultado nasce em dois casos:
+
+- **A partida terminou** (vitória ou derrota por vidas). A casca pede o resultado de uma partida
+  terminada. Pedir o resultado de uma partida em andamento não dá resultado nenhum.
+- **A partida foi abandonada sem terminar**: reiniciada ou largada no meio. O abandono vale com a
+  partida pausada, inclusive se ela nunca foi começada (*escolha do autor da spec*: a partida
+  existiu e foi trocada, então conta; a regra da seção 2 não abre exceção).
+
+Reiniciar uma partida **já terminada** ("jogar de novo") **não** gera um segundo registro: ela já
+tem o seu (seção 11.3).
+
+**Um registro por partida é contrato com a casca** (*escolha do autor da spec*). O compilador não
+tem como garantir isso por inteiro: uma foto restaurada de uma partida terminada pode pedir o
+resultado de novo, e a partida pode ser clonada ou largada. Então a regra fica assim:
+
+- O resultado de uma partida terminada é **puro e repetível**: pedir duas vezes dá o mesmo valor.
+  Pedir não muda a partida, e o `Game` continua `Clone`.
+- A casca **registra o resultado no momento em que a partida termina** (quando `place` ou `hint`
+  a levam a vitória ou derrota), **antes** de salvar a foto. Assim, fechar o app depois do fim não
+  perde o registro, e restaurar uma partida terminada não precisa registrar de novo.
+- Reiniciar e abandonar devolvem resultado **só de abandono**, ou seja, só de partida não
+  terminada. Para uma terminada, não devolvem nada, porque a casca já registrou.
+- `restart` continua recebendo `&self` (fatia 2). Abandonar consome a partida (12.2, abaixo).
+- Uma foto **recusada** por `restore` (corrompida) não vira registro: sem foto válida, não há nível
+  nem seed confiáveis. É a única porta pela qual uma partida some sem resultado, e é aceita.
+
+**O que tem** (seção 7, mais as escolhas abaixo):
+
+- nível e seed do puzzle;
+- desfecho: vitória, derrota por vidas esgotadas, ou derrota por abandono;
+- tempo jogado, em milissegundos, sem as pausas;
+- erros cometidos e dicas usadas;
+- a **configuração** da partida (vidas e dicas). *Escolha do autor da spec:* um ranking justo
+  entre partidas, sobretudo um online, precisa saber se a pessoa jogou com 3 vidas ou com 1;
+- a **data**, informada pela casca.
+
+**A data** (*escolha do autor da spec*). A casca informa um instante de **relógio de parede**, em
+milissegundos desde a época Unix (UTC), e a tela formata (`13/06/2026`) no fuso do aparelho. É um
+número diferente do `now` monotônico da fatia 2: o `now` mede duração e pode não ter relação com o
+calendário; a data é calendário e pode pular (ajuste de hora). O Game não usa a data para nada além
+de guardá-la e, no ranking, desempatar. O tempo jogado continua vindo só do `now`.
+
+**Abandono.** Duas portas, com o mesmo resultado:
+
+- **Reiniciar** (`restart`, da fatia 2) devolve, além da partida nova, o resultado do abandono
+  quando a partida antiga não tinha terminado. O `Restart` já é `#[non_exhaustive]` para isso. A
+  assinatura ganha o instante e a data.
+- **Abandonar** sem começar outra (por exemplo, voltar ao menu e escolher outro nível) consome a
+  partida e devolve o resultado do abandono, ou nada se ela já tinha terminado. *Escolha do autor
+  da spec:* consumir a partida (`self`) faz o compilador impedir jogadas depois do abandono, em vez
+  de mais um status.
+
+O abandono continua **fora da foto** (seção 11.3): o status da partida segue `Playing`, `Won` ou
+`Lost`, e o motivo da derrota mora só no resultado.
+
+### 12.3 Estatísticas e ranking
+
+Funções **puras** sobre uma lista de resultados que a casca entrega (seção 7). O Game não guarda a
+lista.
+
+**Estatísticas, por nível:**
+
+- partidas jogadas e vitórias, com a **porcentagem de vitórias** (abandonos contam como derrota);
+- **melhor tempo**: o menor tempo entre as vitórias do nível, ou nenhum se não houver vitória.
+
+**Ranking pessoal, por nível:** só vitórias, do **menor tempo** para o maior (seção 7). *Escolha do
+autor da spec:* empate no tempo vai para a partida **mais antiga** (quem chegou primeiro), e
+empate também na data mantém a ordem da lista. A casca escolhe quantas mostra.
+
+*Escolha do autor da spec:* dicas usadas e configuração **não** filtram nem pesam no ranking pessoal
+nesta fatia. Elas ficam no resultado para um ranking online decidir depois.
+
+**Lista vazia ou nível sem partidas:** estatística zerada, sem melhor tempo e sem porcentagem
+(e não 0%, que diria "perdeu todas"). Ranking vazio.
+
+### 12.4 Salvamento do resultado
+
+- Com a feature `serde`, o resultado é serializável, como a foto. A casca guarda a lista (o app
+  usa JSON).
+- Os tipos do `sudoku-core` continuam **sem** `serde` (seção 11.4). Nível e seed seguem a forma da
+  foto: nível pelo nome (`"Medio"`), seed em texto, por causa do limite de 2^53 do JavaScript. A
+  data também vai em texto, pelo mesmo motivo.
+- *Escolha do autor da spec:* **cada resultado leva um número de versão**, começando em 1, como a
+  foto. Um histórico guarda registros de meses, de versões diferentes do app; com a versão em cada
+  um, um formato novo convive com os antigos na mesma lista.
+- Um **golden test** trava o JSON de um resultado fixo. Um histórico de meses precisa continuar
+  abrindo depois de uma atualização do app: mudou a forma, ou é bug, ou é versão nova com leitura
+  da antiga.
+- *Escolha do autor da spec:* ler um resultado **não** confere a coerência dele (vidas × erros, por
+  exemplo) além do que a desserialização já exige. Um histórico editado à mão só engana a própria
+  pessoa, e o ranking online, quando existir, refaz a partida pela seed.
+
+### 12.5 Metas, não-metas e o que não pode acontecer
+
+- **Metas:** resultado de vitória, de derrota por vidas e de abandono; reiniciar devolvendo o
+  abandono; estatísticas e ranking por nível; resultado serializável com golden test.
+- **Não-metas:** guardar a lista ou gravar no disco; formatar a data ou o tempo para a tela;
+  ranking online, contas e rede; apagar ou editar o histórico; estatísticas além das da seção 2
+  (sequência de vitórias, média de tempo...).
+- **Não pode acontecer:**
+  - reiniciar ou abandonar uma partida em andamento ou pausada sem devolver o resultado do
+    abandono;
+  - reiniciar ou abandonar uma partida terminada devolver um segundo resultado;
+  - pedir o resultado de uma partida terminada dar valores diferentes a cada chamada;
+  - o tempo do resultado contar pausas ou depender de a casca ter pausado antes;
+  - um abandono contar como vitória ou não baixar a porcentagem de vitórias;
+  - mudar o `sudoku-core`, a forma da foto v1 ou a saída do gerador.
+
+### 12.6 Com o builder
+
+- Os nomes: o tipo do resultado, o desfecho, as funções de estatística e ranking, o método de
+  abandonar e o novo campo do `Restart`.
+- Como a casca pede o resultado de uma partida terminada: um método que devolve `Option` é o
+  caminho mais simples; `place` e `hint` devolverem o resultado junto também serve.
+- A forma das estatísticas: contagens com a porcentagem calculada, ou só as contagens. A
+  porcentagem não pode virar `NaN` nem dividir por zero.
+- A forma serializada de cada campo, dentro de 12.4.
+- **Opcional, antes das tasks de resultado:** os candidatos A e D da revisão de arquitetura de
+  2026-11-06 (mover a conversão da foto para `save.rs`; derivar vidas, dicas e status em vez de
+  guardá-los). Não mudam a interface nem a foto v1, e deixam a `game.rs` menor antes de crescer.
+  Se entrarem, são tasks `refactor` próprias, com os testes atuais passando antes e depois.
+- Página da wiki por task e o consolidado das tasks 41 a 45, que cai durante esta fatia.
+
+## 13. Ainda em aberto no projeto
 
 - **Nome do repositório.** Ele se chama `sudoku-core`, mas vai abrigar o app inteiro. Renomear (por
   exemplo, para `sudoku`) é decisão da pessoa responsável, fora desta spec.
