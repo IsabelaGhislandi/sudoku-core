@@ -108,7 +108,7 @@ git add sudoku-game/src docs/superpowers/plans/2026-11-07-save-module.md
 git commit -m "refactor: move saved level names into their own module"
 ```
 
-- [ ] **Step 6: Wiki da task e commit `docs`**
+- [x] **Step 6: Wiki da task e commit `docs`**
 
 Página `49-modules-de-dentro-do-crate.md`, cabeçalho
 `# 49 — Nomes salvos: um module de dentro do crate, `pub(crate)` e dependência entre irmãos`

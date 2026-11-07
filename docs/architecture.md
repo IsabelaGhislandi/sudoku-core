@@ -141,6 +141,7 @@ sudoku-game/
 │   │                   Restart, PlaceOutcome, HintOutcome, MoveError, PuzzleError
 │   ├── notes.rs        Notes: anotações de uma célula (bitmask u16)
 │   ├── save.rs         SavedGame (foto versão 1, campos simples), RestoreError, SAVE_VERSION
+│   ├── names.rs        difficulty_name e parse_difficulty: o nome do nível na foto e no resultado salvo
 │   ├── result.rs       GameResult, Outcome, SavedResult (registro versão 1), ResultError, RESULT_VERSION
 │   ├── stats.rs        LevelStats, level_stats e personal_ranking: funções puras sobre os resultados
 │   └── hint.rs         splitmix64 e pick: sorteio determinístico da célula da dica
