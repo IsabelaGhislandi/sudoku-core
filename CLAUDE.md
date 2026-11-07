@@ -113,7 +113,13 @@ acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`]
 
 - **Uma página de wiki por task**, em `docs/wiki/`, em português, focada nos conceitos de Rust
   que apareceram naquela task (o projeto também é um estudo de Rust, vindo de background web).
-  Indexe a página nova em `docs/wiki/README.md`.
+  Indexe a página nova em `docs/wiki/README.md`. Formato das páginas:
+  - Cabeçalho: `# NN — <tema>: <conceito>, <conceito> e <conceito>` e, logo abaixo,
+    ``> Referente à Task N do plano <fatia>. Commit: `<mensagem do commit feat/fix>`.``
+  - Uma seção `##` por conceito de Rust, com o código do próprio projeto como exemplo e o
+    *porquê* da escolha, não só o *como*.
+  - Comparação com JavaScript/TypeScript sempre que houver um equivalente (ou uma diferença que
+    surpreenda quem vem da web: ownership, `Option` no lugar de `null`, enum com dados...).
 - A cada 5 tasks, um documento consolidado em `docs/wiki/fundamentos/`.
 - `docs/architecture.md` é a visão de design; mantenha-o em dia quando uma decisão mudar.
 - `CONTEXT.md` é o glossário do domínio. Tipo novo, renomeado ou removido no código atualiza o
