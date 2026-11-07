@@ -16,14 +16,22 @@ pub struct LevelStats {
 
 impl LevelStats {
     /// Porcentagem de vitórias, arredondada para o inteiro mais próximo (meio para cima):
-    /// 2 de 3 dá 67. `None` sem partidas, em vez de 0%, que diria "perdeu todas".
+    /// 2 de 3 dá 67. `None` sem partidas, em vez de 0%, que diria "perdeu todas". 0% e 100% só
+    /// aparecem quando são verdade.
     pub fn win_percentage(&self) -> Option<u8> {
         if self.played == 0 {
             return None;
         }
         // Em u64: `won * 100` não estoura nem com u32::MAX partidas.
         let (won, played) = (u64::from(self.won), u64::from(self.played));
-        Some(((won * 100 + played / 2) / played) as u8)
+        let rounded = ((won * 100 + played / 2) / played) as u8;
+        // 0% diria "perdeu todas" e 100% "venceu todas". Com uma vitória em 201, ou uma derrota
+        // em 200, o arredondamento chegaria lá; nesses casos fica em 1% ou 99%.
+        if won == 0 || won == played {
+            Some(rounded)
+        } else {
+            Some(rounded.clamp(1, 99))
+        }
     }
 }
 
@@ -96,6 +104,19 @@ mod tests {
             best_ms: Some(1),
         };
         assert_eq!(s.win_percentage(), Some(67));
+    }
+
+    #[test]
+    fn porcentagem_so_eh_0_ou_100_quando_eh_verdade() {
+        let stats = |played, won| LevelStats {
+            played,
+            won,
+            best_ms: None,
+        };
+        assert_eq!(stats(200, 199).win_percentage(), Some(99));
+        assert_eq!(stats(201, 1).win_percentage(), Some(1));
+        assert_eq!(stats(5, 5).win_percentage(), Some(100));
+        assert_eq!(stats(5, 0).win_percentage(), Some(0));
     }
 
     #[test]
