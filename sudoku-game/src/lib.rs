@@ -7,6 +7,7 @@ mod config;
 mod game;
 mod hint;
 mod notes;
+mod result;
 mod save;
 
 pub use config::GameConfig;
@@ -14,6 +15,7 @@ pub use game::{
     CellState, Game, HintOutcome, MoveError, PlaceOutcome, PuzzleError, Restart, Status,
 };
 pub use notes::Notes;
+pub use result::{GameResult, Outcome};
 pub use save::{RestoreError, SAVE_VERSION, SavedGame};
 
 // A casca só precisa depender deste crate: os tipos do core que aparecem na API vêm junto

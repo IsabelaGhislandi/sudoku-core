@@ -5,6 +5,7 @@ use sudoku_core::{Cell, Difficulty, GenError, Grid, Puzzle, generate, validate};
 use crate::config::GameConfig;
 use crate::hint;
 use crate::notes::Notes;
+use crate::result::{GameResult, Outcome};
 use crate::save::{RestoreError, SAVE_VERSION, SavedGame, difficulty_name, parse_difficulty};
 
 /// O que a tela mostra numa célula. Não existe estado "errado": um número errado nunca fica
@@ -437,6 +438,42 @@ impl Game {
         self.hints_used += 1;
         self.finish_if_complete(now);
         Ok(HintOutcome { index, value })
+    }
+
+    /// O resultado de uma partida **terminada** (vitória ou derrota por vidas), ou `None` se ela
+    /// ainda está em andamento. `finished_at_ms` é a data do registro, pelo relógio de parede da
+    /// casca (ver `GameResult`).
+    ///
+    /// É repetível: pedir de novo dá o mesmo resultado (só a data muda, se mudar o argumento), e
+    /// pedir não muda a partida. A casca registra o resultado quando `place` ou `hint` terminam a
+    /// partida, antes de salvar a foto; por isso não precisa registrar de novo ao restaurar uma
+    /// partida terminada. O tempo é o congelado no fim, e não cresce depois.
+    pub fn result(&self, finished_at_ms: u64) -> Option<GameResult> {
+        let outcome = match self.status {
+            Status::Playing => return None,
+            Status::Won => Outcome::Won,
+            Status::Lost => Outcome::OutOfLives,
+        };
+        Some(self.result_with(outcome, self.elapsed_ms, finished_at_ms))
+    }
+
+    /// Monta o resultado com o desfecho e o tempo dados; o resto vem da partida.
+    pub(crate) fn result_with(
+        &self,
+        outcome: Outcome,
+        elapsed_ms: u64,
+        finished_at_ms: u64,
+    ) -> GameResult {
+        GameResult {
+            difficulty: self.puzzle.difficulty,
+            seed: self.puzzle.seed,
+            outcome,
+            elapsed_ms,
+            mistakes: self.mistakes,
+            hints_used: self.hints_used,
+            config: self.config,
+            finished_at_ms,
+        }
     }
 
     /// Termina a partida e congela o relógio em `now`. É o único lugar onde a partida acaba,
@@ -1309,6 +1346,46 @@ mod tests {
         let new_game = game.restart(9).game;
         assert_eq!(new_game.status(), Status::Playing);
         assert_eq!(new_game.lives_left(), 3);
+    }
+
+    /// Data de relógio de parede (13/06/2026 12:00 UTC), em milissegundos desde a época Unix.
+    const DATE: u64 = 1_781_352_000_000;
+
+    #[test]
+    fn partida_em_andamento_nao_tem_resultado() {
+        let game = easy_game();
+        assert_eq!(game.result(DATE), None);
+    }
+
+    #[test]
+    fn derrota_por_vidas_vira_resultado() {
+        let mut game = easy_game();
+        make_mistakes(&mut game, 3);
+        let r = game.result(DATE).unwrap();
+        assert_eq!(r.outcome, Outcome::OutOfLives);
+        assert_eq!(
+            (r.difficulty, r.seed),
+            (Difficulty::Facil, game.puzzle().seed)
+        );
+        assert_eq!((r.mistakes, r.hints_used), (3, 0));
+        assert_eq!(r.config, GameConfig::default());
+        assert_eq!(r.finished_at_ms, DATE);
+    }
+
+    #[test]
+    fn vitoria_vira_resultado_com_o_tempo_congelado() {
+        let mut game = easy_game();
+        game.hint(0).unwrap();
+        while let Some(i) = (0..81).find(|&i| game.cell(i) == CellState::Empty) {
+            let v = solution_value(&game, i);
+            game.place(i, v, 4_000).unwrap();
+        }
+        let r = game.result(DATE).unwrap();
+        assert_eq!(r.outcome, Outcome::Won);
+        assert_eq!((r.elapsed_ms, r.hints_used), (4_000, 1));
+        // Pedir de novo, com outra data, só muda a data: nada na partida mudou.
+        assert_eq!(game.result(DATE + 1).unwrap().elapsed_ms, 4_000);
+        assert_eq!(game.result(DATE), Some(r));
     }
 
     #[test]
