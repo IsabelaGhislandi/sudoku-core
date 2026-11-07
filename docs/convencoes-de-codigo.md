@@ -95,7 +95,7 @@ Rust não tem herança, e boa parte do SOLID foi pensada para ela. O que sobra, 
 
 | Princípio | Em Rust, neste projeto |
 |---|---|
-| **S** — responsabilidade única | Um módulo por motivo de mudança. A foto (`save.rs`), o resultado (`result.rs`) e as estatísticas (`stats.rs`) mudam por motivos diferentes e moram em arquivos diferentes. |
+| **S** — responsabilidade única | Um módulo por motivo de mudança. A foto (`game/save.rs`), o resultado (`result.rs`) e as estatísticas (`stats.rs`) mudam por motivos diferentes e moram em arquivos diferentes. Mudar o formato da foto mexe só em `game/save.rs`. |
 | **O** — aberto/fechado | Conjunto **aberto** → trait: uma técnica nova implementa `Technique` e entra na lista do solver, sem mexer nas outras. Conjunto **fechado** → `enum` com `match` exaustivo (`Outcome`, `CellState`): o compilador aponta cada lugar que precisa tratar a variante nova. Escolha pelo tipo de conjunto, não por gosto. |
 | **L** — substituição de Liskov | Toda implementação de trait cumpre o contrato **documentado** na trait. Ex.: uma `Deduction` com `Action::Eliminate` nunca vem vazia, senão o solver entra em laço. Contrato que o tipo não garante vai no `///`. |
 | **I** — segregação de interfaces | Traits pequenas, com o mínimo de métodos. E trait só quando há (ou vai haver logo) **duas** implementações; com uma só, uma função ou um tipo concreto basta. |

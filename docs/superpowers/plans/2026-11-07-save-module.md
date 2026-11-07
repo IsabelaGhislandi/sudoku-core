@@ -195,7 +195,14 @@ Run: `grep -c "#\[test\]" sudoku-game/src/game.rs sudoku-game/src/game/save.rs` 
 Quebrar de propósito: em `restore`, trocar `i <= p` por `i < p` na conferência das dicas.
 Run: `cargo test -p sudoku-game dica_repetida` → Expected: FAIL em `dica_repetida_eh_recusada`
 (o `restore` passa a aceitar a dica repetida). Desfazer → PASS.
-Na execução, essa quebra **não** derrubou o teste: uma dica repetida já cai na conferência`let CellState::Placed(v) = ... else`, porque na segunda visita a célula está `Hinted`. A provausou outra conferência movida: em `parse_notes`, `d > previous` → `d >= previous` derrubou`anotacao_repetida_ou_fora_de_ordem_eh_recusada` (`Ok(..)` no lugar de `Err(InvalidNotes)`).Nenhum teste cobre dicas fora de ordem; fica registrado como lacuna, fora deste refactor.
+
+Na execução, essa quebra **não** derrubou o teste: uma dica repetida já cai na conferência
+`let CellState::Placed(v) = ... else`, porque na segunda visita a célula está `Hinted`. A prova
+usou outra conferência movida: em `parse_notes`, `d > previous` → `d >= previous` derrubou
+`anotacao_repetida_ou_fora_de_ordem_eh_recusada` (`Ok(..)` no lugar de `Err(InvalidNotes)`).
+Nenhum teste cobre dicas fora de ordem; fica registrado como lacuna, fora deste refactor.
+O `sed` do Step 4 também deixou `pub(super)` no método `Game::solution_value`; desfeito antes do
+commit, porque nenhum método da `Game` ganha visibilidade.
 
 - [x] **Step 6: Refactor e verificação**
 
@@ -210,7 +217,7 @@ git add sudoku-game/src docs/superpowers/plans/2026-11-07-save-module.md
 git commit -m "refactor: move the saved game codec into a child module of game"
 ```
 
-- [ ] **Step 8: Wiki da task, consolidado e commit `docs`**
+- [x] **Step 8: Wiki da task, consolidado e commit `docs`**
 
 Página `50-module-filho-e-privacidade.md`, cabeçalho
 `# 50 — A foto como module filho: privacidade por árvore, `impl` em outro arquivo e `git mv``

@@ -1,7 +1,7 @@
 # Spec — Refactor: a foto mora no module de salvamento
 
 - **Data:** 2026-11-07
-- **Status:** aprovada.
+- **Status:** implementada (Tasks 49 e 50 do [plano](../plans/2026-11-07-save-module.md)).
 - **Módulo:** 2 de 5 (Game/Sessão), depois do fim da fase. Refactor interno, sem comportamento novo.
 - **Origem:** candidato A das revisões de arquitetura de 2026-11-06 e 2026-11-07 (skill
   `improve-codebase-architecture`), já listado como opcional na
