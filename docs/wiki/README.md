@@ -66,5 +66,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [44 — Reiniciar: `#[non_exhaustive]`, `&self` que devolve um valor novo e o fim da fatia 2](44-reiniciar-e-non-exhaustive.md)
 - [45 — Resultado da partida: enum de desfecho, `Option` para "só quando terminou" e dois relógios](45-resultado-da-partida.md)
 - [46 — Abandonar: `self` que consome, `bool::then` e uma assinatura que cresce](46-abandonar-e-self.md)
+- [47 — Estatísticas: iteradores preguiçosos, `Option` no lugar de dividir por zero e ordenação estável](47-estatisticas-e-iteradores.md)
 
 > Cada nova task ganha uma página aqui.
