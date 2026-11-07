@@ -137,10 +137,13 @@ sudoku-game/
 │   ├── lib.rs          re-exporta a API e os tipos do core que ela usa (Difficulty, Puzzle, Grid, Cell)
 │   ├── config.rs       GameConfig { lives: NonZeroU8, hints: u8 }, padrão 3 vidas e 2 dicas
 │   ├── game.rs         Game (new, from_puzzle, place, toggle_note, hint, pause, resume,
-│   │                   elapsed_ms, save, restore, restart, result, abandon), CellState, Status,
+│   │                   elapsed_ms, restart, result, abandon), CellState, Status,
 │   │                   Restart, PlaceOutcome, HintOutcome, MoveError, PuzzleError
 │   ├── notes.rs        Notes: anotações de uma célula (bitmask u16)
-│   ├── save.rs         SavedGame (foto versão 1, campos simples), RestoreError, SAVE_VERSION
+│   ├── game/
+│   │   └── save.rs     SavedGame (foto versão 1, campos simples), RestoreError, SAVE_VERSION e o
+│   │                   bloco `impl Game { save, restore }`: filho de `game` para ler os campos privados
+│   ├── names.rs        difficulty_name e parse_difficulty: o nome do nível na foto e no resultado salvo
 │   ├── result.rs       GameResult, Outcome, SavedResult (registro versão 1), ResultError, RESULT_VERSION
 │   ├── stats.rs        LevelStats, level_stats e personal_ranking: funções puras sobre os resultados
 │   └── hint.rs         splitmix64 e pick: sorteio determinístico da célula da dica

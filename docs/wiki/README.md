@@ -17,6 +17,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 31 a 35](fundamentos/rust-base-tarefas-31-a-35.md)
 - [Fundamentos de Rust — Tarefas 36 a 40](fundamentos/rust-base-tarefas-36-a-40.md)
 - [Fundamentos de Rust — Tarefas 41 a 45](fundamentos/rust-base-tarefas-41-a-45.md)
+- [Fundamentos de Rust — Tarefas 46 a 50](fundamentos/rust-base-tarefas-46-a-50.md)
 
 ## Índice por task
 
@@ -68,5 +69,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [46 — Abandonar: `self` que consome, `bool::then` e uma assinatura que cresce](46-abandonar-e-self.md)
 - [47 — Estatísticas: iteradores preguiçosos, `Option` no lugar de dividir por zero e ordenação estável](47-estatisticas-e-iteradores.md)
 - [48 — Resultado salvável: o mesmo padrão de DTO, versão por registro e o fim da fatia 3](48-resultado-salvavel.md)
+- [49 — Nomes salvos: um module de dentro do crate, `pub(crate)` e dependência entre irmãos](49-modules-de-dentro-do-crate.md)
+- [50 — A foto como module filho: privacidade por árvore, `impl` em outro arquivo e `git mv`](50-module-filho-e-privacidade.md)
 
 > Cada nova task ganha uma página aqui.

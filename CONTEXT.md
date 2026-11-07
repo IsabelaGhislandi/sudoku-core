@@ -65,7 +65,7 @@ entre parênteses, o nome que aparece na conversa e nos docs em português. O de
 ## Salvamento e histórico (`sudoku-game`)
 
 - **`SavedGame`** (foto): a partida em campos simples, versionada (`SAVE_VERSION`), sem garantia
-  nenhuma até passar por `Game::restore`. `sudoku-game/src/save.rs`.
+  nenhuma até passar por `Game::restore`. `sudoku-game/src/game/save.rs`.
 - **`GameResult`** (resultado): o registro de uma partida terminada ou abandonada: nível, seed,
   **`Outcome`** (`Won`, `OutOfLives`, `Abandoned`), tempo, erros, dicas, configuração e data. Só
   nasce da `Game` ou de um registro salvo. `sudoku-game/src/result.rs`.
