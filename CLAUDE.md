@@ -82,3 +82,7 @@ acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`]
   Indexe a página nova em `docs/wiki/README.md`.
 - A cada 5 tasks, um documento consolidado em `docs/wiki/fundamentos/`.
 - `docs/architecture.md` é a visão de design; mantenha-o em dia quando uma decisão mudar.
+- `CONTEXT.md` é o glossário do domínio. Tipo novo, renomeado ou removido no código atualiza o
+  glossário no mesmo commit.
+- No fim de cada fase (Engine, Game...), rode a skill `improve-codebase-architecture` antes do spec
+  da fase seguinte. Skills do fluxo: `docs/architecture.md`, seção 9.
