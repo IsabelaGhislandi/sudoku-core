@@ -144,11 +144,11 @@ git commit -m "docs: add wiki page 49 on crate-private modules"
   e `Game::restore(saved: &SavedGame) -> Result<Game, RestoreError>`, agora definidos em
   `game/save.rs`; `sudoku_game::{SavedGame, RestoreError, SAVE_VERSION}` continuam exportados.
 
-- [ ] **Step 1: Linha de base**
+- [x] **Step 1: Linha de base**
 
 As duas linhas do Step 1 da Task 49 → Expected: as mesmas contagens de lá.
 
-- [ ] **Step 2: Mover o arquivo e religar os modules**
+- [x] **Step 2: Mover o arquivo e religar os modules**
 
 `git mv sudoku-game/src/save.rs sudoku-game/src/game/save.rs`. Em `game.rs`: `mod save;` e
 `pub use save::{RestoreError, SAVE_VERSION, SavedGame};`. O module fica privado, e só os três
@@ -156,7 +156,7 @@ itens saem. Em `lib.rs`: sai `mod save;`, e os três entram no `pub use game::{.
 `game/save.rs`: `use super::{CellState, Game, PuzzleError};`, mais o que o código movido precisar.
 Run: `cargo build --workspace` → compila.
 
-- [ ] **Step 3: Mover o código da foto**
+- [x] **Step 3: Mover o código da foto**
 
 Para `game/save.rs`, sem mudar uma linha do corpo: o bloco `impl Game { pub fn save(&self, now: u64) -> SavedGame; pub fn restore(saved: &SavedGame) -> Result<Game, RestoreError> }`
 com os `///` atuais, e a função livre `parse_notes`. Na `game.rs` não fica nada da foto, e o
@@ -164,7 +164,7 @@ comentário do `struct Game` sobre `config` continua valendo. Nenhum campo nem m
 ganha visibilidade: `from_puzzle` já é `pub`, e `solution_value` é privado em `game`, visível para o
 filho. O doc do module `save.rs` ganha uma frase sobre por que ele é filho de `game`.
 
-- [ ] **Step 4: Mover os testes da foto**
+- [x] **Step 4: Mover os testes da foto**
 
 Para o `mod tests` de `game/save.rs` vão os helpers `played_game` e `valid_save` e estes 24
 testes, sem mudança de corpo:
@@ -186,7 +186,7 @@ Os helpers que os dois blocos de testes usam (`started`, `easy_game`, `solution_
 `pub(super)`, e o de `save.rs` os importa com `use crate::game::tests::{...}`. Helper que só a
 foto usa vai junto com ela.
 
-- [ ] **Step 5: Provar que nada sumiu e que os testes movidos pegam erro**
+- [x] **Step 5: Provar que nada sumiu e que os testes movidos pegam erro**
 
 Run: as duas linhas do Step 1 → Expected: **as mesmas contagens**, inclusive a linha de
 `tests/save_json.rs` com `--all-features`.
@@ -195,14 +195,15 @@ Run: `grep -c "#\[test\]" sudoku-game/src/game.rs sudoku-game/src/game/save.rs` 
 Quebrar de propósito: em `restore`, trocar `i <= p` por `i < p` na conferência das dicas.
 Run: `cargo test -p sudoku-game dica_repetida` → Expected: FAIL em `dica_repetida_eh_recusada`
 (o `restore` passa a aceitar a dica repetida). Desfazer → PASS.
+Na execução, essa quebra **não** derrubou o teste: uma dica repetida já cai na conferência`let CellState::Placed(v) = ... else`, porque na segunda visita a célula está `Hinted`. A provausou outra conferência movida: em `parse_notes`, `d > previous` → `d >= previous` derrubou`anotacao_repetida_ou_fora_de_ordem_eh_recusada` (`Ok(..)` no lugar de `Err(InvalidNotes)`).Nenhum teste cobre dicas fora de ordem; fica registrado como lacuna, fora deste refactor.
 
-- [ ] **Step 6: Refactor e verificação**
+- [x] **Step 6: Refactor e verificação**
 
 `use` sobrando na `game.rs` (`NonZeroU8`, `Grid`...) sai. `cargo clippy --workspace --all-targets --all-features -- -D warnings`,
 `cargo fmt --all`, `cargo build --workspace` → limpos. `git diff --stat master -- sudoku-game/tests`
 → vazio.
 
-- [ ] **Step 7: Commit do código**
+- [x] **Step 7: Commit do código**
 
 ```bash
 git add sudoku-game/src docs/superpowers/plans/2026-11-07-save-module.md
