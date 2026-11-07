@@ -23,6 +23,12 @@ Tipos em uso: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`.
 - As mensagens de commit de exemplo dentro dos planos (`docs/superpowers/plans/`) também
   seguem esta regra, mesmo com o texto ao redor em português. Se escrever um plano novo,
   já escreva os `git commit -m` dele em inglês.
+- **Branches e PRs também em inglês:** branch `<tipo>/<descricao-em-kebab-case>`
+  (`feat/game-results`), sempre a partir do `master`; título do PR no formato do commit e
+  descrição em inglês, pelo template do `.github/`.
+
+Regras completas de idioma, nomes, design (SOLID em Rust), erros e API pública, com exemplos:
+[`docs/convencoes-de-codigo.md`](docs/convencoes-de-codigo.md).
 
 ## Planos
 
@@ -103,6 +109,12 @@ acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`]
   (`cells`, `pairs`, `MAX_ATTEMPTS_HARD`). É a convenção do ecossistema Rust e combina com a
   API pública. A exceção são as variantes de `Difficulty` (`Facil`, `Medio`...), que ficam
   como estão até uma decisão consciente de mudar a API.
+- **Nomes seguem as Rust API Guidelines:** `new`/`from_*`/`to_*`/`into_*`, getter sem `get_`,
+  `is_*`/`has_*`/`can_*` para `bool`, erro como `<Operação>Error`, unidade no nome (`elapsed_ms`).
+- **Design:** estados inválidos não compilam; conjunto fechado é `enum` com `match` exaustivo,
+  conjunto aberto é trait; trait só com duas implementações; o core recebe dados (`now`, `seed`),
+  não serviços. `Result` para falha esperada; `panic` só para invariante interna, com `expect`
+  explicando por quê; sem `unwrap()` fora de testes. Detalhes em `docs/convencoes-de-codigo.md`.
 - Comentários e doc comments (`///`) em **português**, explicando o *porquê*. Strings de
   mensagem (por exemplo, de `assert!`) também em português.
 - Determinismo do gerador é **contrato**: mesma seed + mesmo nível → mesmo puzzle, inclusive

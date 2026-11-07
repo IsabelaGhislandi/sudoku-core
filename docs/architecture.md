@@ -256,7 +256,9 @@ flagrar qualquer mudança acidental.
   integração da API pública em `sudoku-core/tests/`.
 - Comandos rodam de qualquer pasta do repo, sem `--manifest-path`: `cargo test --workspace`,
   `cargo test -p sudoku-core`, `cargo fmt --all`, `cargo deny check`.
-- Commits em **inglês**, padrão Conventional Commits.
+- Commits, branches e PRs em **inglês**, padrão Conventional Commits. Nomes no código em inglês
+  (testes em português), pelas Rust API Guidelines; SOLID traduzido para Rust, erros e API pública:
+  [`docs/convencoes-de-codigo.md`](convencoes-de-codigo.md).
 - Código formatado com `rustfmt` (configuração padrão); finais de linha LF via `.gitattributes`.
 - **CI** (GitHub Actions, `.github/workflows/ci.yml`): fmt, clippy, build e testes em
   Ubuntu/Windows/macOS a cada PR, com `-D warnings` e `--locked`. **CD** fica para o módulo
