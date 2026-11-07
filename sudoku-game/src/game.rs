@@ -261,7 +261,8 @@ impl Game {
         if saved.version != SAVE_VERSION {
             return Err(RestoreError::UnknownVersion(saved.version));
         }
-        let difficulty = parse_difficulty(&saved.difficulty)?;
+        let difficulty =
+            parse_difficulty(&saved.difficulty).ok_or(RestoreError::UnknownDifficulty)?;
         let seed: u64 = saved.seed.parse().map_err(|_| RestoreError::InvalidSeed)?;
         let grid = |line: &str| Grid::from_line(line).map_err(|_| RestoreError::InvalidGrid);
         let (givens, solution, board) = (
