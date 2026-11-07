@@ -44,6 +44,8 @@ Os planos em `docs/superpowers/plans/` seguem um formato fixo, para quem executa
 ```
 
 - O `Expected` do vermelho diz **qual asserção** falha, não "FAIL na compilação".
+- **Marque `- [x]` em cada passo concluído durante a execução**, e o plano atualizado vai no
+  commit da própria task. Se a sessão cair no meio, a próxima sabe onde parou lendo o plano.
 
 ## Testes
 
