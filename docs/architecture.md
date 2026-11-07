@@ -256,7 +256,9 @@ flagrar qualquer mudança acidental.
   integração da API pública em `sudoku-core/tests/`.
 - Comandos rodam de qualquer pasta do repo, sem `--manifest-path`: `cargo test --workspace`,
   `cargo test -p sudoku-core`, `cargo fmt --all`, `cargo deny check`.
-- Commits em **inglês**, padrão Conventional Commits.
+- Commits, branches e PRs em **inglês**, padrão Conventional Commits. Nomes no código em inglês
+  (testes em português), pelas Rust API Guidelines; SOLID traduzido para Rust, erros e API pública:
+  [`docs/convencoes-de-codigo.md`](convencoes-de-codigo.md).
 - Código formatado com `rustfmt` (configuração padrão); finais de linha LF via `.gitattributes`.
 - **CI** (GitHub Actions, `.github/workflows/ci.yml`): fmt, clippy, build e testes em
   Ubuntu/Windows/macOS a cada PR, com `-D warnings` e `--locked`. **CD** fica para o módulo
@@ -268,14 +270,30 @@ flagrar qualquer mudança acidental.
 
 ## 9. Processo e skills
 
-Metodologia **spec-driven + modular + TDD**. Skills que apoiam o fluxo (em `.agents/skills/`,
-fixadas em `skills-lock.json`):
+Metodologia **spec-driven + modular + TDD**. As skills que de fato conduzem o fluxo:
 
-| Skill | Papel |
-|-------|-------|
-| `agile-roadmap` | Sequencia as fatias/fases em um roadmap. |
-| `agile-tdd` | Conduz o ciclo Red-Green-Refactor de cada unidade. |
-| `improve-codebase-architecture` | Acha oportunidades de aprofundar módulos (testabilidade). |
+| Quando | Skill | Onde mora | Papel |
+|--------|-------|-----------|-------|
+| Cada fatia | `superpowers:brainstorming` | plugin superpowers | Do pedido ao spec em `docs/superpowers/specs/`. |
+| Cada fatia | `superpowers:writing-plans` | plugin superpowers | Do spec ao plano em `docs/superpowers/plans/`. |
+| Cada task | `superpowers:executing-plans` / `subagent-driven-development` | plugin superpowers | Executa o plano, task por task. |
+| Cada task | `superpowers:test-driven-development` | plugin superpowers | Red-Green-Refactor; as regras do projeto (testes inline, nomes em português) estão no `CLAUDE.md`. |
+| Fim da fatia | `superpowers:finishing-a-development-branch` | plugin superpowers | Verifica, faz o merge ou abre o PR. |
+| Dependência nova | `adding-dependencies` | `.claude/skills/` | Verifica o crate e pede aprovação antes do `cargo add`. |
+| Fim de cada fase | `improve-codebase-architecture` | `.claude/skills/` | Revisão de arquitetura: acha módulos rasos e propõe aprofundá-los, antes do spec da fase seguinte. |
+
+As skills do projeto ficam em `.claude/skills/`, a pasta que o Claude Code carrega. A
+`improve-codebase-architecture` é uma adaptação da de [mattpocock/skills](https://github.com/mattpocock/skills);
+a seção "Neste repositório" do `SKILL.md` diz o que mudou. Ela usa dois artefatos do repositório:
+
+- **[`CONTEXT.md`](../CONTEXT.md):** glossário do domínio (Grid, Deduction, Game, GameResult...).
+  Atualizado quando um conceito ganha nome novo ou muda.
+- **`docs/adr/`:** registros de decisões de arquitetura recusadas ou tomadas numa revisão, para não
+  serem propostas de novo. Criada com o primeiro ADR; nenhum existe ainda.
+
+Removidas em 2026-11-07, porque o Claude Code não as carregava e nunca rodaram: `agile-tdd`
+(voltada para JS/Bun, mesmo papel do `superpowers:test-driven-development`) e `agile-roadmap`
+(os specs e planos já fazem o sequenciamento).
 
 Artefatos de processo do Engine:
 - **Spec:** `docs/superpowers/specs/2026-06-14-sudoku-engine-design.md`

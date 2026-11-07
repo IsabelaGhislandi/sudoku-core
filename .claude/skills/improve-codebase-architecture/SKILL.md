@@ -75,7 +75,24 @@ Once the user picks a candidate, drop into a grilling conversation. Walk the des
 
 Side effects happen inline as decisions crystallize:
 
-- **Naming a deepened module after a concept not in `CONTEXT.md`?** Add the term to `CONTEXT.md` — same discipline as `/grill-with-docs` (see [CONTEXT-FORMAT.md](../grill-with-docs/CONTEXT-FORMAT.md)). Create the file lazily if it doesn't exist.
+- **Naming a deepened module after a concept not in `CONTEXT.md`?** Add the term to `CONTEXT.md` — see [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md). Create the file lazily if it doesn't exist.
 - **Sharpening a fuzzy term during the conversation?** Update `CONTEXT.md` right there.
-- **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [ADR-FORMAT.md](../grill-with-docs/ADR-FORMAT.md).
+- **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [ADR-FORMAT.md](ADR-FORMAT.md).
 - **Want to explore alternative interfaces for the deepened module?** See [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
+
+## Neste repositório
+
+Adaptação local da skill de [mattpocock/skills](https://github.com/mattpocock/skills)
+(`skills/engineering/improve-codebase-architecture`). Mudanças: os links para a skill
+`grill-with-docs`, que não está instalada, viraram os arquivos locais
+[CONTEXT-FORMAT.md](CONTEXT-FORMAT.md) e [ADR-FORMAT.md](ADR-FORMAT.md), e esta seção foi acrescentada.
+
+- **Glossário do domínio:** `CONTEXT.md`, na raiz.
+- **Decisões que não se relitigam:** os ADRs em `docs/adr/` (quando existirem) **e** as decisões de
+  design do `docs/architecture.md`, principalmente a seção 3 e o contrato de determinismo do
+  gerador (`CLAUDE.md`). Um candidato que contradiz uma delas segue a regra de "ADR conflicts" acima.
+- **Quando rodar:** no fim de cada fase (Engine, Game, e as próximas), antes do spec da fase
+  seguinte. Não é parte do ciclo de cada task.
+- **O relatório e a conversa são em português;** os termos de [LANGUAGE.md](LANGUAGE.md) (module,
+  interface, seam, depth...) ficam como estão, em inglês, como nomes técnicos.
+- Um candidato escolhido vira spec e plano em `docs/superpowers/`, como qualquer outra mudança.

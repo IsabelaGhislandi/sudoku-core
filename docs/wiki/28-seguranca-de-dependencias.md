@@ -15,7 +15,7 @@ Ela lista riscos que aparecem quando quem escreve o código é um agente de IA. 
 | Camada | Onde | O que pega |
 |---|---|---|
 | Skill `adding-dependencies` | `.claude/skills/` | o agente verifica o crate e **pede aprovação** antes do `cargo add` |
-| `cargo deny check` local | `sudoku-core/deny.toml` | alertas, crates retirados, licenças e origem, antes do commit |
+| `cargo deny check` local | `deny.toml` (raiz; era `sudoku-core/deny.toml` antes do workspace) | alertas, crates retirados, licenças e origem, antes do commit |
 | Workflow `Dependências` | `.github/workflows/dependencias.yml` | o mesmo, em todo PR e **toda segunda-feira** |
 
 A execução semanal existe porque vulnerabilidades novas são publicadas sem que nada mude no repositório. Um

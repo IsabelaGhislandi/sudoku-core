@@ -23,10 +23,50 @@ Tipos em uso: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`.
 - As mensagens de commit de exemplo dentro dos planos (`docs/superpowers/plans/`) também
   seguem esta regra, mesmo com o texto ao redor em português. Se escrever um plano novo,
   já escreva os `git commit -m` dele em inglês.
+- **Branches e PRs também em inglês:** branch `<tipo>/<descricao-em-kebab-case>`
+  (`feat/game-results`), sempre a partir do `master`; título do PR no formato do commit e
+  descrição em inglês, pelo template do `.github/`.
+
+Regras completas de idioma, nomes, design (SOLID em Rust), erros e API pública, com exemplos:
+[`docs/convencoes-de-codigo.md`](docs/convencoes-de-codigo.md).
+
+## Planos
+
+Os planos em `docs/superpowers/plans/` seguem um formato fixo, para quem executa saber onde está:
+
+- Seções `### Task N: <comportamento>`. Uma task = um commit `feat`/`fix` + um commit `docs` com a
+  página da wiki. O tamanho da task não muda; o que fica pequeno é o ciclo dentro dela.
+- Passos com checkbox (`- [ ] **Step N: ...**`), nesta ordem:
+
+```markdown
+- [ ] **Step 1: Esqueleto que compila** (tipos e assinaturas, corpo `todo!()` ou valor errado)
+- [ ] **Step 2: Ciclo — <comportamento 1>**
+      teste → `cargo test -p <crate> <filtro>` → Expected: FAIL na asserção (<qual>)
+      → mínimo para passar → Expected: PASS
+- [ ] **Step 3: Ciclo — <comportamento 2>** (mesmo formato; um ciclo por teste)
+- [ ] **Step N-2: Refactor** com tudo verde; `cargo test --workspace`, `clippy`, `fmt`
+- [ ] **Step N-1: Commit do código**
+- [ ] **Step N: Wiki da task e commit `docs`**
+```
+
+- O `Expected` do vermelho diz **qual asserção** falha, não "FAIL na compilação".
+- **Marque `- [x]` em cada passo concluído durante a execução**, e o plano atualizado vai no
+  commit da própria task. Se a sessão cair no meio, a próxima sabe onde parou lendo o plano.
 
 ## Testes
 
 TDD de verdade: escreva o teste, **veja-o falhar**, implemente, veja passar.
+
+- **Um teste por ciclo.** Um comportamento, um teste, vermelho, o mínimo de código para passar,
+  verde. Só depois o próximo teste. Nada de escrever os testes da task em lote e implementar tudo
+  de uma vez.
+- **O vermelho que vale é o de asserção.** Falhar porque o tipo ou a função não existe não prova
+  que o teste pega o comportamento errado. Primeiro um esqueleto que compila (`todo!()`, ou um
+  valor padrão que dê a resposta errada), depois o ciclo. Teste que passa de primeira (golden
+  test, comportamento que já existia) exige uma prova: quebre o código de propósito, veja falhar,
+  desfaça.
+- **Refactor é um passo, não um extra.** Com tudo verde, antes do commit: limpe duplicação e nomes,
+  rode `cargo test`, `clippy` e `fmt` de novo.
 
 - Testes unitários ficam **inline** em cada módulo, num bloco `#[cfg(test)] mod tests`.
 - Testes de integração da API pública ficam na pasta `tests/` de cada crate (por exemplo,
@@ -69,6 +109,12 @@ acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`]
   (`cells`, `pairs`, `MAX_ATTEMPTS_HARD`). É a convenção do ecossistema Rust e combina com a
   API pública. A exceção são as variantes de `Difficulty` (`Facil`, `Medio`...), que ficam
   como estão até uma decisão consciente de mudar a API.
+- **Nomes seguem as Rust API Guidelines:** `new`/`from_*`/`to_*`/`into_*`, getter sem `get_`,
+  `is_*`/`has_*`/`can_*` para `bool`, erro como `<Operação>Error`, unidade no nome (`elapsed_ms`).
+- **Design:** estados inválidos não compilam; conjunto fechado é `enum` com `match` exaustivo,
+  conjunto aberto é trait; trait só com duas implementações; o core recebe dados (`now`, `seed`),
+  não serviços. `Result` para falha esperada; `panic` só para invariante interna, com `expect`
+  explicando por quê; sem `unwrap()` fora de testes. Detalhes em `docs/convencoes-de-codigo.md`.
 - Comentários e doc comments (`///`) em **português**, explicando o *porquê*. Strings de
   mensagem (por exemplo, de `assert!`) também em português.
 - Determinismo do gerador é **contrato**: mesma seed + mesmo nível → mesmo puzzle, inclusive
@@ -79,6 +125,16 @@ acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`]
 
 - **Uma página de wiki por task**, em `docs/wiki/`, em português, focada nos conceitos de Rust
   que apareceram naquela task (o projeto também é um estudo de Rust, vindo de background web).
-  Indexe a página nova em `docs/wiki/README.md`.
+  Indexe a página nova em `docs/wiki/README.md`. Formato das páginas:
+  - Cabeçalho: `# NN — <tema>: <conceito>, <conceito> e <conceito>` e, logo abaixo,
+    ``> Referente à Task N do plano <fatia>. Commit: `<mensagem do commit feat/fix>`.``
+  - Uma seção `##` por conceito de Rust, com o código do próprio projeto como exemplo e o
+    *porquê* da escolha, não só o *como*.
+  - Comparação com JavaScript/TypeScript sempre que houver um equivalente (ou uma diferença que
+    surpreenda quem vem da web: ownership, `Option` no lugar de `null`, enum com dados...).
 - A cada 5 tasks, um documento consolidado em `docs/wiki/fundamentos/`.
 - `docs/architecture.md` é a visão de design; mantenha-o em dia quando uma decisão mudar.
+- `CONTEXT.md` é o glossário do domínio. Tipo novo, renomeado ou removido no código atualiza o
+  glossário no mesmo commit.
+- No fim de cada fase (Engine, Game...), rode a skill `improve-codebase-architecture` antes do spec
+  da fase seguinte. Skills do fluxo: `docs/architecture.md`, seção 9.

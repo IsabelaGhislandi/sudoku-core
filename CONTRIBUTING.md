@@ -42,7 +42,15 @@ Optional body explaining why, wrapped at ~72 columns.
 Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`. Write the summary as what the
 commit does ("add rate", not "added rate"). Keep one logical change per commit.
 
+Branch names are in English too, as `<type>/<short-kebab-description>` (`feat/game-results`),
+branched from `master`. PR titles follow the commit format.
+
 ## Code conventions
+
+The full guide, in Portuguese and with examples from the code (naming per the
+[Rust API Guidelines](https://rust-lang.github.io/api-guidelines/), SOLID translated to Rust,
+errors and panics, public API), is [`docs/convencoes-de-codigo.md`](docs/convencoes-de-codigo.md).
+In short:
 
 - **`sudoku-core` is a pure library**: no UI, no IO, no clock. Timers, persistence and history
   belong to the future Game module.
