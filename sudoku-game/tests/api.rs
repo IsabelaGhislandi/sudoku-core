@@ -3,7 +3,7 @@
 
 use sudoku_game::{
     Cell, CellState, Difficulty, Game, GameConfig, MoveError, Outcome, PlaceOutcome, Restart,
-    SavedGame, Status,
+    SavedGame, Status, level_stats, personal_ranking,
 };
 
 fn solution_value(game: &Game, index: usize) -> u8 {
@@ -112,4 +112,42 @@ fn abandonar_pela_api_publica() {
         game.abandon(700, 1).map(|r| r.outcome),
         Some(Outcome::Abandoned)
     );
+}
+
+#[test]
+fn historico_de_tres_partidas() {
+    let mut won = Game::new(Difficulty::Facil, 7, GameConfig::default());
+    won.resume(0);
+    for i in empties(&won) {
+        let v = solution_value(&won, i);
+        won.place(i, v, 60_000).unwrap();
+    }
+
+    let mut lost = Game::new(Difficulty::Facil, 8, GameConfig::default());
+    lost.resume(0);
+    let i = empties(&lost)[0];
+    let wrong = if solution_value(&lost, i) == 9 {
+        1
+    } else {
+        solution_value(&lost, i) + 1
+    };
+    for _ in 0..3 {
+        lost.place(i, wrong, 1_000).unwrap();
+    }
+
+    let mut abandoned = Game::new(Difficulty::Facil, 9, GameConfig::default());
+    abandoned.resume(0);
+
+    let results = vec![
+        won.result(1).unwrap(),
+        lost.result(2).unwrap(),
+        abandoned.restart(10, 500, 3).abandoned.unwrap(),
+    ];
+    let stats = level_stats(&results, Difficulty::Facil);
+    assert_eq!(
+        (stats.played, stats.won, stats.best_ms),
+        (3, 1, Some(60_000))
+    );
+    assert_eq!(stats.win_percentage(), Some(33));
+    assert_eq!(personal_ranking(&results, Difficulty::Facil).len(), 1);
 }
