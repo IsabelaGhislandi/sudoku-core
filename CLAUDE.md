@@ -24,9 +24,41 @@ Tipos em uso: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`.
   seguem esta regra, mesmo com o texto ao redor em português. Se escrever um plano novo,
   já escreva os `git commit -m` dele em inglês.
 
+## Planos
+
+Os planos em `docs/superpowers/plans/` seguem um formato fixo, para quem executa saber onde está:
+
+- Seções `### Task N: <comportamento>`. Uma task = um commit `feat`/`fix` + um commit `docs` com a
+  página da wiki. O tamanho da task não muda; o que fica pequeno é o ciclo dentro dela.
+- Passos com checkbox (`- [ ] **Step N: ...**`), nesta ordem:
+
+```markdown
+- [ ] **Step 1: Esqueleto que compila** (tipos e assinaturas, corpo `todo!()` ou valor errado)
+- [ ] **Step 2: Ciclo — <comportamento 1>**
+      teste → `cargo test -p <crate> <filtro>` → Expected: FAIL na asserção (<qual>)
+      → mínimo para passar → Expected: PASS
+- [ ] **Step 3: Ciclo — <comportamento 2>** (mesmo formato; um ciclo por teste)
+- [ ] **Step N-2: Refactor** com tudo verde; `cargo test --workspace`, `clippy`, `fmt`
+- [ ] **Step N-1: Commit do código**
+- [ ] **Step N: Wiki da task e commit `docs`**
+```
+
+- O `Expected` do vermelho diz **qual asserção** falha, não "FAIL na compilação".
+
 ## Testes
 
 TDD de verdade: escreva o teste, **veja-o falhar**, implemente, veja passar.
+
+- **Um teste por ciclo.** Um comportamento, um teste, vermelho, o mínimo de código para passar,
+  verde. Só depois o próximo teste. Nada de escrever os testes da task em lote e implementar tudo
+  de uma vez.
+- **O vermelho que vale é o de asserção.** Falhar porque o tipo ou a função não existe não prova
+  que o teste pega o comportamento errado. Primeiro um esqueleto que compila (`todo!()`, ou um
+  valor padrão que dê a resposta errada), depois o ciclo. Teste que passa de primeira (golden
+  test, comportamento que já existia) exige uma prova: quebre o código de propósito, veja falhar,
+  desfaça.
+- **Refactor é um passo, não um extra.** Com tudo verde, antes do commit: limpe duplicação e nomes,
+  rode `cargo test`, `clippy` e `fmt` de novo.
 
 - Testes unitários ficam **inline** em cada módulo, num bloco `#[cfg(test)] mod tests`.
 - Testes de integração da API pública ficam na pasta `tests/` de cada crate (por exemplo,
