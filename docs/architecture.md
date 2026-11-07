@@ -22,7 +22,7 @@ o ciclo `spec → plano → implementação` com **TDD**.
 | # | Módulo | Responsabilidade | Status |
 |---|--------|------------------|--------|
 | 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **concluído: os quatro níveis** |
-| 2 | **Game/Sessão** (`sudoku-game`) | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. Lógica pura. | **em andamento: fatias 1 e 2 concluídas** (partida básica; tempo e salvamento) |
+| 2 | **Game/Sessão** (`sudoku-game`) | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. Lógica pura. | **concluído: fatias 1, 2 e 3** (partida básica; tempo e salvamento; resultados) |
 | 3 | Frontend/UI | Tabuleiro, input, seleção de dificuldade, telas (Svelte). | futuro |
 | 4 | Tauri/Empacotamento | Ponte Rust↔Svelte e build do APK. | futuro |
 | 5 | Online | Partida por código com outro player. | futuro distante |
@@ -137,14 +137,17 @@ sudoku-game/
 │   ├── lib.rs          re-exporta a API e os tipos do core que ela usa (Difficulty, Puzzle, Grid, Cell)
 │   ├── config.rs       GameConfig { lives: NonZeroU8, hints: u8 }, padrão 3 vidas e 2 dicas
 │   ├── game.rs         Game (new, from_puzzle, place, toggle_note, hint, pause, resume,
-│   │                   elapsed_ms, save, restore, restart), CellState, Status, Restart,
-│   │                   PlaceOutcome, HintOutcome, MoveError, PuzzleError
+│   │                   elapsed_ms, save, restore, restart, result, abandon), CellState, Status,
+│   │                   Restart, PlaceOutcome, HintOutcome, MoveError, PuzzleError
 │   ├── notes.rs        Notes: anotações de uma célula (bitmask u16)
 │   ├── save.rs         SavedGame (foto versão 1, campos simples), RestoreError, SAVE_VERSION
+│   ├── result.rs       GameResult, Outcome, SavedResult (registro versão 1), ResultError, RESULT_VERSION
+│   ├── stats.rs        LevelStats, level_stats e personal_ranking: funções puras sobre os resultados
 │   └── hint.rs         splitmix64 e pick: sorteio determinístico da célula da dica
 └── tests/
-    ├── api.rs          partidas completas pela API pública, inclusive sair e voltar
-    └── save_json.rs    ida e volta em JSON e golden test do formato (só com a feature serde)
+    ├── api.rs          partidas completas pela API pública, inclusive sair, voltar e o histórico
+    ├── save_json.rs    ida e volta em JSON e golden test do formato (só com a feature serde)
+    └── result_json.rs  golden test do JSON do resultado (só com a feature serde)
 ```
 
 Regras da fatia 1: número certo trava; número errado tira uma vida e **sai do tabuleiro** (a mesma
@@ -164,6 +167,17 @@ a partida restaurada volta pausada. Ele **não** confere se o puzzle vem da seed
 arquivo só engana a si mesmo, e no PvP quem confere é o servidor. `restart(seed)` começa outro puzzle
 do mesmo nível e com a mesma configuração. A feature opcional `serde` deixa o `SavedGame` serializável,
 e um golden test trava o JSON da versão 1.
+
+Regras da fatia 3: toda partida termina num `GameResult` (nível, seed, desfecho, tempo, erros,
+dicas usadas, configuração e data). O desfecho é `Won`, `OutOfLives` ou `Abandoned`, e abandonar
+conta como derrota. `result(finished_at_ms)` dá o resultado de uma partida terminada; é repetível, e
+a casca o registra quando a partida termina, antes de salvar a foto. `abandon(self, now, data)`
+consome a partida, e `restart(seed, now, data)` devolve em `abandoned` o resultado de uma partida
+não terminada; uma terminada não dá um segundo resultado. A data vem do relógio de parede da casca
+(milissegundos desde a época Unix, UTC), separada do `now` monotônico. `level_stats` (jogadas,
+vitórias, porcentagem e melhor tempo) e `personal_ranking` (só vitórias, menor tempo primeiro, empate
+para a mais antiga) são funções puras sobre a lista que a casca guarda. `SavedResult` (versão 1, um
+número de versão por registro) guarda o resultado em campos simples, e um golden test trava o JSON.
 
 ## 5. Mapeamento dificuldade → técnica
 
@@ -277,6 +291,7 @@ Artefatos de processo do Game:
 - **Spec:** `docs/superpowers/specs/2026-11-04-game-design.md`
 - **Plano (fatia 1, partida básica):** `docs/superpowers/plans/2026-11-04-game-partida.md`
 - **Plano (fatia 2, tempo e salvamento):** `docs/superpowers/plans/2026-11-05-game-tempo-e-salvamento.md`
+- **Plano (fatia 3, resultados):** `docs/superpowers/plans/2026-11-06-game-resultados.md`
 
 ## 10. Visão do módulo Online (PvP)
 

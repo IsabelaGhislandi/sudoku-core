@@ -85,14 +85,15 @@ pub(crate) fn difficulty_name(difficulty: Difficulty) -> &'static str {
     }
 }
 
-/// O contrário de `difficulty_name`.
-pub(crate) fn parse_difficulty(name: &str) -> Result<Difficulty, RestoreError> {
+/// O contrário de `difficulty_name`. Devolve `Option` porque a foto e o resultado salvo usam o
+/// mesmo nome, e cada um transforma o `None` no seu próprio erro.
+pub(crate) fn parse_difficulty(name: &str) -> Option<Difficulty> {
     match name {
-        "Facil" => Ok(Difficulty::Facil),
-        "Medio" => Ok(Difficulty::Medio),
-        "Dificil" => Ok(Difficulty::Dificil),
-        "MuitoDificil" => Ok(Difficulty::MuitoDificil),
-        _ => Err(RestoreError::UnknownDifficulty),
+        "Facil" => Some(Difficulty::Facil),
+        "Medio" => Some(Difficulty::Medio),
+        "Dificil" => Some(Difficulty::Dificil),
+        "MuitoDificil" => Some(Difficulty::MuitoDificil),
+        _ => None,
     }
 }
 
@@ -108,11 +109,8 @@ mod tests {
             Difficulty::Dificil,
             Difficulty::MuitoDificil,
         ] {
-            assert_eq!(parse_difficulty(difficulty_name(d)), Ok(d));
+            assert_eq!(parse_difficulty(difficulty_name(d)), Some(d));
         }
-        assert_eq!(
-            parse_difficulty("facil"),
-            Err(RestoreError::UnknownDifficulty)
-        );
+        assert_eq!(parse_difficulty("facil"), None);
     }
 }

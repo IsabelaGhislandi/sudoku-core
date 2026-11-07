@@ -2,8 +2,8 @@
 //! para provar que a casca consegue jogar dependendo só deste crate.
 
 use sudoku_game::{
-    Cell, CellState, Difficulty, Game, GameConfig, MoveError, PlaceOutcome, Restart, SavedGame,
-    Status,
+    Cell, CellState, Difficulty, Game, GameConfig, MoveError, Outcome, PlaceOutcome, Restart,
+    SavedGame, Status, level_stats, personal_ranking,
 };
 
 fn solution_value(game: &Game, index: usize) -> u8 {
@@ -94,7 +94,60 @@ fn partida_sai_e_volta_sem_perder_nada() {
 #[test]
 fn reiniciar_pela_api_publica() {
     let game = Game::new(Difficulty::Medio, 3, GameConfig::default());
-    let Restart { game: new_game, .. } = game.restart(4);
+    let Restart { game: new_game, .. } = game.restart(4, 0, 0);
     assert_eq!(new_game.puzzle().difficulty, Difficulty::Medio);
     assert!(new_game.is_paused());
+}
+
+#[test]
+fn abandonar_pela_api_publica() {
+    let mut game = Game::new(Difficulty::Medio, 3, GameConfig::default());
+    game.resume(0);
+    let Restart { abandoned, .. } = game.restart(4, 700, 1);
+    assert_eq!(
+        abandoned.map(|r| (r.outcome, r.elapsed_ms)),
+        Some((Outcome::Abandoned, 700))
+    );
+    assert_eq!(
+        game.abandon(700, 1).map(|r| r.outcome),
+        Some(Outcome::Abandoned)
+    );
+}
+
+#[test]
+fn historico_de_tres_partidas() {
+    let mut won = Game::new(Difficulty::Facil, 7, GameConfig::default());
+    won.resume(0);
+    for i in empties(&won) {
+        let v = solution_value(&won, i);
+        won.place(i, v, 60_000).unwrap();
+    }
+
+    let mut lost = Game::new(Difficulty::Facil, 8, GameConfig::default());
+    lost.resume(0);
+    let i = empties(&lost)[0];
+    let wrong = if solution_value(&lost, i) == 9 {
+        1
+    } else {
+        solution_value(&lost, i) + 1
+    };
+    for _ in 0..3 {
+        lost.place(i, wrong, 1_000).unwrap();
+    }
+
+    let mut abandoned = Game::new(Difficulty::Facil, 9, GameConfig::default());
+    abandoned.resume(0);
+
+    let results = vec![
+        won.result(1).unwrap(),
+        lost.result(2).unwrap(),
+        abandoned.restart(10, 500, 3).abandoned.unwrap(),
+    ];
+    let stats = level_stats(&results, Difficulty::Facil);
+    assert_eq!(
+        (stats.played, stats.won, stats.best_ms),
+        (3, 1, Some(60_000))
+    );
+    assert_eq!(stats.win_percentage(), Some(33));
+    assert_eq!(personal_ranking(&results, Difficulty::Facil).len(), 1);
 }

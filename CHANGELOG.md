@@ -20,6 +20,11 @@ The first release (`0.1.0`) will be tagged together with the first browser versi
   board), `toggle_note` (per-cell pencil notes), `hint` (reveals a cell from the solution), win and
   loss. `GameConfig` defaults to 3 lives and 2 hints. Refused actions return a `MoveError` and
   change nothing.
+- **Game results** in `sudoku-game`: `Game::result` for a finished game, `Game::abandon`, and
+  `restart` now returns the abandonment result of an unfinished game (it also takes `now` and the
+  wall-clock date). `level_stats` and `personal_ranking` compute per-level statistics and the
+  personal ranking. `SavedResult` (format v1) stores a result, serializable with the `serde`
+  feature.
 - The repository is now a Cargo workspace (`sudoku-core`, `sudoku-game`), with a shared
   `Cargo.lock` and `deny.toml` at the root.
 - `Grid` and `Cell`, with parsing and serialization to an 81-character line

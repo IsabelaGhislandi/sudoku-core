@@ -5,6 +5,7 @@ use sudoku_core::{Cell, Difficulty, GenError, Grid, Puzzle, generate, validate};
 use crate::config::GameConfig;
 use crate::hint;
 use crate::notes::Notes;
+use crate::result::{GameResult, Outcome};
 use crate::save::{RestoreError, SAVE_VERSION, SavedGame, difficulty_name, parse_difficulty};
 
 /// O que a tela mostra numa célula. Não existe estado "errado": um número errado nunca fica
@@ -86,14 +87,16 @@ pub enum MoveError {
     Paused,
 }
 
-/// O que `Game::restart` devolve. `#[non_exhaustive]` porque a fatia 3 acrescenta o resultado
-/// do abandono (reiniciar uma partida em andamento conta como derrota), sem quebrar quem já lê
-/// `game`. Fora do crate, só dá para ler os campos, nunca montar o valor.
+/// O que `Game::restart` devolve. `#[non_exhaustive]` para poder ganhar campos sem quebrar quem
+/// já lê os atuais. Fora do crate, só dá para ler os campos, nunca montar o valor.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct Restart {
     /// A partida nova, pausada: "começar" é o primeiro `resume`.
     pub game: Game,
+    /// O resultado do abandono, se a partida antiga não tinha terminado: reiniciar no meio conta
+    /// como derrota. `None` se ela já tinha terminado, porque aí ela já tem o seu resultado.
+    pub abandoned: Option<GameResult>,
 }
 
 /// Uma partida em andamento: o puzzle e tudo o que a pessoa fez nele.
@@ -188,10 +191,31 @@ impl Game {
     /// Começa outro puzzle do mesmo nível e com a mesma configuração, a partir de uma seed nova
     /// que vem da casca (o Game não sorteia seeds). Vale em qualquer estado: em andamento,
     /// pausada ou terminada ("jogar de novo").
-    pub fn restart(&self, seed: u64) -> Restart {
+    ///
+    /// Se a partida não tinha terminado, ela conta como abandonada, e o `Restart` traz o
+    /// resultado do abandono, com o tempo jogado até `now` e a data `finished_at_ms` (relógio de
+    /// parede, ver `GameResult`).
+    pub fn restart(&self, seed: u64, now: u64, finished_at_ms: u64) -> Restart {
         Restart {
             game: Game::new(self.puzzle.difficulty, seed, self.config),
+            abandoned: self.abandoned_result(now, finished_at_ms),
         }
+    }
+
+    /// Larga a partida sem começar outra (por exemplo, voltar ao menu e escolher outro nível).
+    ///
+    /// Se ela não tinha terminado, conta como derrota por abandono, mesmo pausada ou nunca
+    /// começada, e o resultado vem com o tempo jogado até `now`. Se já tinha terminado, devolve
+    /// `None`: ela já tem o seu resultado (`result`). Recebe `self`, e não `&self`, para que o
+    /// compilador recuse qualquer jogada numa partida abandonada.
+    pub fn abandon(self, now: u64, finished_at_ms: u64) -> Option<GameResult> {
+        self.abandoned_result(now, finished_at_ms)
+    }
+
+    /// O resultado de abandonar agora, ou `None` se a partida já terminou.
+    fn abandoned_result(&self, now: u64, finished_at_ms: u64) -> Option<GameResult> {
+        (self.status == Status::Playing)
+            .then(|| self.result_with(Outcome::Abandoned, self.elapsed_ms(now), finished_at_ms))
     }
 
     /// Tira a foto da partida no instante `now`. Se o relógio estiver rodando, o trecho até
@@ -237,7 +261,8 @@ impl Game {
         if saved.version != SAVE_VERSION {
             return Err(RestoreError::UnknownVersion(saved.version));
         }
-        let difficulty = parse_difficulty(&saved.difficulty)?;
+        let difficulty =
+            parse_difficulty(&saved.difficulty).ok_or(RestoreError::UnknownDifficulty)?;
         let seed: u64 = saved.seed.parse().map_err(|_| RestoreError::InvalidSeed)?;
         let grid = |line: &str| Grid::from_line(line).map_err(|_| RestoreError::InvalidGrid);
         let (givens, solution, board) = (
@@ -437,6 +462,42 @@ impl Game {
         self.hints_used += 1;
         self.finish_if_complete(now);
         Ok(HintOutcome { index, value })
+    }
+
+    /// O resultado de uma partida **terminada** (vitória ou derrota por vidas), ou `None` se ela
+    /// ainda está em andamento. `finished_at_ms` é a data do registro, pelo relógio de parede da
+    /// casca (ver `GameResult`).
+    ///
+    /// É repetível: pedir de novo dá o mesmo resultado (só a data muda, se mudar o argumento), e
+    /// pedir não muda a partida. A casca registra o resultado quando `place` ou `hint` terminam a
+    /// partida, antes de salvar a foto; por isso não precisa registrar de novo ao restaurar uma
+    /// partida terminada. O tempo é o congelado no fim, e não cresce depois.
+    pub fn result(&self, finished_at_ms: u64) -> Option<GameResult> {
+        let outcome = match self.status {
+            Status::Playing => return None,
+            Status::Won => Outcome::Won,
+            Status::Lost => Outcome::OutOfLives,
+        };
+        Some(self.result_with(outcome, self.elapsed_ms, finished_at_ms))
+    }
+
+    /// Monta o resultado com o desfecho e o tempo dados; o resto vem da partida.
+    pub(crate) fn result_with(
+        &self,
+        outcome: Outcome,
+        elapsed_ms: u64,
+        finished_at_ms: u64,
+    ) -> GameResult {
+        GameResult {
+            difficulty: self.puzzle.difficulty,
+            seed: self.puzzle.seed,
+            outcome,
+            elapsed_ms,
+            mistakes: self.mistakes,
+            hints_used: self.hints_used,
+            config: self.config,
+            finished_at_ms,
+        }
     }
 
     /// Termina a partida e congela o relógio em `now`. É o único lugar onde a partida acaba,
@@ -1289,7 +1350,7 @@ mod tests {
         };
         let mut game = Game::new(Difficulty::Dificil, 1, config);
         game.resume(0);
-        let new_game = game.restart(2).game;
+        let new_game = game.restart(2, 0, DATE).game;
         assert_eq!(new_game.puzzle().difficulty, Difficulty::Dificil);
         assert_eq!((new_game.lives_left(), new_game.hints_left()), (5, 0));
         assert_eq!(
@@ -1306,9 +1367,87 @@ mod tests {
         let mut game = easy_game();
         make_mistakes(&mut game, 3);
         assert_eq!(game.status(), Status::Lost);
-        let new_game = game.restart(9).game;
+        let restart = game.restart(9, 0, DATE);
+        assert_eq!(
+            restart.abandoned, None,
+            "a partida terminada já tem o seu resultado"
+        );
+        let new_game = restart.game;
         assert_eq!(new_game.status(), Status::Playing);
         assert_eq!(new_game.lives_left(), 3);
+    }
+
+    #[test]
+    fn abandonar_no_meio_vira_derrota_por_abandono() {
+        let mut game = easy_game();
+        make_mistakes(&mut game, 1);
+        let r = game.abandon(2_500, DATE).unwrap();
+        assert_eq!(r.outcome, Outcome::Abandoned);
+        assert_eq!((r.elapsed_ms, r.mistakes), (2_500, 1));
+    }
+
+    #[test]
+    fn abandonar_partida_que_nunca_comecou_conta() {
+        let game = Game::new(Difficulty::Facil, 42, GameConfig::default());
+        let r = game.abandon(9_000, DATE).unwrap();
+        assert_eq!((r.outcome, r.elapsed_ms), (Outcome::Abandoned, 0));
+    }
+
+    #[test]
+    fn abandonar_partida_terminada_nao_da_outro_resultado() {
+        let mut game = easy_game();
+        make_mistakes(&mut game, 3);
+        assert_eq!(game.abandon(0, DATE), None);
+    }
+
+    #[test]
+    fn reiniciar_no_meio_devolve_o_abandono() {
+        let mut game = easy_game();
+        game.pause(1_200);
+        let restart = game.restart(2, 5_000, DATE);
+        let r = restart.abandoned.unwrap();
+        assert_eq!((r.outcome, r.elapsed_ms), (Outcome::Abandoned, 1_200));
+        assert_eq!(restart.game.puzzle().seed, 2);
+    }
+
+    /// Data de relógio de parede (13/06/2026 12:00 UTC), em milissegundos desde a época Unix.
+    const DATE: u64 = 1_781_352_000_000;
+
+    #[test]
+    fn partida_em_andamento_nao_tem_resultado() {
+        let game = easy_game();
+        assert_eq!(game.result(DATE), None);
+    }
+
+    #[test]
+    fn derrota_por_vidas_vira_resultado() {
+        let mut game = easy_game();
+        make_mistakes(&mut game, 3);
+        let r = game.result(DATE).unwrap();
+        assert_eq!(r.outcome, Outcome::OutOfLives);
+        assert_eq!(
+            (r.difficulty, r.seed),
+            (Difficulty::Facil, game.puzzle().seed)
+        );
+        assert_eq!((r.mistakes, r.hints_used), (3, 0));
+        assert_eq!(r.config, GameConfig::default());
+        assert_eq!(r.finished_at_ms, DATE);
+    }
+
+    #[test]
+    fn vitoria_vira_resultado_com_o_tempo_congelado() {
+        let mut game = easy_game();
+        game.hint(0).unwrap();
+        while let Some(i) = (0..81).find(|&i| game.cell(i) == CellState::Empty) {
+            let v = solution_value(&game, i);
+            game.place(i, v, 4_000).unwrap();
+        }
+        let r = game.result(DATE).unwrap();
+        assert_eq!(r.outcome, Outcome::Won);
+        assert_eq!((r.elapsed_ms, r.hints_used), (4_000, 1));
+        // Pedir de novo, com outra data, só muda a data: nada na partida mudou.
+        assert_eq!(game.result(DATE + 1).unwrap().elapsed_ms, 4_000);
+        assert_eq!(game.result(DATE), Some(r));
     }
 
     #[test]

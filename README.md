@@ -54,8 +54,12 @@ a server, and in a future online mode.
   seed as text so JavaScript keeps its precision). `Game::restore` rejects any corrupted or
   tampered snapshot with a `RestoreError` and never panics.
 - **Restart** with a new seed at the same level and with the same rules.
+- **Results.** Every game ends in a `GameResult`: a win, a loss by lives, or an abandonment
+  (restarting or leaving mid-game counts as a loss). Per-level statistics (`level_stats`: games,
+  wins, win percentage, best time) and a personal ranking (`personal_ranking`: wins, fastest
+  first) are pure functions over the list the shell keeps.
 - **No required dependency** besides `sudoku-core`. The optional `serde` feature makes
-  `SavedGame` serializable, and a golden test locks its JSON form.
+  `SavedGame` and `SavedResult` serializable, and golden tests lock their JSON forms.
 
 ## Quick start: engine
 
@@ -180,7 +184,12 @@ game.hint(now) -> Result<HintOutcome, MoveError>;              // { index, value
 game.resume(now); game.pause(now); game.elapsed_ms(now) -> u64; game.is_paused() -> bool;
 game.save(now) -> SavedGame;
 Game::restore(&saved) -> Result<Game, RestoreError>;
-game.restart(seed) -> Restart;                                  // { game, .. }
+game.restart(seed, now, finished_at_ms) -> Restart;             // { game, abandoned, .. }
+game.result(finished_at_ms) -> Option<GameResult>;             // Some once the game is over
+game.abandon(now, finished_at_ms) -> Option<GameResult>;       // consumes the game
+result.save() -> SavedResult; GameResult::restore(&saved) -> Result<GameResult, ResultError>;
+level_stats(&results, difficulty) -> LevelStats;               // played, won, best_ms, win_percentage()
+personal_ranking(&results, difficulty) -> Vec<&GameResult>;
 game.cell(index) -> CellState;  // Empty | Given(v) | Placed(v) | Hinted(v)
 game.notes(index) -> Notes; game.status() -> Status;           // Playing | Won | Lost
 ```

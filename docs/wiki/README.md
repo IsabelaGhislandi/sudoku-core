@@ -16,6 +16,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 26 a 30](fundamentos/rust-base-tarefas-26-a-30.md)
 - [Fundamentos de Rust — Tarefas 31 a 35](fundamentos/rust-base-tarefas-31-a-35.md)
 - [Fundamentos de Rust — Tarefas 36 a 40](fundamentos/rust-base-tarefas-36-a-40.md)
+- [Fundamentos de Rust — Tarefas 41 a 45](fundamentos/rust-base-tarefas-41-a-45.md)
 
 ## Índice por task
 
@@ -63,5 +64,9 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [42 — Validar o que vem de fora: "parse, don't validate", índices conferidos e `let ... else`](42-validar-entrada-de-fora.md)
 - [43 — Features do Cargo, `serde` opcional e golden test de formato](43-features-opcionais-e-serde.md)
 - [44 — Reiniciar: `#[non_exhaustive]`, `&self` que devolve um valor novo e o fim da fatia 2](44-reiniciar-e-non-exhaustive.md)
+- [45 — Resultado da partida: enum de desfecho, `Option` para "só quando terminou" e dois relógios](45-resultado-da-partida.md)
+- [46 — Abandonar: `self` que consome, `bool::then` e uma assinatura que cresce](46-abandonar-e-self.md)
+- [47 — Estatísticas: iteradores preguiçosos, `Option` no lugar de dividir por zero e ordenação estável](47-estatisticas-e-iteradores.md)
+- [48 — Resultado salvável: o mesmo padrão de DTO, versão por registro e o fim da fatia 3](48-resultado-salvavel.md)
 
 > Cada nova task ganha uma página aqui.
