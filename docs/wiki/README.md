@@ -67,5 +67,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [45 — Resultado da partida: enum de desfecho, `Option` para "só quando terminou" e dois relógios](45-resultado-da-partida.md)
 - [46 — Abandonar: `self` que consome, `bool::then` e uma assinatura que cresce](46-abandonar-e-self.md)
 - [47 — Estatísticas: iteradores preguiçosos, `Option` no lugar de dividir por zero e ordenação estável](47-estatisticas-e-iteradores.md)
+- [48 — Resultado salvável: o mesmo padrão de DTO, versão por registro e o fim da fatia 3](48-resultado-salvavel.md)
 
 > Cada nova task ganha uma página aqui.

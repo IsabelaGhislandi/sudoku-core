@@ -1,7 +1,7 @@
 # Spec — Módulo Game/Sessão
 
 - **Data:** 2026-11-04
-- **Status:** aprovada. Fatias 1 (workspace e partida básica) e 2 (tempo e salvamento, seção 11) implementadas; fatia 3 (resultados, seção 12) especificada.
+- **Status:** aprovada. Fatias 1 (workspace e partida básica), 2 (tempo e salvamento, seção 11) e 3 (resultados, seção 12) implementadas.
 - **Módulo:** 2 de 5 (Game/Sessão). Depende do [módulo 1, engine](2026-06-14-sudoku-engine-design.md).
 - **Visão relacionada:** [`docs/architecture.md`](../../architecture.md), seções 10 (PvP) e 11.
 
