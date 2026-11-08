@@ -136,7 +136,12 @@ E os princípios que, em Rust, pesam tanto quanto o SOLID:
   transporte sem garantia (`SavedGame`, `SavedResult`).
 - `#[non_exhaustive]` em structs de leitura e enums que podem crescer sem quebrar quem usa
   (`GameResult`, `Restart`).
-- Todo item `pub` tem `///` em português dizendo o que é, o que garante e quando falha.
+- Todo item `pub` tem `///` em português dizendo o que é, o que garante e quando falha. Quem
+  cobra é o `#![warn(missing_docs)]` no `lib.rs` de cada crate: com o `-D warnings` do clippy,
+  um item público sem doc quebra o CI. A doc diz o que o nome não diz (invariante, unidade,
+  quando dá panic); `/// Célula vazia.` em `Cell::Empty` só repete o nome.
+- Todo módulo começa com `//!` dizendo do que ele cuida. A exceção são os arquivos de
+  `techniques/`: cada um tem um único tipo, e o `///` dele já explica a técnica.
 - Mudou a API pública? Testes de integração em `tests/` e o `CHANGELOG.md` no mesmo PR.
 
 ## 7. Quem garante o quê
