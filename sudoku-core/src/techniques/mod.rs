@@ -1,3 +1,5 @@
+//! As técnicas de resolução, uma por arquivo, e os tipos que elas devolvem.
+
 use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::Grid;
@@ -8,8 +10,11 @@ use crate::grid::Grid;
 /// basta para representar todas as deduções.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
+    /// Coloca um dígito numa célula vazia.
     Place {
+        /// A célula, de 0 a 80.
         index: usize,
+        /// O dígito, de 1 a 9.
         value: u8,
     },
     /// Pares (célula, dígito) a remover. Nunca vem vazia, e todo par remove um
@@ -17,10 +22,15 @@ pub enum Action {
     Eliminate(Vec<(usize, u8)>),
 }
 
+/// Um passo de resolução: o que muda e qual técnica justificou a mudança.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Deduction {
+    /// O que o passo muda na grade ou nos candidatos.
     pub action: Action,
+    /// O nome da técnica em inglês, como ela é conhecida entre jogadores
+    /// (`"Naked Pair"`, `"X-Wing"`). É o texto que a dica mostra.
     pub technique: &'static str,
+    /// O nível da técnica; o maior entre os passos é o nível do puzzle.
     pub level: Difficulty,
 }
 
@@ -29,6 +39,8 @@ pub struct Deduction {
 pub trait Technique {
     /// Nível da técnica, usado para montar um solver limitado por dificuldade.
     fn level(&self) -> Difficulty;
+    /// A primeira dedução que a técnica acha, ou `None` se ela não se aplica agora.
+    /// Só lê: quem aplica a dedução é o solver.
     fn apply(&self, grid: &Grid, candidates: &CandidateGrid) -> Option<Deduction>;
 }
 

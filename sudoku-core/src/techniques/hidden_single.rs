@@ -3,6 +3,8 @@ use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
 
+/// Um dígito que, numa unidade, só cabe numa célula: ele vai nela, mesmo que a célula
+/// tenha outros candidatos.
 pub struct HiddenSingle;
 
 impl Technique for HiddenSingle {

@@ -1,3 +1,5 @@
+//! Classificação de puzzles vindos de fora pelo nível que exigem.
+
 use crate::backtracking::count_solutions;
 use crate::difficulty::Difficulty;
 use crate::grid::{Grid, validate};

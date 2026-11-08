@@ -1,6 +1,9 @@
 //! sudoku-core — geração, resolução, validação e classificação de Sudoku 9×9.
 //! Biblioteca pura: sem UI, sem IO, sem Tauri.
 
+// Todo item público precisa de doc: com o `-D warnings` do CI, faltar uma vira erro.
+#![warn(missing_docs)]
+
 mod backtracking;
 mod candidates;
 mod difficulty;

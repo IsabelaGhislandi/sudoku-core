@@ -1,3 +1,5 @@
+//! Geração determinística de puzzles: mesma seed + mesmo nível => mesmo puzzle.
+
 use rand::SeedableRng;
 use rand::seq::SliceRandom;
 use rand_chacha::ChaCha12Rng;
@@ -6,16 +8,26 @@ use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
 use crate::solver::LogicalSolver;
 
+/// Um puzzle gerado: o enunciado, a solução e o que é preciso para gerá-lo de novo.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Puzzle {
+    /// O enunciado: as células da solução que o jogador recebe preenchidas. Tem solução
+    /// única, e é `solution`.
     pub givens: Grid,
+    /// A grade completa. Vem junto para o jogo conferir jogadas sem resolver de novo.
     pub solution: Grid,
+    /// O nível pedido, que é também o nível que `rate` dá ao enunciado.
     pub difficulty: Difficulty,
+    /// A seed usada: `generate(difficulty, seed)` devolve este mesmo puzzle.
     pub seed: u64,
 }
 
+/// Por que `generate` não devolveu um puzzle.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GenError {
+    /// A seed esgotou o teto de tentativas do nível sem achar um puzzle que o exija.
+    /// É raro e esperado (cerca de 1 seed em 5.000 no Difícil, 1 em 200 no Muito
+    /// Difícil); quem chama sorteia outra seed.
     AttemptsExhausted(Difficulty),
 }
 
