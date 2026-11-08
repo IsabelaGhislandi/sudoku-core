@@ -3,6 +3,9 @@
 //! Biblioteca pura, como o sudoku-core: sem relógio, sem IO, sem rede, sem UI. A casca (app,
 //! navegador, servidor) informa o que acontece e guarda o que precisa ser guardado.
 
+// Todo item público precisa de doc: com o `-D warnings` do CI, faltar uma vira erro.
+#![warn(missing_docs)]
+
 mod config;
 mod game;
 mod hint;

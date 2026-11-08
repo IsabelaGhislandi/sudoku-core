@@ -52,9 +52,13 @@ pub struct SavedGame {
     pub lives: u8,
     /// Dicas da configuração da partida.
     pub hints: u8,
+    /// Vidas que restavam, como em `Game::lives_left`.
     pub lives_left: u8,
+    /// Dicas que restavam, como em `Game::hints_left`.
     pub hints_left: u8,
+    /// Números errados até o salvamento, como em `Game::mistakes`.
     pub mistakes: u32,
+    /// Dicas pedidas até o salvamento, como em `Game::hints_used`.
     pub hints_used: u8,
     /// Tempo jogado até o instante do salvamento, em milissegundos.
     pub elapsed_ms: u64,

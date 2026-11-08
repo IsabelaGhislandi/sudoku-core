@@ -1,3 +1,5 @@
+//! A configuração de uma partida: vidas e dicas.
+
 use std::num::NonZeroU8;
 
 /// Regras ajustáveis de uma partida. O solo usa o padrão; no PvP, quem cria a sala escolhe o

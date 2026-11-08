@@ -1,3 +1,5 @@
+//! As anotações que a pessoa faz nas células vazias.
+
 /// Anotações de uma célula: os números pequenos de "pode ser". Bit n ligado quer dizer que o
 /// dígito n está anotado (n de 1 a 9).
 ///
@@ -8,6 +10,7 @@
 pub struct Notes(u16);
 
 impl Notes {
+    /// `true` se `value` (de 1 a 9) está anotado.
     pub fn contains(self, value: u8) -> bool {
         self.0 & (1 << value) != 0
     }
@@ -17,6 +20,7 @@ impl Notes {
         (1..=9).filter(|&v| self.contains(v)).collect()
     }
 
+    /// `true` sem nenhuma anotação, o caso de toda célula com número.
     pub fn is_empty(self) -> bool {
         self.0 == 0
     }
