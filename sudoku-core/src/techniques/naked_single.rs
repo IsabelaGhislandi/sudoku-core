@@ -3,6 +3,7 @@ use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
 
+/// Uma célula com um único candidato: esse é o dígito dela.
 pub struct NakedSingle;
 
 impl Technique for NakedSingle {

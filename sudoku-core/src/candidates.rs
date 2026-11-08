@@ -1,3 +1,5 @@
+//! Candidatos: os dígitos que ainda cabem em cada célula vazia.
+
 use crate::grid::{Cell, Grid, box_of, col_of, row_of};
 use crate::techniques::units;
 
@@ -6,10 +8,14 @@ use crate::techniques::units;
 pub struct CandidateSet(u16);
 
 impl CandidateSet {
+    /// `true` se `value` é candidato. `value` vai de 1 a 9; acima de 15 dá panic em
+    /// debug (shift maior que o `u16`).
     pub fn contains(&self, value: u8) -> bool {
         self.0 & (1 << value) != 0
     }
 
+    /// Os dígitos candidatos em ordem crescente. Aloca um `Vec`, então fica para quem
+    /// está fora do caminho quente; as técnicas usam `digits`.
     pub fn values(&self) -> Vec<u8> {
         self.digits().collect()
     }
@@ -26,10 +32,12 @@ impl CandidateSet {
         self.0
     }
 
+    /// Quantos dígitos são candidatos. Com 1, a célula é um Naked Single.
     pub fn count(&self) -> u32 {
         self.0.count_ones()
     }
 
+    /// Tira `value` do conjunto. Tirar um dígito que não está lá não muda nada.
     pub fn remove(&mut self, value: u8) {
         self.0 &= !(1 << value);
     }
@@ -114,6 +122,7 @@ impl CandidateGrid {
         })
     }
 
+    /// Os candidatos da célula `index`, vazio se ela estiver preenchida.
     pub fn get(&self, index: usize) -> CandidateSet {
         self.cells[index]
     }

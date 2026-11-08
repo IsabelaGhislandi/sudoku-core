@@ -1,37 +1,66 @@
+//! A grade 9×9 e as regras básicas do Sudoku: parse, validação e onde cada dígito cabe.
+//!
+//! As células são numeradas de 0 a 80, linha por linha (a célula 9 é a primeira da
+//! segunda linha). Toda a lib usa essa numeração.
+
+/// O conteúdo de uma célula da grade.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Cell {
+    /// Sem dígito. No enunciado, é a célula que o jogador preenche.
     Empty,
+    /// Com um dígito, que por convenção vai de 1 a 9. O tipo não impede outro valor
+    /// (`set` aceita `Filled(0)`), mas o parse e o gerador só produzem 1 a 9.
     Filled(u8),
 }
 
+/// Uma grade 9×9, completa ou não. Não garante que as regras do Sudoku valham: uma
+/// grade com dois 5 na mesma linha é uma `Grid` válida, e `validate` é quem aponta o
+/// conflito. Assim o jogo consegue representar o erro do jogador.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Grid {
     cells: [Cell; 81],
 }
 
 impl Grid {
+    /// Grade com as 81 células vazias.
     pub fn empty() -> Self {
         Grid {
             cells: [Cell::Empty; 81],
         }
     }
 
+    /// A célula `index` (0 a 80, linha por linha).
+    ///
+    /// # Panics
+    ///
+    /// Se `index` for 81 ou mais.
     pub fn get(&self, index: usize) -> Cell {
         self.cells[index]
     }
 
+    /// Troca a célula `index` sem checar as regras: quem precisa delas chama
+    /// `can_place` antes.
+    ///
+    /// # Panics
+    ///
+    /// Se `index` for 81 ou mais.
     pub fn set(&mut self, index: usize, cell: Cell) {
         self.cells[index] = cell;
     }
 
+    /// `true` se nenhuma célula estiver vazia. Não confere conflitos: uma grade completa
+    /// só é solução se `validate` também não achar nenhum.
     pub fn is_complete(&self) -> bool {
         self.cells.iter().all(|c| matches!(c, Cell::Filled(_)))
     }
 }
 
+/// Por que `Grid::from_line` recusou a linha.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseError {
+    /// A linha não tinha 81 caracteres; guarda quantos tinha.
     WrongLength(usize),
+    /// O primeiro caractere que não é dígito de 1 a 9, `.` nem `0`.
     InvalidChar(char),
 }
 
@@ -47,9 +76,13 @@ pub fn box_of(index: usize) -> usize {
     (row_of(index) / 3) * 3 + col_of(index) / 3
 }
 
+/// Duas células preenchidas com o mesmo dígito na mesma linha, coluna ou box.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Conflict {
+    /// A célula de menor índice do par.
     pub a: usize,
+    /// A célula de maior índice do par. Como sempre `a < b`, cada conflito aparece uma
+    /// vez só em `validate`.
     pub b: usize,
 }
 
@@ -91,6 +124,8 @@ pub fn validate(grid: &Grid) -> Vec<Conflict> {
 }
 
 impl Grid {
+    /// Lê uma grade no formato de uma linha só: 81 caracteres, linha por linha, com `1`
+    /// a `9` para dígitos e `.` ou `0` para vazio. É o formato comum de troca de puzzles.
     pub fn from_line(line: &str) -> Result<Grid, ParseError> {
         let chars: Vec<char> = line.chars().collect();
         if chars.len() != 81 {
@@ -108,6 +143,8 @@ impl Grid {
         Ok(grid)
     }
 
+    /// O inverso de `from_line`, sempre com `.` para vazio. É a string que os golden
+    /// tests comparam.
     pub fn to_line(&self) -> String {
         self.cells
             .iter()

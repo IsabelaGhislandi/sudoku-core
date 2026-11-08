@@ -1,3 +1,6 @@
+//! Busca por tentativa e erro, só para contar soluções. Nunca entra na resolução que
+//! mede a dificuldade: o jogo promete puzzles que não exigem chute.
+
 use crate::candidates::candidates_for;
 use crate::grid::{Cell, Grid};
 

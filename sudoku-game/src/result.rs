@@ -19,7 +19,9 @@ pub const RESULT_VERSION: u32 = 1;
 /// histórico poder mostrar a diferença.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Outcome {
+    /// Tabuleiro completo.
     Won,
+    /// Perdida por erros: as vidas acabaram.
     OutOfLives,
     /// Reiniciada ou largada antes de terminar.
     Abandoned,
@@ -32,14 +34,18 @@ pub enum Outcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct GameResult {
+    /// O nível do puzzle jogado. Estatística e ranking separam por ele.
     pub difficulty: Difficulty,
     /// A seed de fato usada (`Puzzle.seed`). Permite a um ranking online comparar quem jogou o
     /// mesmo puzzle, e ao servidor refazer a partida.
     pub seed: u64,
+    /// Como a partida terminou.
     pub outcome: Outcome,
     /// Tempo jogado, sem as pausas, em milissegundos.
     pub elapsed_ms: u64,
+    /// Números errados na partida inteira.
     pub mistakes: u32,
+    /// Dicas pedidas na partida inteira.
     pub hints_used: u8,
     /// Vidas e dicas com que a partida foi jogada: 3 vidas e 1 vida não são a mesma partida.
     pub config: GameConfig,
@@ -62,8 +68,12 @@ pub struct SavedResult {
     pub seed: String,
     /// `"Won"`, `"OutOfLives"` ou `"Abandoned"`.
     pub outcome: String,
+    /// Como em `GameResult::elapsed_ms`. Número, e não texto: uma partida não chega perto
+    /// de 2^53 ms.
     pub elapsed_ms: u64,
+    /// Como em `GameResult::mistakes`.
     pub mistakes: u32,
+    /// Como em `GameResult::hints_used`.
     pub hints_used: u8,
     /// Vidas da configuração da partida.
     pub lives: u8,
@@ -79,9 +89,11 @@ pub struct SavedResult {
 pub enum ResultError {
     /// Versão de formato que esta versão do jogo não sabe ler.
     UnknownVersion(u32),
+    /// Nível que não é um dos quatro nomes de `SavedResult::difficulty`.
     UnknownDifficulty,
     /// Seed que não é um `u64` em decimal.
     InvalidSeed,
+    /// Desfecho que não é um dos três nomes de `SavedResult::outcome`.
     UnknownOutcome,
     /// Data que não é um `u64` em decimal.
     InvalidDate,

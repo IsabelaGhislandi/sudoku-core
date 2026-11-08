@@ -1,3 +1,5 @@
+//! A partida: o estado de um jogo em andamento e as ações que a pessoa faz nele.
+
 use sudoku_core::{Cell, Difficulty, GenError, Puzzle, generate, validate};
 
 use crate::config::GameConfig;
@@ -14,6 +16,7 @@ pub use save::{RestoreError, SAVE_VERSION, SavedGame};
 /// no tabuleiro, só custa uma vida.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CellState {
+    /// Sem número: a pessoa ainda pode jogar ou anotar aqui.
     Empty,
     /// Número do enunciado.
     Given(u8),
@@ -36,8 +39,11 @@ impl CellState {
 /// Em que pé está a partida. `Won` e `Lost` são finais: depois deles, nenhuma ação é aceita.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Status {
+    /// Em andamento, pausada ou não (ver `is_paused`).
     Playing,
+    /// Todas as células preenchidas.
     Won,
+    /// As vidas acabaram. Abandonar não leva aqui: o abandono só existe no `GameResult`.
     Lost,
 }
 
@@ -48,7 +54,12 @@ pub enum PlaceOutcome {
     Correct,
     /// O número estava errado: custou uma vida e não ficou no tabuleiro. Volta a célula e o
     /// número tentados, para a tela mostrar o vermelho no lugar certo.
-    Wrong { index: usize, value: u8 },
+    Wrong {
+        /// A célula tentada, que continua vazia.
+        index: usize,
+        /// O número errado que a pessoa tentou.
+        value: u8,
+    },
 }
 
 /// Por que um `Puzzle` foi recusado por `Game::from_puzzle`.
@@ -67,7 +78,9 @@ pub enum PuzzleError {
 /// A célula que uma dica revelou e o número certo dela.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HintOutcome {
+    /// A célula revelada, que agora está como `CellState::Hinted`.
     pub index: usize,
+    /// O número da solução nessa célula.
     pub value: u8,
 }
 
@@ -220,6 +233,7 @@ impl Game {
             .then(|| self.result_with(Outcome::Abandoned, self.elapsed_ms(now), finished_at_ms))
     }
 
+    /// O puzzle desta partida, com enunciado, solução, nível e seed.
     pub fn puzzle(&self) -> &Puzzle {
         &self.puzzle
     }
@@ -236,10 +250,12 @@ impl Game {
         self.notes[index]
     }
 
+    /// Vidas que ainda restam. Cada número errado custa uma; em zero, a partida está perdida.
     pub fn lives_left(&self) -> u8 {
         self.lives_left
     }
 
+    /// Dicas que ainda podem ser pedidas.
     pub fn hints_left(&self) -> u8 {
         self.hints_left
     }
@@ -249,10 +265,12 @@ impl Game {
         self.mistakes
     }
 
+    /// Dicas pedidas até agora. Vai para o `GameResult` quando a partida termina.
     pub fn hints_used(&self) -> u8 {
         self.hints_used
     }
 
+    /// Em que pé está a partida.
     pub fn status(&self) -> Status {
         self.status
     }

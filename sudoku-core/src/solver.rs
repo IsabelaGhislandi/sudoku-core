@@ -1,3 +1,5 @@
+//! O solver lógico: resolve como uma pessoa, com técnicas, sem chute.
+
 use crate::candidates::CandidateGrid;
 use crate::difficulty::Difficulty;
 use crate::grid::{Cell, Grid};
@@ -6,14 +8,22 @@ use crate::techniques::{
     NakedSingle, NakedTriple, PointingPair, Swordfish, Technique, XWing, XYWing, units,
 };
 
+/// Resolve aplicando técnicas de Sudoku, sempre a mais simples disponível primeiro.
+/// Nunca chuta: se nenhuma técnica serve, para. É isso que permite medir a dificuldade
+/// de um puzzle pela técnica mais difícil que ele precisou.
 pub struct LogicalSolver {
     techniques: Vec<Box<dyn Technique>>,
 }
 
+/// O resultado de `LogicalSolver::solve`.
 #[derive(Debug, Clone)]
 pub struct SolveResult {
+    /// A grade como o solver deixou: completa se `solved`, parcial se empacou.
     pub grid: Grid,
+    /// Cada dedução aplicada, na ordem em que o solver aplicou.
     pub steps: Vec<Deduction>,
+    /// `true` se a grade ficou completa. `false` quer dizer que as técnicas empacaram,
+    /// não que o puzzle não tem solução: ele pode ter, só que exigindo chute.
     pub solved: bool,
 }
 

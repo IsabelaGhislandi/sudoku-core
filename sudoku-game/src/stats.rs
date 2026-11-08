@@ -8,7 +8,9 @@ use crate::result::{GameResult, Outcome};
 /// Os números de um nível. Abandonos contam como partidas jogadas e não vencidas.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct LevelStats {
+    /// Partidas do nível, com qualquer desfecho.
     pub played: u32,
+    /// Partidas do nível vencidas.
     pub won: u32,
     /// Menor tempo entre as vitórias, em milissegundos. `None` sem vitória no nível.
     pub best_ms: Option<u64>,
