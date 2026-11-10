@@ -296,7 +296,7 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
       não andou.
 - [x] **Step 7: Refactor** com tudo verde (comandos Rust e `web/`).
 - [x] **Step 8: Commit do código** `git commit -m "feat: add notes, hints and pause to the board"`
-- [ ] **Step 9: Wiki 53** (`# 53 — Anotações, dica e pausa: um bitset visto do JS, eventos da
+- [x] **Step 9: Wiki 53** (`# 53 — Anotações, dica e pausa: um bitset visto do JS, eventos da
       página e estado só da tela`): `Notes` virando `number[]` na ponte, o que é estado da partida
       (Rust) e o que é estado da tela (modo anotar), `visibilitychange` comparado ao
       `beforeunload`. `git commit -m "docs: add wiki page 53 on notes, hints and pause"`
