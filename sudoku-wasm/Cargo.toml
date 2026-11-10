@@ -1,0 +1,25 @@
+[package]
+name = "sudoku-wasm"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "WebAssembly bridge that exposes a sudoku-game match to JavaScript."
+readme = "../README.md"
+# Só o app web consome este crate, pelo pacote gerado com o wasm-pack; não vai para o crates.io.
+publish = false
+
+[lib]
+# cdylib: o .wasm que o navegador carrega. rlib: o mesmo código como biblioteca Rust comum,
+# para o `cargo test` rodar os testes no target nativo.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Serialize do retrato (GameView) e leitura da foto e do resultado em JSON.
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+# A feature serde liga Serialize/Deserialize na foto (SavedGame) e no resultado (SavedResult).
+sudoku-game = { path = "../sudoku-game", features = ["serde"] }
+# Gera a cola entre Rust e JavaScript: exporta o WebGame para o navegador.
+wasm-bindgen = "0.2.130"

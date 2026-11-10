@@ -75,3 +75,35 @@ jobs:
             cat coverage.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # App web: o sudoku-wasm compilado para WebAssembly e o frontend Svelte. Um SO basta: o .wasm e o
+  # JavaScript são os mesmos em qualquer sistema.
+  web:
+    name: App web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      # Binário pronto do wasm-pack, em vez de compilar com `cargo install` a cada execução.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      # npm ci instala exatamente o que está no package-lock.json, e falha se ele estiver
+      # desatualizado: o mesmo papel do --locked do Cargo.
+      - run: npm ci
+      - run: npm run build:wasm
+      - run: npm run check
+      - run: npm test
+      # O build roda o build:wasm de novo; o cache do Cargo deixa essa segunda vez rápida.
+      - run: npm run build

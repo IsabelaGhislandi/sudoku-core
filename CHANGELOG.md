@@ -15,6 +15,16 @@ The first release (`0.1.0`) will be tagged together with the first browser versi
 
 ### Added
 
+- **Browser frontend** (`web/`, Svelte 5 + TypeScript + Vite): home, level choice, game and history
+  screens. Notes, hints, pause (the board hides while paused), restart with confirmation, a saved
+  game with Continuar, and a history of finished, lost (Derrota) and abandoned (Largada) games, all
+  stored in `localStorage`.
+- **Destacar** toggle on the game screen (on by default): tapping a filled cell highlights every
+  cell with the same number.
+- **`sudoku-wasm` crate**: the WebAssembly bridge (`wasm-bindgen`) that exposes a `sudoku-game` match
+  to JavaScript as `WebGame`, with a JSON view of the board, the existing `SavedGame` and
+  `SavedResult` JSON formats, and `historyEntries` to check and sort the stored history.
+- CI job `web`: builds the WASM package, then type-checks, tests and builds the web app.
 - **`sudoku-game` crate** with the rules of a match, on top of `sudoku-core`: `Game::new` and
   `Game::from_puzzle` (which validates the puzzle and returns a `PuzzleError` otherwise), `place` (a correct number locks; a wrong one costs a life and leaves the
   board), `toggle_note` (per-cell pencil notes), `hint` (reveals a cell from the solution), win and

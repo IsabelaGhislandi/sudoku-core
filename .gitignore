@@ -1,1 +1,6 @@
 /target
+
+# App web: dependências do npm, build do Vite e o pacote gerado pelo wasm-pack.
+/web/node_modules/
+/web/dist/
+/web/src/lib/wasm-pkg/
