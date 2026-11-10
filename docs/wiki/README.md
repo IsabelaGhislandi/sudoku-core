@@ -72,5 +72,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [49 — Nomes salvos: um module de dentro do crate, `pub(crate)` e dependência entre irmãos](49-modules-de-dentro-do-crate.md)
 - [50 — A foto como module filho: privacidade por árvore, `impl` em outro arquivo e `git mv`](50-module-filho-e-privacidade.md)
 - [51 — A ponte para o navegador: `wasm-bindgen`, `cdylib` e texto como contrato](51-ponte-wasm-bindgen.md)
+- [52 — WASM no navegador: `wasm-pack`, `init` assíncrono e runes do Svelte](52-wasm-no-navegador-com-vite-e-svelte.md)
 
 > Cada nova task ganha uma página aqui.

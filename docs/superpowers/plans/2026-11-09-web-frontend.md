@@ -259,7 +259,7 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
       `npm run build`. `CLAUDE.md` (Comandos) e `README.md` ganham `npm run dev` e `npm test` em
       `web/`.
 - [x] **Step 8: Commit do código** `git commit -m "feat: play a game on the board in the browser"`
-- [ ] **Step 9: Wiki 52** (`# 52 — WASM no navegador: wasm-pack, init assíncrono e runes do
+- [x] **Step 9: Wiki 52** (`# 52 — WASM no navegador: wasm-pack, init assíncrono e runes do
       Svelte`): o que o `wasm-pack --target web` gera, por que o `init()` é `await`, a memória do
       WASM (um `WebGame` é um ponteiro; `free()`), `$state` comparado a `useState`, os números da
       medição. `git commit -m "docs: add wiki page 52 on running wasm in the browser"`
