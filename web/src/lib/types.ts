@@ -21,3 +21,11 @@ export interface GameView {
   hintsLeft: number
   cells: CellView[]
 }
+
+/** Uma linha do histórico, como `historyEntries` devolve. */
+export interface HistoryEntry {
+  difficulty: Level
+  outcome: 'Won' | 'OutOfLives' | 'Abandoned'
+  elapsedMs: number
+  finishedAtMs: number
+}

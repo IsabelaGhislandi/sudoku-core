@@ -9,11 +9,19 @@
 #![warn(missing_docs)]
 
 mod convert;
+mod history;
 mod view;
 
 use sudoku_game::{Game, GameConfig, GameResult, PlaceOutcome, SavedGame};
 use view::GameView;
 use wasm_bindgen::prelude::*;
+
+/// As entradas do histórico para a tela, a partir do array de `SavedResult` guardado pela casca.
+/// Registros inválidos somem; os válidos vêm do mais recente para o mais antigo.
+#[wasm_bindgen(js_name = historyEntries)]
+pub fn history_entries(json: &str) -> String {
+    history::history_entries(json)
+}
 
 /// Um resultado no formato do histórico: o `SavedResult` em JSON.
 fn save_result(result: &GameResult) -> String {

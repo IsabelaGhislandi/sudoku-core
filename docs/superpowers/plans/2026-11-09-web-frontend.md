@@ -424,30 +424,30 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
   number; finishedAtMs: number }`; `history.ts` com
   `formatEntry(entry: HistoryEntry, timeZone?: string): { text: string; label: string | null }`.
 
-- [ ] **Step 1: Esqueleto que compila.** `history_entries` devolvendo `"[]"`; `formatEntry`
+- [x] **Step 1: Esqueleto que compila.** `history_entries` devolvendo `"[]"`; `formatEntry`
       devolvendo `{ text: '', label: null }`.
-- [ ] **Step 2: Ciclo — histórico ordenado, mais recente primeiro**
+- [x] **Step 2: Ciclo — histórico ordenado, mais recente primeiro**
       `fn historico_mais_recente_primeiro()`: array com dois `SavedResult` válidos (datas `1000` e
       `2000`): saída com 2 entradas, a de `finishedAtMs == 2000` primeiro, `difficulty`, `outcome`
       e `elapsedMs` copiados. → FAIL (veio `[]`). → cada elemento parseado como `serde_json::Value`
       e depois `SavedResult`, `GameResult::restore`, ordenação estável decrescente. → PASS.
-- [ ] **Step 3: Ciclo — registro ruim some, os bons ficam**
+- [x] **Step 3: Ciclo — registro ruim some, os bons ficam**
       `fn registro_ruim_some()`: o array do Step 2 com `{"version": 99, ...}`, `"lixo"` e `42` no
       meio: continuam as 2 entradas boas. Entrada `"não é json"` ou `"{}"` inteira dá `[]`.
       → FAIL ou passa de primeira; se passar, prove quebrando o filtro. → PASS.
-- [ ] **Step 4: Ciclo — linha do histórico**
+- [x] **Step 4: Ciclo — linha do histórico**
       `it('formata a linha do histórico')`, com `timeZone = 'America/Sao_Paulo'`:
       `{ Medio, Won, 600_000, Date.UTC(2026, 5, 13, 15) }` → `text == 'Médio — 10 min — 13/06/2026'`,
       `label == null`; `OutOfLives` → `label == 'Derrota'`; `Abandoned` → `label == 'Largada'`;
       `elapsedMs = 59_000` → `'< 1 min'`; `90_000` → `'2 min'` (arredonda). → `npm test -- history`
       → FAIL. → `Math.round`, `Intl.DateTimeFormat('pt-BR', { timeZone })`. → PASS.
-- [ ] **Step 5: Tela.** `History.svelte` lê `historyEntries(loadHistory(localStorage))`, mostra uma
+- [x] **Step 5: Tela.** `History.svelte` lê `historyEntries(loadHistory(localStorage))`, mostra uma
       linha por entrada com o rótulo ao lado quando houver, "Nenhuma partida ainda." quando vazio,
       e o botão `Início` no fim. Chega pelo `Histórico` da `Home` e pelo fim da partida.
-- [ ] **Step 6: Verificação manual.** Termine uma partida ganhando (dicas ajudam) e outra perdendo,
+- [x] **Step 6: Verificação manual.** Termine uma partida ganhando (dicas ajudam) e outra perdendo,
       recomece uma terceira: três linhas, com `Derrota` e `Largada` nas certas.
-- [ ] **Step 7: Refactor** com tudo verde.
-- [ ] **Step 8: Commit do código** `git commit -m "feat: show the game history"`
+- [x] **Step 7: Refactor** com tudo verde.
+- [x] **Step 8: Commit do código** `git commit -m "feat: show the game history"`
 - [ ] **Step 9: Wiki 56** (`# 56 — Histórico: filtrar o que vem de fora, `filter_map` e
       `Intl` no lugar de formatar à mão`). `git commit -m "docs: add wiki page 56 on the game history"`
 
