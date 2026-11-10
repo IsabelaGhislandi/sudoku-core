@@ -5,7 +5,7 @@
   import Home from './screens/Home.svelte'
   import Levels from './screens/Levels.svelte'
   import { monotonicNow, randomSeed, wallClockNow } from './lib/clock'
-  import { nextScreen, type NavEvent, type Screen } from './lib/navigation'
+  import { historyAction, nextScreen, type NavEvent, type Screen } from './lib/navigation'
   import { appendResult, browserStorage, clearSavedGame, loadSavedGame } from './lib/storage'
   import type { Level } from './lib/types'
   import { WebGame } from './lib/wasm-pkg/sudoku_wasm'
@@ -23,9 +23,13 @@
 
   function navigate(event: NavEvent) {
     const next = nextScreen(screen, event)
-    if (next === screen) return
+    const action = historyAction(screen, next)
     screen = next
-    history.pushState({ screen }, '')
+    if (action === 'push') history.pushState({ screen: next }, '')
+    else if (action === 'replace') history.replaceState({ screen: next }, '')
+    // Voltar ao início desfaz a única entrada acima dele; o `popstate` que vem depois só confirma
+    // a tela que já está aqui.
+    else if (action === 'back') history.back()
   }
 
   window.addEventListener('popstate', () => {

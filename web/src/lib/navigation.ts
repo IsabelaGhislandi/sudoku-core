@@ -35,3 +35,18 @@ export function nextScreen(screen: Screen, event: NavEvent): Screen {
       return screen
   }
 }
+
+/** O que fazer no histórico do navegador ao trocar de tela. */
+export type HistoryAction = 'push' | 'replace' | 'back' | 'none'
+
+/**
+ * Como a troca de `from` para `to` aparece no histórico do navegador. O histórico fica com no
+ * máximo uma entrada acima do início, para o voltar do navegador (e, no APK, do Android) sempre
+ * levar ao início, e do início sair do site.
+ */
+export function historyAction(from: Screen, to: Screen): HistoryAction {
+  if (from === to) return 'none'
+  if (from === 'home') return 'push'
+  if (to === 'home') return 'back'
+  return 'replace'
+}

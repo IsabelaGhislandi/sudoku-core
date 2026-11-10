@@ -101,9 +101,11 @@ history.replaceState({ screen: 'home' }, '')
 
 function navigate(event: NavEvent) {
   const next = nextScreen(screen, event)
-  if (next === screen) return
+  const action = historyAction(screen, next)
   screen = next
-  history.pushState({ screen }, '') // uma entrada nova no histórico do navegador
+  if (action === 'push') history.pushState({ screen: next }, '')
+  else if (action === 'replace') history.replaceState({ screen: next }, '')
+  else if (action === 'back') history.back()
 }
 
 window.addEventListener('popstate', () => {
@@ -115,6 +117,23 @@ window.addEventListener('popstate', () => {
   agora existe um "voltar" possível.
 - O `popstate` dispara quando a pessoa aperta voltar. O app trata como o evento `back` da própria
   máquina de estados. Assim, o voltar do navegador e a seta `←` da tela fazem a mesma coisa.
+
+A primeira versão fazia `pushState` em **toda** troca, inclusive na seta `←` e no "Início". A revisão
+final pegou o efeito: depois de algumas telas, o histórico ficava `[início, nível, jogo, início]`, e o
+voltar do navegador "morria" por vários toques no início, porque cada toque só desfazia uma entrada
+extra. A correção é uma regra pura, testada com Vitest:
+
+```ts
+export function historyAction(from: Screen, to: Screen): HistoryAction {
+  if (from === to) return 'none'
+  if (from === 'home') return 'push'    // sair do início acrescenta uma entrada
+  if (to === 'home') return 'back'      // voltar ao início desfaz essa entrada
+  return 'replace'                      // entre telas que não são o início, troca
+}
+```
+
+O histórico do navegador fica com no máximo uma entrada acima do início. O voltar sempre leva ao
+início, e do início sai do site, como num app de celular.
 
 Frameworks de rotas, como o SvelteKit e o React Router, fazem isso com URLs (`/jogo`, `/historico`).
 Aqui não há URL por tela: uma partida não faz sentido aberta direto por link, porque ela depende do

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { nextScreen } from './navigation'
+import { historyAction, nextScreen } from './navigation'
 
 describe('navigation', () => {
   it('vai do início ao jogo pelo nível', () => {
@@ -16,5 +16,15 @@ describe('navigation', () => {
     expect(nextScreen('game', { type: 'gameOver' })).toBe('history')
     expect(nextScreen('history', { type: 'home' })).toBe('home')
     expect(nextScreen('levels', { type: 'gameOver' })).toBe('levels')
+  })
+
+  it('mantém o histórico do navegador a uma entrada do início', () => {
+    expect(historyAction('home', 'levels')).toBe('push')
+    expect(historyAction('home', 'history')).toBe('push')
+    expect(historyAction('levels', 'game')).toBe('replace')
+    expect(historyAction('game', 'history')).toBe('replace')
+    expect(historyAction('game', 'home')).toBe('back')
+    expect(historyAction('history', 'home')).toBe('back')
+    expect(historyAction('home', 'home')).toBe('none')
   })
 })
