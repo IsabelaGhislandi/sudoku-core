@@ -344,7 +344,7 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
       navegador; o voltar nunca sai do site a partir do jogo.
 - [x] **Step 7: Refactor** com tudo verde.
 - [x] **Step 8: Commit do código** `git commit -m "feat: add home, level and game screens with navigation"`
-- [ ] **Step 9: Wiki 54** (`# 54 — Telas como máquina de estados: união discriminada no TS, enum no
+- [x] **Step 9: Wiki 54** (`# 54 — Telas como máquina de estados: união discriminada no TS, enum no
       Rust e o histórico do navegador`): `NavEvent` comparado a um `enum` com dados do Rust,
       exaustividade (`never` no TS × `match`), `pushState`/`popstate`.
       `git commit -m "docs: add wiki page 54 on screens and navigation"`

@@ -74,5 +74,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [51 — A ponte para o navegador: `wasm-bindgen`, `cdylib` e texto como contrato](51-ponte-wasm-bindgen.md)
 - [52 — WASM no navegador: `wasm-pack`, `init` assíncrono e runes do Svelte](52-wasm-no-navegador-com-vite-e-svelte.md)
 - [53 — Anotações, dica e pausa: um bitset visto do JS, eventos da página e estado só da tela](53-anotacoes-dica-e-pausa.md)
+- [54 — Telas como máquina de estados: união discriminada no TS, `enum` no Rust e o histórico do navegador](54-telas-e-navegacao.md)
 
 > Cada nova task ganha uma página aqui.
