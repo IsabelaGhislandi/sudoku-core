@@ -5,7 +5,13 @@
 export const WIDTH = 160
 export const HEIGHT = 80
 export const GROUND = 60
-export const APE_H = 20
+/**
+ * Um pixel do desenho dos macacos, em unidades do mundo. Os desenhos têm 18×20 pixels; com 2/3,
+ * eles ocupam 12×13⅓ do mundo, menores que um pixel do cenário mas com todo o detalhe.
+ */
+export const APE_SCALE = 2 / 3
+export const APE_W = 18 * APE_SCALE
+export const APE_H = 20 * APE_SCALE
 /** O `y` do topo de um macaco em pé no chão. */
 export const GROUND_Y = GROUND - APE_H
 export const BRANCH = 40
@@ -85,9 +91,9 @@ function makeApe(name: ApeName, x: number, side: -1 | 1): Ape {
     emote: null,
     peelOnHead: 0,
     eatLeft: 0,
-    trunkX: side < 0 ? 64 : 74,
-    branchX: side < 0 ? 44 : 96,
-    range: side < 0 ? [0, 50] : [98, 142],
+    trunkX: side < 0 ? TRUNK_L - 2 : TRUNK_R - APE_W + 2,
+    branchX: side < 0 ? 48 : 100,
+    range: side < 0 ? [2, 54] : [98, 144],
   }
 }
 
@@ -104,6 +110,9 @@ export function createJungle(options: { random?: () => number; calm?: boolean } 
 const WALK_SPEED = 11
 const CLIMB_SPEED = 8
 const EMOTE_S = 1.4
+/** Onde fica a mão que segura a banana, no desenho (pixel 11–12, linha 10), em unidades do mundo. */
+const HAND_X = 12 * APE_SCALE
+const HAND_Y = 10 * APE_SCALE
 const EAT_S = 1.8
 const PEEL_S = 2.5
 /** Em pixels por segundo², para a banana e a casca. */
@@ -220,8 +229,8 @@ function throwPeel(jungle: Jungle, ape: Ape): void {
     return
   }
   jungle.peels.push({
-    x: ape.x + 12,
-    y: ape.y + 8,
+    x: ape.x + HAND_X,
+    y: ape.y + HAND_Y,
     vx: ape.side * between(jungle.random, 18, 30),
     vy: -38,
     life: PEEL_S,
@@ -280,10 +289,10 @@ function isClimbing(ape: Ape): boolean {
 
 /** No chão: a banana cai da copa, no ponto mais perto dele, e ele corre buscar. */
 function bananaToFetch(ape: Ape): Banana {
-  const landX = Math.min(116, Math.max(44, ape.x + 9))
+  const landX = Math.min(116, Math.max(44, ape.x + APE_W / 2))
   const banana: Banana = { x: landX - 1, y: 22, targetY: GROUND - 4, vy: 0, landed: false }
   ape.plan = [
-    { type: 'walk', x: landX - 12, speed: 30 },
+    { type: 'walk', x: landX - HAND_X, speed: 30 },
     { type: 'await', banana },
     { type: 'eat', t: 0 },
     { type: 'gag', kind: 'dance', dur: 1.6, t: 0 },
@@ -294,9 +303,9 @@ function bananaToFetch(ape: Ape): Banana {
 /** Na árvore: a banana cai bem em cima dele, que pega ali mesmo e depois desce. */
 function bananaToCatch(ape: Ape): Banana {
   const banana: Banana = {
-    x: ape.x + 12,
-    y: Math.max(ape.y - 12, 2),
-    targetY: ape.y + 10,
+    x: ape.x + HAND_X,
+    y: Math.max(ape.y - 8, 2),
+    targetY: ape.y + HAND_Y,
     vy: 0,
     landed: false,
   }

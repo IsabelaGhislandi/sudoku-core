@@ -1,7 +1,14 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte'
-  import { createAir, createBackground, drawJungle, stepAir } from '../lib/jungle/draw'
-  import { HEIGHT, WIDTH, createJungle, dropBananas, step } from '../lib/jungle/sim'
+  import {
+    CANVAS_H,
+    CANVAS_W,
+    createAir,
+    createBackground,
+    drawJungle,
+    stepAir,
+  } from '../lib/jungle/draw'
+  import { createJungle, dropBananas, step } from '../lib/jungle/sim'
 
   // `drops` conta quantas vezes uma jogada fechou linha ou coluna. Cada número novo derruba uma
   // banana para cada um. O valor de quando a tela abre não conta: abrir uma partida salva não
@@ -50,7 +57,7 @@
 </script>
 
 <div class="jungle" role="img" aria-label="Selva com os orangotangos Beni e Valentino">
-  <canvas bind:this={canvas} width={WIDTH} height={HEIGHT} aria-hidden="true"></canvas>
+  <canvas bind:this={canvas} width={CANVAS_W} height={CANVAS_H} aria-hidden="true"></canvas>
 </div>
 
 <style>

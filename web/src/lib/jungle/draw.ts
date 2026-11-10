@@ -1,6 +1,7 @@
 // Desenha a selva num canvas de 160×80 "pixels", ampliado sem suavizar pelo CSS. O fundo parado é
 // desenhado uma vez numa imagem à parte; a cada quadro só o que se mexe é redesenhado por cima.
 import {
+  APE_SCALE,
   BRANCH,
   BRANCH_Y,
   GROUND,
@@ -260,7 +261,7 @@ function drawGrassAndButterfly(g: Ctx, air: Air, t: number) {
 
 function raisedArm(g: Ctx, ape: Ape, y: number, side: -1 | 1, lift: number) {
   const pal = APE_PALETTES[ape.name]
-  const c = side > 0 ? ape.x + 16 : ape.x
+  const c = side > 0 ? 16 : 0
   for (let r = 4; r <= 11; r++) {
     rect(g, c, y + r, 1, 1, (side > 0 ? pal.O : pal.o))
     rect(g, c + 1, y + r, 1, 1, (side > 0 ? pal.o : pal.O))
@@ -271,138 +272,174 @@ function raisedArm(g: Ctx, ape: Ape, y: number, side: -1 | 1, lift: number) {
 
 function scratchArm(g: Ctx, ape: Ape, y: number, dy: number) {
   const pal = APE_PALETTES[ape.name]
-  for (let r = 3; r <= 11; r++) rect(g, ape.x + 16, y + r, 1, 1, pal.O)
-  rect(g, ape.x + 15, y + 2, 2, 1, pal.O)
-  rect(g, ape.x + 12, y + dy, 3, 2, pal.s)
+  for (let r = 3; r <= 11; r++) rect(g, 16, y + r, 1, 1, pal.O)
+  rect(g, 15, y + 2, 2, 1, pal.O)
+  rect(g, 12, y + dy, 3, 2, pal.s)
 }
 
 function happyEyes(g: Ctx, ape: Ape, y: number) {
   const pal = APE_PALETTES[ape.name]
-  rect(g, ape.x + 6, y + 6, 2, 2, pal.p)
-  rect(g, ape.x + 11, y + 6, 2, 2, pal.p)
+  rect(g, 6, y + 6, 2, 2, pal.p)
+  rect(g, 11, y + 6, 2, 2, pal.p)
   for (const [dx, dy] of [
     [6, 7],
     [7, 6],
     [12, 7],
     [11, 6],
   ] as const)
-    rect(g, ape.x + dx, y + dy, 1, 1, pal.k)
+    rect(g, dx, y + dy, 1, 1, pal.k)
 }
 
 function closedEyes(g: Ctx, ape: Ape, y: number) {
   const pal = APE_PALETTES[ape.name]
-  rect(g, ape.x + 6, y + 6, 2, 2, pal.p)
-  rect(g, ape.x + 11, y + 6, 2, 2, pal.p)
-  rect(g, ape.x + 6, y + 7, 2, 1, pal.k)
-  rect(g, ape.x + 11, y + 7, 2, 1, pal.k)
+  rect(g, 6, y + 6, 2, 2, pal.p)
+  rect(g, 11, y + 6, 2, 2, pal.p)
+  rect(g, 6, y + 7, 2, 1, pal.k)
+  rect(g, 11, y + 7, 2, 1, pal.k)
 }
 
 function openMouth(g: Ctx, ape: Ape, y: number, big: boolean) {
   const pal = APE_PALETTES[ape.name]
-  rect(g, ape.x + 7, y + 9, 6, 2, pal.p)
-  rect(g, ape.x + (big ? 8 : 9), y + 9, big ? 4 : 2, 2, pal.m)
-  if (big) rect(g, ape.x + 9, y + 10, 2, 1, '#e85a6a') // a linguinha
+  rect(g, 7, y + 9, 6, 2, pal.p)
+  rect(g, (big ? 8 : 9), y + 9, big ? 4 : 2, 2, pal.m)
+  if (big) rect(g, 9, y + 10, 2, 1, '#e85a6a') // a linguinha
 }
 
-/** Desenha um deles e devolve o `y` em que ficou, para a etiqueta e o emote irem junto. */
+/**
+ * Desenha um deles na própria grade (0,0 é o canto do desenho, 1 = um pixel do desenho) e devolve
+ * quanto ele subiu (dança, passo), para a etiqueta e o emote irem junto.
+ */
 function drawApe(g: Ctx, ape: Ape, t: number): number {
   const pal = APE_PALETTES[ape.name]
   const s = APE_SPRITES[ape.name]
-  let y = ape.y
+  let y = 0
   const beat = Math.floor(ape.anim * 4) % 2
   const frame = Math.floor(ape.anim * 5) % 2
   switch (ape.pose) {
     case 'walk':
-      sprite(g, frame ? s.side[1] : s.side[0], pal, ape.x, y - frame, ape.face < 0)
+      sprite(g, frame ? s.side[1] : s.side[0], pal, 0, y - frame, ape.face < 0)
       break
     case 'climb':
-      sprite(g, s.climb, pal, ape.x, y, frame === 1)
+      sprite(g, s.climb, pal, 0, y, frame === 1)
       break
     case 'climbStill':
-      sprite(g, s.climb, pal, ape.x, y)
+      sprite(g, s.climb, pal, 0, y)
       break
     case 'sit':
-      sprite(g, s.sit, pal, ape.x, y + (ape.y === BRANCH_Y ? 1 : 0))
+      sprite(g, s.sit, pal, 0, y + (ape.y === BRANCH_Y ? 1 : 0))
       break
     case 'lookUp':
-      sprite(g, s.front, pal, ape.x, y)
-      rect(g, ape.x + 7, y + 6, 1, 1, pal.w)
-      rect(g, ape.x + 12, y + 6, 1, 1, pal.w)
+      sprite(g, s.front, pal, 0, y)
+      rect(g, 7, y + 6, 1, 1, pal.w)
+      rect(g, 12, y + 6, 1, 1, pal.w)
       openMouth(g, ape, y, false)
       break
     case 'eat': {
-      sprite(g, s.front, pal, ape.x, y)
+      sprite(g, s.front, pal, 0, y)
       if (Math.floor(ape.anim * 8) % 2) openMouth(g, ape, y, false)
       else happyEyes(g, ape, y)
       const left = Math.ceil(ape.eatLeft * 4)
-      if (left > 0) sprite(g, BANANA.slice(4 - left), BANANA_PALETTE, ape.x + 11, y + 10 + (4 - left))
+      if (left > 0) sprite(g, BANANA.slice(4 - left), BANANA_PALETTE, 11, y + 10 + (4 - left))
       break
     }
     case 'wave':
-      sprite(g, s.noRight, pal, ape.x, y)
+      sprite(g, s.noRight, pal, 0, y)
       raisedArm(g, ape, y, 1, beat)
       happyEyes(g, ape, y)
       break
     case 'scratch':
-      sprite(g, s.noRight, pal, ape.x, y)
+      sprite(g, s.noRight, pal, 0, y)
       scratchArm(g, ape, y, Math.floor(ape.anim * 10) % 2)
       break
     case 'yawn':
-      sprite(g, s.front, pal, ape.x, y)
+      sprite(g, s.front, pal, 0, y)
       closedEyes(g, ape, y)
       if (ape.anim % 2.2 > 0.3) openMouth(g, ape, y, true)
       break
     case 'dance':
       y -= beat * 2
-      sprite(g, s.noArms, pal, ape.x, y)
+      sprite(g, s.noArms, pal, 0, y)
       raisedArm(g, ape, y, 1, beat)
       raisedArm(g, ape, y, -1, 1 - beat)
       happyEyes(g, ape, y)
       break
     case 'front':
-      sprite(g, s.front, pal, ape.x, y)
+      sprite(g, s.front, pal, 0, y)
       // pisca de vez em quando, cada um no seu tempo
       if ((t + (ape.side < 0 ? 0 : 1.7)) % 4 < 0.15) closedEyes(g, ape, y)
       break
   }
-  if (ape.peelOnHead > 0) sprite(g, PEEL, PEEL_PALETTE, ape.x + 6, y - 2)
+  if (ape.peelOnHead > 0) sprite(g, PEEL, PEEL_PALETTE, 6, y - 2)
   return y
 }
 
-/** Etiqueta simples com o nome, em cima da cabeça. */
-function drawLabel(g: Ctx, ape: Ape, y: number) {
+/** Etiqueta simples com o nome, em cima da cabeça (na grade do desenho, presa à borda da cena). */
+function drawLabel(g: Ctx, ape: Ape, dy: number) {
   const glyphs = [...ape.name.toUpperCase()].map((ch) => GLYPHS[ch] ?? [])
   const width = glyphs.reduce((n, q) => n + (q[0]?.length ?? 0), 0) + glyphs.length - 1
-  const x = Math.round(Math.min(Math.max(ape.x + 9 - width / 2 - 2, 1), WIDTH - width - 5))
-  const top = Math.round(Math.max(y - (ape.peelOnHead > 0 ? 12 : 9), 1))
-  rect(g, x, top, width + 4, 7, 'rgba(30,16,6,.72)')
-  let cx = x + 2
+  const boxW = width + 4
+  const left = Math.min(
+    Math.max(toCanvas(ape.x) + (9 - boxW / 2) * APE_PX, APE_PX),
+    CANVAS_W - (boxW + 1) * APE_PX,
+  )
+  const top = Math.max(toCanvas(ape.y) + (dy - (ape.peelOnHead > 0 ? 12 : 9)) * APE_PX, APE_PX)
+  g.setTransform(APE_PX, 0, 0, APE_PX, Math.round(left), Math.round(top))
+  rect(g, 0, 0, boxW, 7, 'rgba(30,16,6,.72)')
+  let cx = 2
   for (const q of glyphs) {
-    sprite(g, q, { 1: '#fff3c4' }, cx, top + 1)
+    sprite(g, q, { 1: '#fff3c4' }, cx, 1)
     cx += (q[0]?.length ?? 0) + 1
   }
 }
 
-function drawEmote(g: Ctx, ape: Ape, y: number) {
+function drawEmote(g: Ctx, ape: Ape, dy: number) {
   if (!ape.emote) return
   const { sprite: rows, palette } = EMOTES[ape.emote.kind]
-  const x = ape.side < 0 ? ape.x + 17 : ape.x - 5
-  sprite(g, rows, palette, x, y + 2 - Math.round(ape.emote.t * 4))
+  onApeGrid(g, ape.x, ape.y)
+  sprite(g, rows, palette, ape.side < 0 ? 17 : -5, dy + 2 - Math.round(ape.emote.t * 4))
+}
+
+// A cena é desenhada num canvas SCENE_PX vezes maior que a grade do mundo (160×80). O cenário usa
+// pixels de SCENE_PX; os orangotangos, a banana e as etiquetas usam pixels menores, de APE_PX.
+// Assim eles ficam menores (APE_PX / SCENE_PX do tamanho) sem perder nenhum detalhe do desenho.
+export const SCENE_PX = 3
+const APE_PX = Math.round(SCENE_PX * APE_SCALE)
+export const CANVAS_W = WIDTH * SCENE_PX
+export const CANVAS_H = HEIGHT * SCENE_PX
+
+const toCanvas = (world: number) => Math.round(world * SCENE_PX)
+
+/** Passa a desenhar na grade do desenho, com o canto em (x, y) do mundo. */
+function onApeGrid(g: Ctx, x: number, y: number) {
+  g.setTransform(APE_PX, 0, 0, APE_PX, toCanvas(x), toCanvas(y))
 }
 
 /** Um quadro inteiro da cena. */
 export function drawJungle(g: Ctx, background: HTMLCanvasElement, jungle: Jungle, air: Air, t: number) {
+  g.imageSmoothingEnabled = false
+  g.setTransform(SCENE_PX, 0, 0, SCENE_PX, 0, 0)
   g.drawImage(background, 0, 0)
   drawAir(g, air, t)
   drawVines(g, t)
   drawCanopy(g, t)
-  const ys = jungle.apes.map((ape) => drawApe(g, ape, t))
-  for (const banana of jungle.bananas) sprite(g, BANANA, BANANA_PALETTE, banana.x, banana.y)
-  drawGrassAndButterfly(g, air, t)
-  for (const peel of jungle.peels) sprite(g, PEEL, PEEL_PALETTE, peel.x, peel.y)
-  jungle.apes.forEach((ape, i) => {
-    const y = ys[i] ?? ape.y
-    drawLabel(g, ape, y)
-    drawEmote(g, ape, y)
+  const lifts = jungle.apes.map((ape) => {
+    onApeGrid(g, ape.x, ape.y)
+    return drawApe(g, ape, t)
   })
+  for (const banana of jungle.bananas) {
+    onApeGrid(g, banana.x, banana.y)
+    sprite(g, BANANA, BANANA_PALETTE, 0, 0)
+  }
+  g.setTransform(SCENE_PX, 0, 0, SCENE_PX, 0, 0)
+  drawGrassAndButterfly(g, air, t)
+  for (const peel of jungle.peels) {
+    onApeGrid(g, peel.x, peel.y)
+    sprite(g, PEEL, PEEL_PALETTE, 0, 0)
+  }
+  jungle.apes.forEach((ape, i) => {
+    const dy = lifts[i] ?? 0
+    drawLabel(g, ape, dy)
+    drawEmote(g, ape, dy)
+  })
+  g.setTransform(1, 0, 0, 1, 0, 0)
 }
