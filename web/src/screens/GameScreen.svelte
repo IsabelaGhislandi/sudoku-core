@@ -140,8 +140,7 @@
       <button
         class="pause"
         disabled={isOver}
-        aria-label={view.paused ? 'Continuar' : 'Pausar'}
-        onclick={togglePause}>{view.paused ? '▶' : '⏸'}</button
+        onclick={togglePause}>{view.paused ? 'Continuar' : 'Pausar'}</button
       >
     </span>
     <span aria-label={`${view.livesLeft} vidas`}>{'❤'.repeat(view.livesLeft)}</span>
@@ -164,22 +163,22 @@
 
   <div class="tools">
     <button class:active={noting} disabled={isBlocked} onclick={() => (noting = !noting)}>
-      ✏ Anotar
+      Anotar
     </button>
     <button
       disabled={isBlocked || view.hintsLeft === 0}
       onclick={() => act(() => game.hint(monotonicNow()))}
     >
-      💡 Dica ({view.hintsLeft})
+      Dica ({view.hintsLeft})
     </button>
     <button
       class:active={highlighting}
       aria-pressed={highlighting}
       onclick={() => (highlighting = !highlighting)}
     >
-      🔍 Destacar
+      Destacar
     </button>
-    <button onclick={restart}>↺ Recomeçar</button>
+    <button onclick={restart}>Recomeçar</button>
   </div>
 
   <NumberPad disabled={isBlocked || selected === null} {onNumber} />
