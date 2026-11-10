@@ -79,5 +79,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [55 — Guardar e continuar: `serde_json` na ponte, `self` que consome visto do JS e `try/catch` no armazenamento](55-guardar-e-continuar.md)
 - [56 — Histórico: filtrar o que vem de fora, `filter_map` e `Intl` no lugar de formatar à mão](56-historico.md)
 - [57 — CI do frontend: um job para o WASM, `npm ci` e o lockfile como contrato](57-ci-do-frontend.md)
+- [58 — Destacar números iguais: estado derivado, `$derived` e uma função pura para a tela](58-destacar-numeros-iguais.md)
 
 > Cada nova task ganha uma página aqui.
