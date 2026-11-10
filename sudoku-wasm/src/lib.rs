@@ -11,7 +11,7 @@
 mod convert;
 mod view;
 
-use sudoku_game::{Game, GameConfig, GameResult, PlaceOutcome};
+use sudoku_game::{Game, GameConfig, GameResult, PlaceOutcome, SavedGame};
 use view::GameView;
 use wasm_bindgen::prelude::*;
 
@@ -96,6 +96,36 @@ impl WebGame {
             .restart(seed, convert::to_ms(now), convert::to_ms(finished_at_ms));
         self.game = restart.game;
         Ok(restart.abandoned.map(|result| save_result(&result)))
+    }
+
+    /// A foto da partida no instante `now`: o `SavedGame` em JSON, para a casca guardar.
+    pub fn save(&self, now: f64) -> String {
+        serde_json::to_string(&self.game.save(convert::to_ms(now)))
+            .expect("o SavedGame só tem campos simples")
+    }
+
+    /// Lê uma foto guardada por `save`. A partida volta pausada. Foto inválida volta como erro
+    /// (`"InvalidJson"` ou o nome do `RestoreError`).
+    pub fn restore(json: &str) -> Result<WebGame, String> {
+        let saved: SavedGame = serde_json::from_str(json).map_err(|_| "InvalidJson".to_string())?;
+        let game = Game::restore(&saved).map_err(convert::error_name)?;
+        Ok(WebGame { game })
+    }
+
+    /// O resultado de uma partida terminada, como `SavedResult` em JSON, ou `None` se ela ainda
+    /// está em andamento. `finished_at_ms` é a data, pelo relógio de parede.
+    pub fn result(&self, finished_at_ms: f64) -> Option<String> {
+        self.game
+            .result(convert::to_ms(finished_at_ms))
+            .map(|result| save_result(&result))
+    }
+
+    /// Larga a partida. Se ela não tinha terminado, devolve o abandono como `SavedResult` em JSON.
+    /// Consome o `WebGame`: no JS, o objeto deixa de valer depois da chamada.
+    pub fn abandon(self, now: f64, finished_at_ms: f64) -> Option<String> {
+        self.game
+            .abandon(convert::to_ms(now), convert::to_ms(finished_at_ms))
+            .map(|result| save_result(&result))
     }
 
     /// Liga o relógio no instante `now`.
@@ -278,5 +308,59 @@ mod tests {
 
         assert_eq!(game.restart("7", 10.0, 0.0), Ok(None));
         assert_eq!(view_json(&game, 10.0)["status"], "playing");
+    }
+
+    #[test]
+    fn foto_depois_da_jogada_traz_a_jogada() {
+        let mut game = WebGame::new("Facil", "42").expect("nível e seed válidos");
+        game.resume(0.0);
+        let empties = empty_cells_with_answers();
+        let (placed, answer) = empties[0];
+        let (noted, _) = empties[1];
+        game.place(placed, answer, 10.0).expect("jogada aceita");
+        game.toggle_note(noted, 4).expect("anotação aceita");
+
+        let restored = WebGame::restore(&game.save(50.0)).expect("a foto acabou de ser tirada");
+        let view = view_json(&restored, 0.0);
+        assert_eq!(view["cells"][placed]["kind"], "placed");
+        assert_eq!(view["cells"][placed]["value"], answer);
+        assert_eq!(view["cells"][noted]["notes"], serde_json::json!([4]));
+        assert_eq!(view["livesLeft"], 3);
+        assert_eq!(view["elapsedMs"], 50);
+        assert_eq!(view["paused"], true);
+    }
+
+    #[test]
+    fn foto_invalida_volta_como_erro() {
+        let game = WebGame::new("Facil", "42").expect("nível e seed válidos");
+        let mut saved: Value = serde_json::from_str(&game.save(0.0)).expect("foto em JSON");
+        saved["version"] = 99.into();
+
+        assert_eq!(
+            WebGame::restore(&saved.to_string()).err(),
+            Some("UnknownVersion(99)".to_string())
+        );
+        assert_eq!(
+            WebGame::restore("lixo").err(),
+            Some("InvalidJson".to_string())
+        );
+    }
+
+    #[test]
+    fn resultado_e_abandono() {
+        let mut playing = WebGame::new("Facil", "42").expect("nível e seed válidos");
+        playing.resume(0.0);
+        assert_eq!(playing.result(0.0), None);
+        let abandoned = playing.abandon(10.0, 0.0).expect("estava em andamento");
+        let abandoned: Value = serde_json::from_str(&abandoned).expect("resultado em JSON");
+        assert_eq!(abandoned["outcome"], "Abandoned");
+
+        let mut lost = WebGame::new("Facil", "42").expect("nível e seed válidos");
+        lost.resume(0.0);
+        lose(&mut lost);
+        let result = lost.result(0.0).expect("a partida terminou");
+        let result: Value = serde_json::from_str(&result).expect("resultado em JSON");
+        assert_eq!(result["outcome"], "OutOfLives");
+        assert_eq!(lost.abandon(10.0, 0.0), None);
     }
 }

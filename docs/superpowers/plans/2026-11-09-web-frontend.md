@@ -366,28 +366,28 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
   `appendResult(s: Storage, resultJson: string): void`. `Storage` é a interface do DOM
   (`getItem`/`setItem`/`removeItem`); nenhuma função lança.
 
-- [ ] **Step 1: Esqueleto que compila.** Os quatro métodos com corpo errado (`save` devolve
+- [x] **Step 1: Esqueleto que compila.** Os quatro métodos com corpo errado (`save` devolve
       `"{}"`, `restore` devolve `Err`, `result`/`abandon` devolvem `None`); `storage.ts` com
       funções vazias e `loadHistory` devolvendo `''`.
-- [ ] **Step 2: Ciclo — foto depois da jogada traz a jogada**
+- [x] **Step 2: Ciclo — foto depois da jogada traz a jogada**
       `fn foto_depois_da_jogada_traz_a_jogada()`: seed 42, `resume`, uma jogada certa e uma anotação,
       `save(50.0)`; `WebGame::restore(&json)`: o `view` tem a jogada, a anotação, as vidas e
       `paused == true`. Foto com `"version": 99` dá `Err("UnknownVersion(99)")`; `"lixo"` dá `Err`.
       → FAIL. → PASS.
-- [ ] **Step 3: Ciclo — histórico só cresce, mesmo sobre lixo**
+- [x] **Step 3: Ciclo — histórico só cresce, mesmo sobre lixo**
       `it('acrescenta resultados ao histórico')`: com um `Storage` em memória, dois
       `appendResult` dão um array de 2 em `loadHistory`; com `HISTORY_KEY = 'não é json'` ou
       `'{"a":1}'`, `appendResult` dá um array só com o novo; vazio, `loadHistory == '[]'`.
       → FAIL. → PASS.
-- [ ] **Step 4: Ciclo — armazenamento quebrado não derruba o jogo**
+- [x] **Step 4: Ciclo — armazenamento quebrado não derruba o jogo**
       `it('ignora Storage que lança')`: um `Storage` cujos três métodos lançam; nenhuma função de
       `storage.ts` lança, `loadSavedGame` dá `null`, `loadHistory` dá `'[]'`. → FAIL. → `try/catch`.
       → PASS.
-- [ ] **Step 5: Ciclo — resultado só no fim, abandono só no meio**
+- [x] **Step 5: Ciclo — resultado só no fim, abandono só no meio**
       `fn resultado_e_abandono()`: partida em andamento: `result(..)` é `None`, `abandon(..)` traz
       `"Abandoned"`; partida perdida (3 erros): `result(..)` traz `"OutOfLives"` e `abandon(..)`
       é `None`. → FAIL. → PASS.
-- [ ] **Step 6: Ligar no app.**
+- [x] **Step 6: Ligar no app.**
       - `GameScreen` chama `storeSavedGame(localStorage, game.save(now))` depois de **cada**
         `place`, `toggleNote`, `hint`, `pause`/`resume` e `restart`, e ao sair pela seta.
       - Fim de partida (`status` vira `won`/`lost`): `appendResult(localStorage, game.result(wallClockNow()))`,
@@ -399,11 +399,11 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
         `abandon` → `appendResult` → `clearSavedGame`, e começa a nova; não: fica na tela de nível.
       - Partida nova ou continuada abre pausada; o primeiro toque no tabuleiro ou no botão de pausa
         chama `resume`.
-- [ ] **Step 7: Verificação manual.** Jogue, feche a aba logo depois de uma jogada, abra de novo:
+- [x] **Step 7: Verificação manual.** Jogue, feche a aba logo depois de uma jogada, abra de novo:
       `Continuar` traz a jogada e o tempo de antes. Em `localStorage.setItem('sudoku.savedGame',
       'x')`, recarregue: o `Continuar` some e nada quebra.
-- [ ] **Step 8: Refactor** com tudo verde.
-- [ ] **Step 9: Commit do código** `git commit -m "feat: save the game in progress and continue it later"`
+- [x] **Step 8: Refactor** com tudo verde.
+- [x] **Step 9: Commit do código** `git commit -m "feat: save the game in progress and continue it later"`
 - [ ] **Step 10: Wiki 55 e consolidado.** `# 55 — Guardar e continuar: serde_json na ponte, `self`
       que consome visto do JS e try/catch no armazenamento` (o `abandon(self)` liberando o objeto no
       JS, `Option<String>` virando `string | undefined`, `localStorage` síncrono). E o consolidado

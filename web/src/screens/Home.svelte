@@ -1,10 +1,23 @@
 <script lang="ts">
-  let { onPlay, onHistory }: { onPlay: () => void; onHistory: () => void } = $props()
+  let {
+    canContinue,
+    onContinue,
+    onPlay,
+    onHistory,
+  }: {
+    canContinue: boolean
+    onContinue: () => void
+    onPlay: () => void
+    onHistory: () => void
+  } = $props()
 </script>
 
 <section class="home">
   <h1>Sudoku</h1>
-  <button class="primary" onclick={onPlay}>Jogar</button>
+  {#if canContinue}
+    <button class="primary" onclick={onContinue}>Continuar</button>
+  {/if}
+  <button class:primary={!canContinue} onclick={onPlay}>Jogar</button>
   <button onclick={onHistory}>Histórico</button>
 </section>
 

@@ -4,6 +4,12 @@
   import NumberPad from '../components/NumberPad.svelte'
   import { formatClock, monotonicNow, randomSeed, wallClockNow } from '../lib/clock'
   import { levelLabel } from '../lib/levels'
+  import {
+    appendResult,
+    browserStorage,
+    clearSavedGame,
+    storeSavedGame,
+  } from '../lib/storage'
   import type { GameView } from '../lib/types'
   import type { WebGame } from '../lib/wasm-pkg/sudoku_wasm'
 
@@ -21,14 +27,35 @@
   // Modo anotar é estado só da tela: a partida não sabe dele, só recebe `place` ou `toggleNote`.
   let noting = $state(false)
   let wrongTimer: ReturnType<typeof setTimeout> | undefined
+  // Vira `true` no instante em que o resultado é gravado. Depois disso, nada mais é salvo nem
+  // gravado: a partida terminada não volta a ser "partida guardada", nem entra duas vezes no
+  // histórico.
+  let recorded = false
+  const storage = browserStorage()
 
   function readView(): GameView {
     return JSON.parse(game.view(monotonicNow()))
   }
 
+  // A foto é gravada depois de **cada** ação, e não só ao fechar a aba: o fechamento não é
+  // confiável, e no celular a aba pode morrer sem aviso (spec, seção 7).
+  function persist() {
+    if (!recorded) storeSavedGame(storage, game.save(monotonicNow()))
+  }
+
   function refresh() {
     view = readView()
-    if (view.status !== 'playing') onFinished()
+    if (view.status === 'playing') {
+      persist()
+      return
+    }
+    if (recorded) return
+    // Fim da partida: o resultado vai para o histórico e a partida guardada some, nessa ordem.
+    const result = game.result(wallClockNow())
+    if (result !== undefined) appendResult(storage, result)
+    clearSavedGame(storage)
+    recorded = true
+    onFinished()
   }
 
   // Uma ação recusada pela partida (célula ocupada, pausada, sem dicas) não muda nada nela; a tela
@@ -54,6 +81,11 @@
   document.addEventListener('visibilitychange', onVisibilityChange)
 
   onDestroy(() => {
+    // Sair da tela (seta, voltar do navegador) guarda a partida pausada, para o Continuar.
+    if (!recorded) {
+      game.pause(monotonicNow())
+      persist()
+    }
     clearInterval(tick)
     clearTimeout(wrongTimer)
     document.removeEventListener('visibilitychange', onVisibilityChange)
@@ -86,8 +118,8 @@
     // confirmação antes (spec, seção 2). Partida já terminada recomeça direto.
     if (!isOver && !confirm('Largar esta partida e começar outra?')) return
     act(() => {
-      // O abandono devolvido entra no histórico na Task 55; por enquanto, é descartado.
-      game.restart(randomSeed(), monotonicNow(), wallClockNow())
+      const abandoned = game.restart(randomSeed(), monotonicNow(), wallClockNow())
+      if (abandoned !== undefined) appendResult(storage, abandoned)
     })
     selected = null
   }
