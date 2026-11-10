@@ -102,7 +102,8 @@ acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`]
 - `sudoku-core` é uma **biblioteca pura**: sem UI, sem IO, sem Tauri, sem relógio. Timer,
   persistência e histórico pertencem ao módulo Game (futuro).
 - Dependências mínimas: no `sudoku-core`, só `rand` (sem features padrão) e `rand_chacha`; no
-  `sudoku-game`, só o `serde` opcional (feature `serde`) e o `serde_json` nos testes. Cada nova dependência
+  `sudoku-game`, só o `serde` opcional (feature `serde`) e o `serde_json` nos testes; no `sudoku-wasm`
+  (a ponte para o navegador), só `sudoku-game`, `wasm-bindgen`, `serde` e `serde_json`. Cada nova dependência
   precisa de motivo e segue a skill `adding-dependencies` (`.claude/skills/`): verificar o crate e pedir
   aprovação antes do `cargo add`. `cargo deny check` precisa passar.
 - **Nomes no código em inglês**: tipos, funções, constantes, variáveis e helpers de teste

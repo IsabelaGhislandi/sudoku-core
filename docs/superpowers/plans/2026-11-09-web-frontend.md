@@ -154,49 +154,49 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
   parse_difficulty(&str) -> Result<Difficulty, String>, parse_seed(&str) -> Result<u64, String>}`;
   `view::GameView::from_game(&Game, now: u64) -> GameView`.
 
-- [ ] **Step 0: Dependências.** Siga a skill `adding-dependencies` para `wasm-bindgen` (última
+- [x] **Step 0: Dependências.** Siga a skill `adding-dependencies` para `wasm-bindgen` (última
       versão), `serde` (mesma do `sudoku-game`, `derive`) e `serde_json`, no `sudoku-wasm`.
       Peça aprovação, depois `cargo add`. `rustup target add wasm32-unknown-unknown`.
       `cargo deny check` → Expected: ok.
-- [ ] **Step 1: Esqueleto que compila.** `crate-type = ["cdylib", "rlib"]`, `publish = false`,
+- [x] **Step 1: Esqueleto que compila.** `crate-type = ["cdylib", "rlib"]`, `publish = false`,
       campos herdados do workspace, `#![warn(missing_docs)]`. `sudoku-game = { path, features =
       ["serde"] }`. Assinaturas da Task 51 com corpo `todo!()`; `to_ms` devolvendo `1`.
       `cargo build -p sudoku-wasm` e `cargo build -p sudoku-wasm --target wasm32-unknown-unknown`
       → Expected: compilam.
-- [ ] **Step 2: Ciclo — `now` estranho satura em zero**
+- [x] **Step 2: Ciclo — `now` estranho satura em zero**
       `fn now_negativo_ou_nan_vira_zero()`: `to_ms(-5.0) == 0`, `to_ms(f64::NAN) == 0`,
       `to_ms(1234.9) == 1234`. → `cargo test -p sudoku-wasm convert` → Expected: FAIL em
       `to_ms(-5.0) == 0` (left 1). → `now as u64` (o `as` de float satura e leva NaN a 0). → PASS.
-- [ ] **Step 3: Ciclo — seed acima de 2^53 atravessa sem perder precisão**
+- [x] **Step 3: Ciclo — seed acima de 2^53 atravessa sem perder precisão**
       `fn seed_maxima_atravessa_a_ponte()`: `parse_seed("18446744073709551615") == Ok(u64::MAX)`,
       `parse_seed("abc") == Err("InvalidSeed")`, `parse_seed("-1")` é `Err`. → FAIL na primeira
       asserção (`todo!` vira panic: troque o `todo!` por `Err(String::new())` antes de rodar, para
       o vermelho ser de asserção). → `str::parse::<u64>`. → PASS.
-- [ ] **Step 4: Ciclo — nível pelo nome do Rust**
+- [x] **Step 4: Ciclo — nível pelo nome do Rust**
       `fn nivel_pelo_nome()`: os quatro nomes `"Facil"`, `"Medio"`, `"Dificil"`, `"MuitoDificil"`
       dão as quatro variantes; `"facil"` dá `Err("UnknownDifficulty")`. Mesmo vermelho de asserção
       (corpo errado primeiro). → `match` exaustivo. → PASS.
-- [ ] **Step 5: Ciclo — retrato de uma partida nova**
+- [x] **Step 5: Ciclo — retrato de uma partida nova**
       `fn retrato_de_partida_nova()`: `WebGame::new("Facil", "42")`, `view(0.0)` parseado com
       `serde_json::Value`: `status == "playing"`, `paused == true`, `livesLeft == 3`,
       `hintsLeft == 2`, `elapsedMs == 0`, `cells.len() == 81`, e as células `given` batem com
       `Game::new(Facil, 42, default).cell(i)`. → FAIL (comece `from_game` com `cells` vazio).
       → `GameView`/`CellView` com `Serialize`. → PASS.
-- [ ] **Step 6: Ciclo — jogada certa e errada pelo nome**
+- [x] **Step 6: Ciclo — jogada certa e errada pelo nome**
       `fn jogada_certa_e_errada()`: na partida da seed 42, depois de `resume(0.0)`, achar uma célula
       vazia `i` e o valor certo pela solução (`Game::new(...).puzzle().solution`):
       `place(i, certo, 10.0) == Ok("correct")`; outro índice vazio com valor errado dá
       `Ok("wrong")` e `livesLeft == 2` no `view`; `place(i, certo, 20.0)` de novo dá
       `Err("CellNotEmpty")`. → FAIL. → mínimo. → PASS.
-- [ ] **Step 7: Ciclo — pausada recusa jogada**
+- [x] **Step 7: Ciclo — pausada recusa jogada**
       `fn pausada_recusa_jogada()`: sem `resume`, `place(...) == Err("Paused")`. Se passar de
       primeira (o `MoveError` já cobre), prove: troque o mapeamento de erro por `"x"`, veja falhar,
       desfaça.
-- [ ] **Step 8: Refactor** com tudo verde. `cargo test --workspace`, `--all-features`, `clippy`,
+- [x] **Step 8: Refactor** com tudo verde. `cargo test --workspace`, `--all-features`, `clippy`,
       `fmt`, `cargo build -p sudoku-wasm --target wasm32-unknown-unknown`, `cargo deny check`.
       Atualize `CLAUDE.md` (dependências do `sudoku-wasm`: só `sudoku-game`, `wasm-bindgen`,
       `serde`, `serde_json`) e `CONTEXT.md`.
-- [ ] **Step 9: Commit do código**
+- [x] **Step 9: Commit do código**
       `git commit -m "feat: add the sudoku-wasm bridge to start and play a game"`
 - [ ] **Step 10: Wiki 51** (`# 51 — A ponte para o navegador: wasm-bindgen, cdylib e texto como
       contrato`): `cdylib` + `rlib`, o que o `#[wasm_bindgen]` gera, `Result<T, String>` virando
