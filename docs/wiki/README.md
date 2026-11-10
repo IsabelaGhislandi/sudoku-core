@@ -78,5 +78,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [54 — Telas como máquina de estados: união discriminada no TS, `enum` no Rust e o histórico do navegador](54-telas-e-navegacao.md)
 - [55 — Guardar e continuar: `serde_json` na ponte, `self` que consome visto do JS e `try/catch` no armazenamento](55-guardar-e-continuar.md)
 - [56 — Histórico: filtrar o que vem de fora, `filter_map` e `Intl` no lugar de formatar à mão](56-historico.md)
+- [57 — CI do frontend: um job para o WASM, `npm ci` e o lockfile como contrato](57-ci-do-frontend.md)
 
 > Cada nova task ganha uma página aqui.

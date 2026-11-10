@@ -478,5 +478,5 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
       comandos de `web/`, `cargo build -p sudoku-wasm --target wasm32-unknown-unknown`.
 - [x] **Step 5: Commit** `git commit -m "chore: build and test the web frontend in CI"`
       (e `docs: record the browser frontend in the architecture`, se separar ficar mais claro).
-- [ ] **Step 6: Wiki 57** (`# 57 — CI do frontend: um job para o WASM, npm ci e o lockfile como
+- [x] **Step 6: Wiki 57** (`# 57 — CI do frontend: um job para o WASM, npm ci e o lockfile como
       contrato`). `git commit -m "docs: add wiki page 57 on the frontend CI"`
