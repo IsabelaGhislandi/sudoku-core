@@ -3,6 +3,7 @@
   import Board from '../components/Board.svelte'
   import NumberPad from '../components/NumberPad.svelte'
   import { formatClock, monotonicNow, randomSeed, wallClockNow } from '../lib/clock'
+  import { highlightedValue } from '../lib/highlight'
   import { levelLabel } from '../lib/levels'
   import {
     appendResult,
@@ -26,6 +27,8 @@
   let wrong: number | null = $state(null)
   // Modo anotar é estado só da tela: a partida não sabe dele, só recebe `place` ou `toggleNote`.
   let noting = $state(false)
+  // Destacar números iguais também é só da tela. Começa ligado.
+  let highlighting = $state(true)
   let wrongTimer: ReturnType<typeof setTimeout> | undefined
   // Vira `true` no instante em que o resultado é gravado. Depois disso, nada mais é salvo nem
   // gravado: a partida terminada não volta a ser "partida guardada", nem entra duas vezes no
@@ -126,6 +129,7 @@
 
   const isOver = $derived(view.status !== 'playing')
   const isBlocked = $derived(isOver || view.paused)
+  const highlighted = $derived(highlightedValue(view.cells, selected, highlighting))
 </script>
 
 <section class="game">
@@ -149,7 +153,13 @@
       {view.elapsedMs === 0 ? 'Toque para começar' : 'Pausado — toque para continuar'}
     </button>
   {:else}
-    <Board cells={view.cells} {selected} {wrong} onSelect={(i) => (selected = i)} />
+    <Board
+      cells={view.cells}
+      {selected}
+      {wrong}
+      {highlighted}
+      onSelect={(i) => (selected = i)}
+    />
   {/if}
 
   <div class="tools">
@@ -161,6 +171,13 @@
       onclick={() => act(() => game.hint(monotonicNow()))}
     >
       💡 Dica ({view.hintsLeft})
+    </button>
+    <button
+      class:active={highlighting}
+      aria-pressed={highlighting}
+      onclick={() => (highlighting = !highlighting)}
+    >
+      🔍 Destacar
     </button>
     <button onclick={restart}>↺ Recomeçar</button>
   </div>
@@ -206,6 +223,8 @@
   }
   .tools button {
     flex: 1;
+    font-size: 0.9rem;
+    padding: 0 4px;
   }
   .tools button.active {
     background: var(--selected);

@@ -6,12 +6,15 @@
     cells,
     selected,
     wrong,
+    highlighted,
     onSelect,
   }: {
     cells: CellView[]
     selected: number | null
     /** A célula que acabou de receber um número errado, para piscar em vermelho. */
     wrong: number | null
+    /** O número em destaque: as células com ele ganham outro fundo. */
+    highlighted: number | null
     onSelect: (index: number) => void
   } = $props()
 </script>
@@ -22,6 +25,7 @@
       class="cell"
       class:given={cell.kind === 'given'}
       class:hinted={cell.kind === 'hinted'}
+      class:highlighted={highlighted !== null && cell.value === highlighted}
       class:selected={selected === i}
       class:wrong={wrong === i}
       class:box-right={i % 9 === 2 || i % 9 === 5}
@@ -65,6 +69,9 @@
   }
   .cell.hinted {
     font-style: italic;
+  }
+  .cell.highlighted {
+    background: var(--highlight);
   }
   .cell.selected {
     background: var(--selected);

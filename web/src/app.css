@@ -7,6 +7,7 @@
   --line-strong: #1d1b22;
   --accent: #2f7a4f;
   --selected: #d9eee1;
+  --highlight: #fbefc4;
   --wrong: #f6c9c9;
   --wrong-text: #b3261e;
   font: 18px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -23,6 +24,7 @@
     --line-strong: #ecebee;
     --accent: #5cc08a;
     --selected: #24402f;
+    --highlight: #4a4020;
     --wrong: #5a2323;
     --wrong-text: #ff8a80;
   }
