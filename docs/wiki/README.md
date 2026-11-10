@@ -71,5 +71,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [48 — Resultado salvável: o mesmo padrão de DTO, versão por registro e o fim da fatia 3](48-resultado-salvavel.md)
 - [49 — Nomes salvos: um module de dentro do crate, `pub(crate)` e dependência entre irmãos](49-modules-de-dentro-do-crate.md)
 - [50 — A foto como module filho: privacidade por árvore, `impl` em outro arquivo e `git mv`](50-module-filho-e-privacidade.md)
+- [51 — A ponte para o navegador: `wasm-bindgen`, `cdylib` e texto como contrato](51-ponte-wasm-bindgen.md)
 
 > Cada nova task ganha uma página aqui.

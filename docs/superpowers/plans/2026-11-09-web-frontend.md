@@ -198,7 +198,7 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
       `serde`, `serde_json`) e `CONTEXT.md`.
 - [x] **Step 9: Commit do código**
       `git commit -m "feat: add the sudoku-wasm bridge to start and play a game"`
-- [ ] **Step 10: Wiki 51** (`# 51 — A ponte para o navegador: wasm-bindgen, cdylib e texto como
+- [x] **Step 10: Wiki 51** (`# 51 — A ponte para o navegador: wasm-bindgen, cdylib e texto como
       contrato`): `cdylib` + `rlib`, o que o `#[wasm_bindgen]` gera, `Result<T, String>` virando
       exceção no JS, por que seeds viajam como texto (2^53, comparar com `Number.MAX_SAFE_INTEGER`
       e `BigInt`), o `as` que satura. Indexe no README.
