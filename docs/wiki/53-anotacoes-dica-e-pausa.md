@@ -9,7 +9,7 @@ de estado e como um tipo do Rust aparece do outro lado da ponte.
 ## `Notes`: um bitset que vira `number[]`
 
 No `sudoku-game`, as anotações de uma célula são um `Notes(u16)`, um bitset: o bit 3 ligado quer
-dizer "o 3 está anotado". Ele é compacto e barato de copiar (wiki 30). Só que o JavaScript não
+dizer "o 3 está anotado". Ele é compacto e barato de copiar (wiki 37). Só que o JavaScript não
 deveria precisar saber disso. Na ponte, o retrato converte para a forma que a tela usa:
 
 ```rust
@@ -90,7 +90,7 @@ function act(action: () => void) {
 ```
 
 Uma dica pedida sem dicas, ou uma jogada numa célula ocupada, volta como exceção (o `Err` do Rust).
-Como uma ação recusada não muda nada na partida (é o contrato do `MoveError`, wiki 32), a tela pode
+Como uma ação recusada não muda nada na partida (é o contrato do `MoveError`, wiki 36), a tela pode
 engolir a exceção e simplesmente desenhar de novo. O retrato novo é a verdade, tenha a ação sido
 aceita ou não.
 
