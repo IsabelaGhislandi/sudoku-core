@@ -221,25 +221,25 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
   `monotonicNow(): number` (`performance.now()`), `wallClockNow(): number` (`Date.now()`);
   `GameScreen.svelte` com props `game: WebGame`, `onExit: () => void`, `onFinished: () => void`.
 
-- [ ] **Step 0: Ferramentas e pacotes.** `df -h /c`. Liste e peça aprovação de: `wasm-pack`
+- [x] **Step 0: Ferramentas e pacotes.** `df -h /c`. Liste e peça aprovação de: `wasm-pack`
       (`cargo install wasm-pack`), o scaffold `npm create vite@latest web -- --template svelte-ts`
       e `vitest` como devDependency. Scripts no `package.json`: `build:wasm` =
       `wasm-pack build ../sudoku-wasm --target web --out-dir ../web/src/lib/wasm-pkg`,
       `dev` = `npm run build:wasm && vite`, `build` = `npm run build:wasm && vite build`,
       `check` = `svelte-check`, `test` = `vitest run`. `.gitignore` com `web/node_modules/`,
       `web/dist/`, `web/src/lib/wasm-pkg/`.
-- [ ] **Step 1: Esqueleto que compila.** `types.ts`, `levels.ts`, `clock.ts` com `formatClock`
+- [x] **Step 1: Esqueleto que compila.** `types.ts`, `levels.ts`, `clock.ts` com `formatClock`
       devolvendo `''` e `randomSeed` devolvendo `'0'`. `main.ts` faz `await init()` do pacote antes
       de montar o `App`. `npm run check` → Expected: 0 erros.
-- [ ] **Step 2: Ciclo — seed aleatória cabe num u64 em decimal**
+- [x] **Step 2: Ciclo — seed aleatória cabe num u64 em decimal**
       `it('seed aleatória é um u64 em decimal')`: 50 chamadas; cada uma casa `/^\d+$/` e
       `BigInt(s) <= 18446744073709551615n`; nem todas iguais. → `npm test -- clock` → FAIL em
       "nem todas iguais". → `crypto.getRandomValues(new BigUint64Array(1))[0].toString()`. → PASS.
-- [ ] **Step 3: Ciclo — relógio da barra**
+- [x] **Step 3: Ciclo — relógio da barra**
       `it('formata o relógio da barra')`: `formatClock(0) == '00:00'`, `formatClock(222_000) ==
       '03:42'`, `formatClock(59_999) == '00:59'`, `formatClock(3_723_000) == '1:02:03'`.
       → FAIL em `'00:00'`. → mínimo. → PASS.
-- [ ] **Step 4: Tela do jogo jogável** (sem teste automático: componente visual, spec seção 8).
+- [x] **Step 4: Tela do jogo jogável** (sem teste automático: componente visual, spec seção 8).
       `App.svelte` provisório: cria `new WebGame('Facil', randomSeed())`, chama
       `resume(monotonicNow())` e mostra `GameScreen`. `GameScreen` guarda `view` num `$state`,
       reparseado do `game.view(now)` depois de cada ação e a cada 1 s (relógio). Barra: rótulo do
@@ -249,16 +249,16 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
       da ponte (ex.: `CellNotEmpty`) são ignoradas na tela. Botões com pelo menos 44 px. Antes de
       gerar o puzzle, mostre `Gerando...` e ceda um quadro (`await tick()` +
       `requestAnimationFrame`), para a tela não congelar sem retorno.
-- [ ] **Step 5: Medir a geração no WASM.** `npm run build` + `npx vite preview`; no console, cronometre
+- [x] **Step 5: Medir a geração no WASM.** `npm run build` + `npx vite preview`; no console, cronometre
       `new WebGame('MuitoDificil', seed)` em 20 seeds e anote mediana e
       pior caso na wiki 52. Se a mediana passar de 1 s, **pare** e traga os números para decidir o
       Web Worker (spec, seção 7) antes de seguir.
-- [ ] **Step 6: Verificação manual.** `npm run dev`; jogue até acertar e errar um número; perca as 3
+- [x] **Step 6: Verificação manual.** `npm run dev`; jogue até acertar e errar um número; perca as 3
       vidas numa partida e veja que o tabuleiro para de aceitar jogadas.
-- [ ] **Step 7: Refactor** com tudo verde. Comandos Rust + `npm run check`, `npm test`,
+- [x] **Step 7: Refactor** com tudo verde. Comandos Rust + `npm run check`, `npm test`,
       `npm run build`. `CLAUDE.md` (Comandos) e `README.md` ganham `npm run dev` e `npm test` em
       `web/`.
-- [ ] **Step 8: Commit do código** `git commit -m "feat: play a game on the board in the browser"`
+- [x] **Step 8: Commit do código** `git commit -m "feat: play a game on the board in the browser"`
 - [ ] **Step 9: Wiki 52** (`# 52 — WASM no navegador: wasm-pack, init assíncrono e runes do
       Svelte`): o que o `wasm-pack --target web` gera, por que o `init()` é `await`, a memória do
       WASM (um `WebGame` é um ponteiro; `free()`), `$state` comparado a `useState`, os números da

@@ -1,0 +1,23 @@
+{
+  "name": "sudoku-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build:wasm": "wasm-pack build ../sudoku-wasm --target web --out-dir ../web/src/lib/wasm-pkg",
+    "dev": "npm run build:wasm && vite",
+    "build": "npm run build:wasm && vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tsconfig/svelte": "^5.0.8",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.8",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.7",
+    "vitest": "^5.1.0"
+  }
+}

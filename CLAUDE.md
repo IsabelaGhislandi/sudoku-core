@@ -92,6 +92,16 @@ cargo fmt    --all                              # antes de cada commit
 cargo deny   check
 ```
 
+O app web fica em `web/` e roda a partir dessa pasta (precisa do target `wasm32-unknown-unknown` e do
+`wasm-pack`):
+
+```bash
+npm run dev                                     # gera o pacote WASM e serve em localhost:5173
+npm test                                        # Vitest, a lógica em TypeScript
+npm run check                                   # svelte-check e tsc
+npm run build                                   # gera o pacote WASM e o build de produção
+```
+
 O CI (`.github/workflows/ci.yml`) roda fmt, clippy, build e testes em Linux, Windows e macOS
 a cada PR, com warnings tratados como erro e `--locked`. Se passou local com os comandos
 acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`](docs/wiki/15-ci-cd-com-github-actions.md).

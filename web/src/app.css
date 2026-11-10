@@ -1,0 +1,61 @@
+/* Visual simples e funcional: o design caprichado é uma fase própria (spec, seção 4). */
+:root {
+  --text: #1d1b22;
+  --muted: #6b6375;
+  --bg: #fafafa;
+  --line: #c9c7cc;
+  --line-strong: #1d1b22;
+  --accent: #2f7a4f;
+  --selected: #d9eee1;
+  --wrong: #f6c9c9;
+  --wrong-text: #b3261e;
+  font: 18px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #ecebee;
+    --muted: #a8a4ae;
+    --bg: #17161a;
+    --line: #4a4750;
+    --line-strong: #ecebee;
+    --accent: #5cc08a;
+    --selected: #24402f;
+    --wrong: #5a2323;
+    --wrong-text: #ff8a80;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  min-height: 44px;
+  min-width: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
