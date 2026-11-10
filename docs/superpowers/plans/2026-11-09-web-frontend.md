@@ -463,20 +463,20 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
 - Consumes: scripts `build:wasm`, `check`, `test`, `build` (Task 52).
 - Produces: job `web` no CI.
 
-- [ ] **Step 1: Job `web`** em `ubuntu-latest`: `actions/checkout@v7`, `dtolnay/rust-toolchain@stable`
+- [x] **Step 1: Job `web`** em `ubuntu-latest`: `actions/checkout@v7`, `dtolnay/rust-toolchain@stable`
       com `targets: wasm32-unknown-unknown`, `Swatinem/rust-cache@v2`,
       `taiki-e/install-action@v2` com `tool: wasm-pack`, `actions/setup-node` com `node-version: 24`
       e cache npm de `web/package-lock.json`; em `web/`: `npm ci`, `npm run build:wasm`,
       `npm run check`, `npm test`, `npm run build`. Comentários em português, como o resto do
       arquivo.
-- [ ] **Step 2: Prova do vermelho.** Numa branch local, quebre de propósito um teste do Vitest e
+- [x] **Step 2: Prova do vermelho.** Numa branch local, quebre de propósito um teste do Vitest e
       um erro de tipo; rode os mesmos comandos do job localmente e veja falhar; desfaça. (O CI de
       verdade roda no PR.)
-- [ ] **Step 3: Documentação da fase.** `architecture.md` e `CHANGELOG.md` atualizados; spec com
+- [x] **Step 3: Documentação da fase.** `architecture.md` e `CHANGELOG.md` atualizados; spec com
       status "implementada".
-- [ ] **Step 4: Refactor e verificação final** com tudo verde: comandos Rust, `cargo deny check`,
+- [x] **Step 4: Refactor e verificação final** com tudo verde: comandos Rust, `cargo deny check`,
       comandos de `web/`, `cargo build -p sudoku-wasm --target wasm32-unknown-unknown`.
-- [ ] **Step 5: Commit** `git commit -m "chore: build and test the web frontend in CI"`
+- [x] **Step 5: Commit** `git commit -m "chore: build and test the web frontend in CI"`
       (e `docs: record the browser frontend in the architecture`, se separar ficar mais claro).
 - [ ] **Step 6: Wiki 57** (`# 57 — CI do frontend: um job para o WASM, npm ci e o lockfile como
       contrato`). `git commit -m "docs: add wiki page 57 on the frontend CI"`

@@ -249,9 +249,9 @@ npm run check   # svelte-check and tsc
 | # | Module | Status |
 |---|---|---|
 | 1 | **Core/Engine** (`sudoku-core`): generate, solve, validate, rate | ✅ done (all four levels) |
-| 2 | Game/Session (`sudoku-game`): moves, lives, hints, notes, timer, game history | 🚧 in progress (slices 1–2 done: basic game, time and saving; next: results, history and stats) |
-| 3 | Frontend (Svelte): board, input, screens | planned |
-| 4 | Tauri packaging: Rust ↔ Svelte bridge, Android APK | planned |
+| 2 | Game/Session (`sudoku-game`): moves, lives, hints, notes, timer, game history | ✅ done (basic game, time and saving, results) |
+| 3 | Frontend (`sudoku-wasm` + Svelte in `web/`): board, input, screens, saved game, history | ✅ done (playable in the PC browser) |
+| 4 | Tauri packaging: the same web app and WASM, as an Android APK | planned |
 | 5 | Online: two-player race via a shared puzzle code | future |
 
 ## Documentation

@@ -1,7 +1,7 @@
 # Spec — Módulo Frontend: o jogo no navegador
 
 - **Data:** 2026-11-09
-- **Status:** aprovada.
+- **Status:** implementada (Tasks 51 a 57 do [plano](../plans/2026-11-09-web-frontend.md)).
 - **Módulo:** 3 de 5 (Frontend/UI). Depende do [módulo 2, Game](2026-11-04-game-design.md), que
   depende do [módulo 1, engine](2026-06-14-sudoku-engine-design.md). O módulo 4 (Tauri/APK) vem
   depois e tem spec própria.

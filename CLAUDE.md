@@ -103,7 +103,8 @@ npm run build                                   # gera o pacote WASM e o build d
 ```
 
 O CI (`.github/workflows/ci.yml`) roda fmt, clippy, build e testes em Linux, Windows e macOS
-a cada PR, com warnings tratados como erro e `--locked`. Se passou local com os comandos
+a cada PR, com warnings tratados como erro e `--locked`. O job `web` compila o WASM e roda `npm ci`,
+`check`, `test` e `build` do app. Se passou local com os comandos
 acima, deve passar lá. Detalhes em [`docs/wiki/15-ci-cd-com-github-actions.md`](docs/wiki/15-ci-cd-com-github-actions.md).
 
 ## Código
