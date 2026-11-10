@@ -318,32 +318,32 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
   { type: 'levelChosen' } | { type: 'back' } | { type: 'gameOver' } | { type: 'home' }`,
   `nextScreen(screen: Screen, event: NavEvent): Screen`.
 
-- [ ] **Step 1: Esqueleto que compila.** `nextScreen` devolvendo `screen`; `restart` devolvendo
+- [x] **Step 1: Esqueleto que compila.** `nextScreen` devolvendo `screen`; `restart` devolvendo
       `Ok(None)` sem trocar a partida.
-- [ ] **Step 2: Ciclo — recomeçar troca a partida e devolve o abandono**
+- [x] **Step 2: Ciclo — recomeçar troca a partida e devolve o abandono**
       `fn recomecar_devolve_o_abandono()`: partida da seed 42, `resume(0.0)`, `restart("7", 3000.0,
       1_700_000_000_000.0)`: o JSON devolvido tem `"outcome": "Abandoned"`, `"seed": "42"`,
       `"elapsed_ms": 3000`; o `view` depois mostra outro tabuleiro e `paused == true`. Partida
       terminada (perca as 3 vidas antes) devolve `Ok(None)`. → FAIL. → PASS.
-- [ ] **Step 3: Ciclo — caminho de ida**
+- [x] **Step 3: Ciclo — caminho de ida**
       `it('vai do início ao jogo pelo nível')`: `home` + `play` → `levels`; `levels` +
       `levelChosen` → `game`; `home` + `continue` → `game`; `home` + `openHistory` → `history`.
       → `npm test -- navigation` → FAIL em `levels`. → PASS.
-- [ ] **Step 4: Ciclo — caminho de volta e fim**
+- [x] **Step 4: Ciclo — caminho de volta e fim**
       `it('volta e termina no histórico')`: `back` de `levels`, `game` e `history` → `home`;
       `game` + `gameOver` → `history`; `history` + `home` → `home`. Evento sem sentido na tela
       (`levels` + `gameOver`) mantém a tela. → FAIL. → PASS.
-- [ ] **Step 5: Telas.** `Home`: título, `Jogar`, `Histórico` (o `Continuar` entra na Task 55).
+- [x] **Step 5: Telas.** `Home`: título, `Jogar`, `Histórico` (o `Continuar` entra na Task 55).
       `Levels`: os quatro de `LEVELS` e `← voltar`. `App.svelte` guarda `screen` num `$state`,
       aplica `nextScreen` e faz `history.pushState({ screen })` a cada troca; `popstate` aplica
       `back`. `GameScreen` ganha `← <nível>` na barra (chama `onExit`) e `Recomeçar`: pede
       `confirm('Largar esta partida e começar outra?')` e chama `restart(randomSeed(), ...)` (o
       abandono devolvido é guardado na Task 55; até lá, descartado). `History.svelte` provisório,
       só com o botão `Início`.
-- [ ] **Step 6: Verificação manual.** Navegue por todas as telas pelos botões e pelo voltar do
+- [x] **Step 6: Verificação manual.** Navegue por todas as telas pelos botões e pelo voltar do
       navegador; o voltar nunca sai do site a partir do jogo.
-- [ ] **Step 7: Refactor** com tudo verde.
-- [ ] **Step 8: Commit do código** `git commit -m "feat: add home, level and game screens with navigation"`
+- [x] **Step 7: Refactor** com tudo verde.
+- [x] **Step 8: Commit do código** `git commit -m "feat: add home, level and game screens with navigation"`
 - [ ] **Step 9: Wiki 54** (`# 54 — Telas como máquina de estados: união discriminada no TS, enum no
       Rust e o histórico do navegador`): `NavEvent` comparado a um `enum` com dados do Rust,
       exaustividade (`never` no TS × `match`), `pushState`/`popstate`.

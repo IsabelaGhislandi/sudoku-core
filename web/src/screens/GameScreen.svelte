@@ -2,14 +2,16 @@
   import { onDestroy } from 'svelte'
   import Board from '../components/Board.svelte'
   import NumberPad from '../components/NumberPad.svelte'
-  import { formatClock, monotonicNow } from '../lib/clock'
+  import { formatClock, monotonicNow, randomSeed, wallClockNow } from '../lib/clock'
   import { levelLabel } from '../lib/levels'
   import type { GameView } from '../lib/types'
   import type { WebGame } from '../lib/wasm-pkg/sudoku_wasm'
 
-  // `onExit` entra no tipo agora e ganha uso na Task 54, com a seta de voltar.
-  let { game, onFinished }: { game: WebGame; onExit: () => void; onFinished: () => void } =
-    $props()
+  let {
+    game,
+    onExit,
+    onFinished,
+  }: { game: WebGame; onExit: () => void; onFinished: () => void } = $props()
 
   // O retrato é a única fonte do que a tela mostra. Depois de cada ação, ele é pedido de novo ao
   // WASM: a tela nunca calcula sozinha vidas, erros ou o fim da partida.
@@ -79,13 +81,24 @@
     act(() => (view.paused ? game.resume(monotonicNow()) : game.pause(monotonicNow())))
   }
 
+  function restart() {
+    // Recomeçar no meio larga a partida, e o abandono vai para o histórico sem volta: pede
+    // confirmação antes (spec, seção 2). Partida já terminada recomeça direto.
+    if (!isOver && !confirm('Largar esta partida e começar outra?')) return
+    act(() => {
+      // O abandono devolvido entra no histórico na Task 55; por enquanto, é descartado.
+      game.restart(randomSeed(), monotonicNow(), wallClockNow())
+    })
+    selected = null
+  }
+
   const isOver = $derived(view.status !== 'playing')
   const isBlocked = $derived(isOver || view.paused)
 </script>
 
 <section class="game">
   <header class="bar">
-    <span>{levelLabel(view.difficulty)}</span>
+    <button class="back" onclick={onExit}>← {levelLabel(view.difficulty)}</button>
     <span class="clock">
       ⏱ {formatClock(view.elapsedMs)}
       <button
@@ -100,7 +113,9 @@
 
   {#if view.paused && !isOver}
     <!-- Pausado, o tabuleiro some: a pausa não vira tempo grátis para pensar (spec, seção 2). -->
-    <button class="paused" onclick={togglePause}>Pausado — toque para continuar</button>
+    <button class="paused" onclick={togglePause}>
+      {view.elapsedMs === 0 ? 'Toque para começar' : 'Pausado — toque para continuar'}
+    </button>
   {:else}
     <Board cells={view.cells} {selected} {wrong} onSelect={(i) => (selected = i)} />
   {/if}
@@ -115,6 +130,7 @@
     >
       💡 Dica ({view.hintsLeft})
     </button>
+    <button onclick={restart}>↺ Recomeçar</button>
   </div>
 
   <NumberPad disabled={isBlocked || selected === null} {onNumber} />
@@ -139,6 +155,10 @@
   }
   .pause {
     border: none;
+  }
+  .back {
+    border: none;
+    padding: 0 8px 0 0;
   }
   .paused {
     aspect-ratio: 1;

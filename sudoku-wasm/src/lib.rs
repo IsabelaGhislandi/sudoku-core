@@ -11,9 +11,14 @@
 mod convert;
 mod view;
 
-use sudoku_game::{Game, GameConfig, PlaceOutcome};
+use sudoku_game::{Game, GameConfig, GameResult, PlaceOutcome};
 use view::GameView;
 use wasm_bindgen::prelude::*;
+
+/// Um resultado no formato do histórico: o `SavedResult` em JSON.
+fn save_result(result: &GameResult) -> String {
+    serde_json::to_string(&result.save()).expect("o SavedResult só tem campos simples")
+}
 
 /// Uma partida, vista do JavaScript.
 #[wasm_bindgen]
@@ -77,6 +82,22 @@ impl WebGame {
         self.game.pause(convert::to_ms(now));
     }
 
+    /// Troca esta partida por uma nova do mesmo nível, com a seed `seed`, pausada. Se a antiga
+    /// não tinha terminado, devolve o abandono como `SavedResult` em JSON; se já tinha, `None`.
+    pub fn restart(
+        &mut self,
+        seed: &str,
+        now: f64,
+        finished_at_ms: f64,
+    ) -> Result<Option<String>, String> {
+        let seed = convert::parse_seed(seed)?;
+        let restart = self
+            .game
+            .restart(seed, convert::to_ms(now), convert::to_ms(finished_at_ms));
+        self.game = restart.game;
+        Ok(restart.abandoned.map(|result| save_result(&result)))
+    }
+
     /// Liga o relógio no instante `now`.
     pub fn resume(&mut self, now: f64) {
         self.game.resume(convert::to_ms(now));
@@ -104,6 +125,16 @@ mod tests {
                 Cell::Empty => panic!("a solução é completa"),
             })
             .collect()
+    }
+
+    /// Perde a partida da seed 42: três números errados na primeira célula vazia.
+    fn lose(game: &mut WebGame) {
+        let (index, answer) = empty_cells_with_answers()[0];
+        let wrong = answer % 9 + 1;
+        for _ in 0..3 {
+            assert_eq!(game.place(index, wrong, 1.0), Ok("wrong".to_string()));
+        }
+        assert_eq!(view_json(game, 1.0)["status"], "lost");
     }
 
     fn view_json(game: &WebGame, now: f64) -> Value {
@@ -217,5 +248,35 @@ mod tests {
         let view = view_json(&game, 5000.0);
         assert_eq!(view["paused"], true);
         assert_eq!(view["elapsedMs"], 1000);
+    }
+
+    #[test]
+    fn recomecar_devolve_o_abandono() {
+        let mut game = WebGame::new("Facil", "42").expect("nível e seed válidos");
+        game.resume(0.0);
+        let before = view_json(&game, 0.0)["cells"].clone();
+
+        let abandoned = game
+            .restart("7", 3000.0, 1_700_000_000_000.0)
+            .expect("seed válida")
+            .expect("a partida estava em andamento");
+        let abandoned: Value = serde_json::from_str(&abandoned).expect("resultado em JSON");
+        assert_eq!(abandoned["outcome"], "Abandoned");
+        assert_eq!(abandoned["seed"], "42");
+        assert_eq!(abandoned["elapsed_ms"], 3000);
+
+        let after = view_json(&game, 3000.0);
+        assert_ne!(after["cells"], before);
+        assert_eq!(after["paused"], true);
+    }
+
+    #[test]
+    fn recomecar_partida_terminada_nao_devolve_abandono() {
+        let mut game = WebGame::new("Facil", "42").expect("nível e seed válidos");
+        game.resume(0.0);
+        lose(&mut game);
+
+        assert_eq!(game.restart("7", 10.0, 0.0), Ok(None));
+        assert_eq!(view_json(&game, 10.0)["status"], "playing");
     }
 }
