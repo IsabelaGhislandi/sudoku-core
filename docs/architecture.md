@@ -23,8 +23,8 @@ o ciclo `spec → plano → implementação` com **TDD**.
 |---|--------|------------------|--------|
 | 1 | **Core/Engine** (`sudoku-core`) | Gerar, resolver, validar e classificar tabuleiros. Lógica pura. | **concluído: os quatro níveis** |
 | 2 | **Game/Sessão** (`sudoku-game`) | Estado de uma partida: jogadas, anotações, erros, **timer**, dicas, **histórico de partidas**. Lógica pura. | **concluído: fatias 1, 2 e 3** (partida básica; tempo e salvamento; resultados) |
-| 3 | Frontend/UI | Tabuleiro, input, seleção de dificuldade, telas (Svelte). | futuro |
-| 4 | Tauri/Empacotamento | Ponte Rust↔Svelte e build do APK. | futuro |
+| 3 | **Frontend/UI** (`sudoku-wasm` + `web/`) | Tabuleiro, input, seleção de dificuldade, telas (Svelte), partida guardada e histórico no navegador. Regras vêm do `sudoku-game` via WebAssembly. | **concluído: jogo no navegador do PC** |
+| 4 | Tauri/Empacotamento | Empacotar o app `web/` (com o WASM dentro) como APK. A ponte Rust↔Svelte já é o WebAssembly (seção 4.2). | futuro |
 | 5 | Online | Partida por código com outro player. | futuro distante |
 
 A fronteira é dura: **`sudoku-core` é uma biblioteca pura** — sem UI, sem IO, sem Tauri.
@@ -126,8 +126,9 @@ no disco, fala com a rede e chama o núcleo. Spec: `docs/superpowers/specs/2026-
 
 ```
 app Tauri + Svelte   ─┐
-navegador (Wasm)     ─┼─→  sudoku-game  ─→  sudoku-core
-servidor PvP         ─┘     (regras)         (gerar, resolver)
+navegador (Wasm)     ─┼─→  sudoku-wasm  ─→  sudoku-game  ─→  sudoku-core
+                      │     (ponte JS)       (regras)         (gerar, resolver)
+servidor PvP         ─┴──────────────────→  sudoku-game
 ```
 
 ```
@@ -181,6 +182,38 @@ não terminada; uma terminada não dá um segundo resultado. A data vem do reló
 vitórias, porcentagem e melhor tempo) e `personal_ranking` (só vitórias, menor tempo primeiro, empate
 para a mais antiga) são funções puras sobre a lista que a casca guarda. `SavedResult` (versão 1, um
 número de versão por registro) guarda o resultado em campos simples, e um golden test trava o JSON.
+
+### 4.2 Arquitetura do frontend (`sudoku-wasm` + `web/`)
+
+Decidido no spec do frontend (`docs/superpowers/specs/2026-11-09-web-design.md`): **a ponte entre
+Rust e a interface é WebAssembly**, e não os comandos do Tauri. O mesmo `.wasm` roda no navegador
+agora e no WebView do Android depois; o Tauri passa a só empacotar. Os comandos do Tauri só
+funcionariam dentro do Tauri, e o PvP previsto (seção 10) roda no navegador.
+
+```
+sudoku-wasm/                ponte fina, sem regra de jogo; o único crate que conhece o navegador
+├── src/lib.rs              WebGame (#[wasm_bindgen]): new, view, place, toggleNote, hint, pause,
+│                           resume, restart, save, restore, result, abandon; historyEntries
+├── src/view.rs             GameView: o retrato da partida em JSON, para a tela
+├── src/convert.rs          now (f64 → u64, satura), seed em decimal, nomes de nível e de erro
+└── src/history.rs          confere cada SavedResult guardado e ordena do mais recente
+web/                        Svelte 5 + TypeScript + Vite; Vitest para a lógica em src/lib/
+├── src/lib/                navegação (redutor puro), armazenamento, relógio, formatação
+├── src/screens/            Início, Escolher nível, Jogo, Histórico
+└── src/components/         Tabuleiro, teclado numérico
+```
+
+- **Tudo que cruza a ponte é texto ou número simples:** seeds em decimal (o `number` do JS perde
+  precisão acima de 2^53), a foto (`SavedGame`) e o resultado (`SavedResult`) nos formatos JSON que
+  já existiam, e o retrato `GameView`. Erros voltam como exceção com o nome da variante.
+- **A tela não calcula regra nenhuma:** depois de cada ação, pede o retrato de novo ao WASM.
+- **A casca fornece o mundo:** `performance.now()` (duração), `Date.now()` (data do resultado),
+  `crypto.getRandomValues` (seed) e `localStorage` (partida guardada e histórico). A foto é gravada
+  depois de cada ação; nenhuma função de armazenamento lança.
+- **Tempo de geração no WASM** (V8, 20 seeds): mediana de 154 ms e pior caso de 676 ms no Muito
+  Difícil, então a geração fica na thread principal, atrás de um "Gerando...". Acima de 1 s de
+  mediana, iria para um Web Worker.
+- **Limitação conhecida:** duas abas na mesma partida guardada podem sobrescrever uma à outra.
 
 ## 5. Mapeamento dificuldade → técnica
 
@@ -253,8 +286,10 @@ flagrar qualquer mudança acidental.
 
 ## 8. Stack e convenções
 
-- **Rust** edition **2024**, num **Cargo workspace** (resolver 3) com os crates `sudoku-core` e `sudoku-game`. Dependências: **`rand` 0.10**, sem as
+- **Rust** edition **2024**, num **Cargo workspace** (resolver 3) com os crates `sudoku-core`, `sudoku-game` e `sudoku-wasm`. Dependências: **`rand` 0.10**, sem as
   features padrão (o core não usa StdRng nem a aleatoriedade do SO), e **`rand_chacha` 0.10** (`ChaCha12Rng`, de algoritmo fixo, para o determinismo da seed).
+- **Frontend** em `web/`: **Svelte 5** + **TypeScript** + **Vite**, testes com **Vitest**. O `sudoku-wasm`
+  (com **`wasm-bindgen`**) é compilado pelo **`wasm-pack`** para `wasm32-unknown-unknown`.
 - Testes unitários **inline** em cada módulo (`#[cfg(test)] mod tests`); teste de
   integração da API pública em `sudoku-core/tests/`.
 - Comandos rodam de qualquer pasta do repo, sem `--manifest-path`: `cargo test --workspace`,
@@ -264,7 +299,8 @@ flagrar qualquer mudança acidental.
   [`docs/convencoes-de-codigo.md`](convencoes-de-codigo.md).
 - Código formatado com `rustfmt` (configuração padrão); finais de linha LF via `.gitattributes`.
 - **CI** (GitHub Actions, `.github/workflows/ci.yml`): fmt, clippy, build e testes em
-  Ubuntu/Windows/macOS a cada PR, com `-D warnings` e `--locked`. **CD** fica para o módulo
+  Ubuntu/Windows/macOS a cada PR, com `-D warnings` e `--locked`. O job `web` compila o WASM e roda
+  `npm ci`, o type-check, o Vitest e o build do app. **CD** fica para o módulo
   Tauri: build do APK a cada tag `v*`, anexado a uma GitHub Release.
   Spec: `docs/superpowers/specs/2026-09-19-ci-design.md`.
 - **Dependências** (`.github/workflows/dependencias.yml`): `cargo deny check` com as regras de
@@ -314,14 +350,18 @@ Artefatos de processo do Game:
 - **Plano (fatia 2, tempo e salvamento):** `docs/superpowers/plans/2026-11-05-game-tempo-e-salvamento.md`
 - **Plano (fatia 3, resultados):** `docs/superpowers/plans/2026-11-06-game-resultados.md`
 
+Artefatos de processo do Frontend:
+- **Spec:** `docs/superpowers/specs/2026-11-09-web-design.md`
+- **Plano:** `docs/superpowers/plans/2026-11-09-web-frontend.md`
+
 ## 10. Visão do módulo Online (PvP)
 
 > Decisões de produto já tomadas, **ainda sem spec**. Quando o módulo começar, a spec parte
 > daqui. O módulo Game/Sessão deve ser desenhado para rodar também no servidor: lógica pura,
 > com o tempo entrando como parâmetro, nunca lido de um relógio interno.
 
-O jogo também roda no **navegador**: o `sudoku-core` compila para WebAssembly e a UI Svelte é
-a mesma do app. O PvP precisa de um **servidor autoritativo** (por exemplo, axum + WebSockets),
+O jogo também roda no **navegador**: o `sudoku-wasm` compila as regras para WebAssembly e a UI
+Svelte é a mesma do app (seção 4.2). O PvP precisa de um **servidor autoritativo** (por exemplo, axum + WebSockets),
 que também usa o `sudoku-core`.
 
 | Tema | Decisão |
@@ -370,7 +410,8 @@ o puzzle pronto ao entrar.
 - A meta de tempo (até 5 s no celular, estimada como 1 s neste PC) foi medida só neste PC, em
   200 seeds, build de release. Depois da otimização da fatia Muito Difícil: pior caso de 15 ms no
   Médio e 431 ms no Difícil; no Muito Difícil, mediana de 119 ms e pior caso de 793 ms, que é o
-  custo do teto inteiro (a seed 15 o esgota). Confirmar em um aparelho real quando o módulo Tauri
+  custo do teto inteiro (a seed 15 o esgota). No WASM (V8), o Muito Difícil ficou com mediana de
+  154 ms e pior caso de 676 ms (seção 4.2). Confirmar em um aparelho real quando o módulo Tauri
   existir.
 - **Ideia: encher Fácil e Médio.** Hoje os três primeiros níveis param em cerca de 25 números,
   então visualmente quase não se distinguem. Devolver números da solução depois de cavar (como o

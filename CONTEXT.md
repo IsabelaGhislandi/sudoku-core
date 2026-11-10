@@ -77,6 +77,13 @@ entre parênteses, o nome que aparece na conversa e nos docs em português. O de
   nível. Abandono conta como partida não vencida. `sudoku-game/src/stats.rs`.
 - **Ranking pessoal** (`personal_ranking`): as vitórias de um nível, do menor tempo para o maior.
 
+## Ponte para o navegador (`sudoku-wasm`)
+
+- **`WebGame`**: a `Game` vista do JavaScript. Casca fina, sem regra própria: converte texto e
+  números do JS e repassa para a `Game`. `sudoku-wasm/src/lib.rs`.
+- **`GameView`** (retrato): tudo o que a tela desenha num instante (nível, status, pausa, tempo,
+  vidas, dicas e as 81 células com anotações), em JSON. `sudoku-wasm/src/view.rs`.
+
 ## Fora do núcleo
 
 - **Casca** (shell): quem usa o núcleo e faz o IO: o app Tauri, o navegador, o servidor do PvP. Lê

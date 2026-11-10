@@ -5,12 +5,13 @@
 ![Rust edition 2024](https://img.shields.io/badge/rust-edition%202024-orange.svg)
 
 The pure Rust core of a Sudoku game built in Rust + Svelte and shipped as an Android APK through
-Tauri. It is a Cargo workspace with two library crates:
+Tauri. It is a Cargo workspace with two library crates and a WebAssembly bridge:
 
 | Crate | What it does |
 |---|---|
 | [`sudoku-core`](sudoku-core) | The engine: **generates, solves, validates and rates** 9×9 puzzles |
 | [`sudoku-game`](sudoku-game) | The match rules: moves, lives, hints, notes, timer, save/restore and restart |
+| [`sudoku-wasm`](sudoku-wasm) | The bridge that exposes a match to JavaScript, compiled to WebAssembly for the [web app](web) |
 
 Both are standalone libraries with no UI, no IO and no clock. The shell (the app, a browser build,
 the future PvP server) reads the clock, writes to disk and talks to the network. The core only
@@ -228,14 +229,29 @@ CI runs fmt, clippy, build and tests on Linux, Windows and macOS for every PR, w
 treated as errors. `cargo-deny` checks advisories, licenses and crate sources on every PR and
 again every week.
 
+### Play in the browser
+
+The web app lives in [`web/`](web) (Svelte 5, TypeScript, Vite). It needs Node 24, the
+`wasm32-unknown-unknown` Rust target and [`wasm-pack`](https://github.com/wasm-bindgen/wasm-pack):
+
+```bash
+rustup target add wasm32-unknown-unknown
+cargo install wasm-pack
+cd web
+npm install
+npm run dev     # builds the WASM package, then serves the app at http://localhost:5173
+npm test        # Vitest, for the TypeScript logic
+npm run check   # svelte-check and tsc
+```
+
 ## Roadmap
 
 | # | Module | Status |
 |---|---|---|
 | 1 | **Core/Engine** (`sudoku-core`): generate, solve, validate, rate | ✅ done (all four levels) |
-| 2 | Game/Session (`sudoku-game`): moves, lives, hints, notes, timer, game history | 🚧 in progress (slices 1–2 done: basic game, time and saving; next: results, history and stats) |
-| 3 | Frontend (Svelte): board, input, screens | planned |
-| 4 | Tauri packaging: Rust ↔ Svelte bridge, Android APK | planned |
+| 2 | Game/Session (`sudoku-game`): moves, lives, hints, notes, timer, game history | ✅ done (basic game, time and saving, results) |
+| 3 | Frontend (`sudoku-wasm` + Svelte in `web/`): board, input, screens, saved game, history | ✅ done (playable in the PC browser) |
+| 4 | Tauri packaging: the same web app and WASM, as an Android APK | planned |
 | 5 | Online: two-player race via a shared puzzle code | future |
 
 ## Documentation

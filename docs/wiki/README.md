@@ -18,6 +18,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 36 a 40](fundamentos/rust-base-tarefas-36-a-40.md)
 - [Fundamentos de Rust — Tarefas 41 a 45](fundamentos/rust-base-tarefas-41-a-45.md)
 - [Fundamentos de Rust — Tarefas 46 a 50](fundamentos/rust-base-tarefas-46-a-50.md)
+- [Fundamentos de Rust — Tarefas 51 a 55](fundamentos/rust-base-tarefas-51-a-55.md)
 
 ## Índice por task
 
@@ -71,5 +72,13 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [48 — Resultado salvável: o mesmo padrão de DTO, versão por registro e o fim da fatia 3](48-resultado-salvavel.md)
 - [49 — Nomes salvos: um module de dentro do crate, `pub(crate)` e dependência entre irmãos](49-modules-de-dentro-do-crate.md)
 - [50 — A foto como module filho: privacidade por árvore, `impl` em outro arquivo e `git mv`](50-module-filho-e-privacidade.md)
+- [51 — A ponte para o navegador: `wasm-bindgen`, `cdylib` e texto como contrato](51-ponte-wasm-bindgen.md)
+- [52 — WASM no navegador: `wasm-pack`, `init` assíncrono e runes do Svelte](52-wasm-no-navegador-com-vite-e-svelte.md)
+- [53 — Anotações, dica e pausa: um bitset visto do JS, eventos da página e estado só da tela](53-anotacoes-dica-e-pausa.md)
+- [54 — Telas como máquina de estados: união discriminada no TS, `enum` no Rust e o histórico do navegador](54-telas-e-navegacao.md)
+- [55 — Guardar e continuar: `serde_json` na ponte, `self` que consome visto do JS e `try/catch` no armazenamento](55-guardar-e-continuar.md)
+- [56 — Histórico: filtrar o que vem de fora, `filter_map` e `Intl` no lugar de formatar à mão](56-historico.md)
+- [57 — CI do frontend: um job para o WASM, `npm ci` e o lockfile como contrato](57-ci-do-frontend.md)
+- [58 — Destacar números iguais: estado derivado, `$derived` e uma função pura para a tela](58-destacar-numeros-iguais.md)
 
 > Cada nova task ganha uma página aqui.
