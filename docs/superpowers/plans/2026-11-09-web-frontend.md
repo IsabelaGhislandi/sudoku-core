@@ -448,7 +448,7 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
       recomece uma terceira: três linhas, com `Derrota` e `Largada` nas certas.
 - [x] **Step 7: Refactor** com tudo verde.
 - [x] **Step 8: Commit do código** `git commit -m "feat: show the game history"`
-- [ ] **Step 9: Wiki 56** (`# 56 — Histórico: filtrar o que vem de fora, `filter_map` e
+- [x] **Step 9: Wiki 56** (`# 56 — Histórico: filtrar o que vem de fora, `filter_map` e
       `Intl` no lugar de formatar à mão`). `git commit -m "docs: add wiki page 56 on the game history"`
 
 ### Task 57: CI do frontend e documentação da fase

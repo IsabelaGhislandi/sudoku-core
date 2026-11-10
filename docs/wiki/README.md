@@ -77,5 +77,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [53 — Anotações, dica e pausa: um bitset visto do JS, eventos da página e estado só da tela](53-anotacoes-dica-e-pausa.md)
 - [54 — Telas como máquina de estados: união discriminada no TS, `enum` no Rust e o histórico do navegador](54-telas-e-navegacao.md)
 - [55 — Guardar e continuar: `serde_json` na ponte, `self` que consome visto do JS e `try/catch` no armazenamento](55-guardar-e-continuar.md)
+- [56 — Histórico: filtrar o que vem de fora, `filter_map` e `Intl` no lugar de formatar à mão](56-historico.md)
 
 > Cada nova task ganha uma página aqui.
