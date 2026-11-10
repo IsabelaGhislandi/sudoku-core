@@ -404,7 +404,7 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
       'x')`, recarregue: o `Continuar` some e nada quebra.
 - [x] **Step 8: Refactor** com tudo verde.
 - [x] **Step 9: Commit do código** `git commit -m "feat: save the game in progress and continue it later"`
-- [ ] **Step 10: Wiki 55 e consolidado.** `# 55 — Guardar e continuar: serde_json na ponte, `self`
+- [x] **Step 10: Wiki 55 e consolidado.** `# 55 — Guardar e continuar: serde_json na ponte, `self`
       que consome visto do JS e try/catch no armazenamento` (o `abandon(self)` liberando o objeto no
       JS, `Option<String>` virando `string | undefined`, `localStorage` síncrono). E o consolidado
       `fundamentos/rust-base-tarefas-51-a-55.md`, no formato dos anteriores.

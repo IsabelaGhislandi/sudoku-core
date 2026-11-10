@@ -18,6 +18,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 36 a 40](fundamentos/rust-base-tarefas-36-a-40.md)
 - [Fundamentos de Rust — Tarefas 41 a 45](fundamentos/rust-base-tarefas-41-a-45.md)
 - [Fundamentos de Rust — Tarefas 46 a 50](fundamentos/rust-base-tarefas-46-a-50.md)
+- [Fundamentos de Rust — Tarefas 51 a 55](fundamentos/rust-base-tarefas-51-a-55.md)
 
 ## Índice por task
 
@@ -75,5 +76,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [52 — WASM no navegador: `wasm-pack`, `init` assíncrono e runes do Svelte](52-wasm-no-navegador-com-vite-e-svelte.md)
 - [53 — Anotações, dica e pausa: um bitset visto do JS, eventos da página e estado só da tela](53-anotacoes-dica-e-pausa.md)
 - [54 — Telas como máquina de estados: união discriminada no TS, `enum` no Rust e o histórico do navegador](54-telas-e-navegacao.md)
+- [55 — Guardar e continuar: `serde_json` na ponte, `self` que consome visto do JS e `try/catch` no armazenamento](55-guardar-e-continuar.md)
 
 > Cada nova task ganha uma página aqui.
