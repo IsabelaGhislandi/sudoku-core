@@ -126,7 +126,7 @@ Na wiki 59, a cena era SVG: cada pixel, um `<rect>`. Funcionava porque quase nad
 copa balança linha por linha a cada quadro, e isso dá uns 2.000 pixels redesenhados. No SVG, seriam
 2.000 elementos no DOM mudando. No canvas, são 2.000 `fillRect` numa imagem só, sem DOM nenhum.
 
-O canvas tem 160×80 pixels de verdade, e o CSS estica até a largura da tela:
+O mundo é uma grade de 160×80, e o CSS estica o canvas até a largura da tela:
 
 ```css
 canvas { width: 100%; image-rendering: pixelated; }
@@ -135,6 +135,35 @@ canvas { width: 100%; image-rendering: pixelated; }
 O `image-rendering: pixelated` faz o navegador ampliar sem borrar, e cada pixel vira um quadrado
 nítido. O fundo que não se mexe (céu, selva distante, chão, tronco) é desenhado uma vez numa imagem
 à parte e colado a cada quadro com um único `drawImage`.
+
+## Menores, sem perder detalhe: duas escalas no mesmo canvas
+
+Na primeira versão, cada pixel do desenho dos orangotangos era um pixel da grade, e eles ficaram
+grandes demais na cena. Redesenhar menor jogaria fora o rosto, o anel claro em volta dos olhos e as
+bochechas. A saída foi desenhar o canvas três vezes maior que a grade (480×240) e usar dois tamanhos
+de pixel:
+
+```ts
+export const SCENE_PX = 3                               // o cenário: blocos de 3
+const APE_PX = Math.round(SCENE_PX * APE_SCALE)         // os macacos: blocos de 2
+```
+
+O `setTransform` do canvas troca a escala antes de cada parte:
+
+```ts
+g.setTransform(SCENE_PX, 0, 0, SCENE_PX, 0, 0)          // cenário na grade do mundo
+// ...
+g.setTransform(APE_PX, 0, 0, APE_PX, toCanvas(x), toCanvas(y)) // macaco na grade do desenho
+```
+
+Com isso, o código que desenha um macaco não sabe onde ele está nem de que tamanho ficou: desenha
+sempre a partir do (0,0), em pixels do desenho. É o mesmo que um `transform: translate() scale()` no
+CSS, aplicado a um grupo de elementos.
+
+A proporção mora numa constante do `sim.ts`, `APE_SCALE = 2 / 3`, porque a simulação também precisa
+dela: a altura deles no mundo (`APE_H = 20 * APE_SCALE`) decide onde ficam o chão e o galho, e a mão
+que segura a banana fica em `12 * APE_SCALE`. Mudar o tamanho deles de novo é mudar essa constante,
+e o resto acompanha.
 
 ## O valor inicial de propósito: `untrack`
 
