@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import Board from '../components/Board.svelte'
+  import Jungle from '../components/Jungle.svelte'
   import NumberPad from '../components/NumberPad.svelte'
   import { formatClock, monotonicNow, randomSeed, wallClockNow } from '../lib/clock'
   import { highlightedValue } from '../lib/highlight'
+  import { closesLine } from '../lib/lines'
   import { levelLabel } from '../lib/levels'
   import {
     appendResult,
@@ -29,6 +31,8 @@
   let noting = $state(false)
   // Destacar números iguais também é só da tela. Começa ligado.
   let highlighting = $state(true)
+  // Quantas vezes uma jogada fechou linha ou coluna: cada uma derruba bananas na selva.
+  let drops = $state(0)
   let wrongTimer: ReturnType<typeof setTimeout> | undefined
   // As células que piscam quando uma anotação é recusada por conflito. Quem diz quais são é o
   // WASM (`conflicts`); a tela só pisca.
@@ -52,7 +56,9 @@
   }
 
   function refresh() {
+    const before = view.cells
     view = readView()
+    if (closesLine(before, view.cells)) drops++
     if (view.status === 'playing') {
       persist()
       return
@@ -212,6 +218,8 @@
   </div>
 
   <NumberPad disabled={isBlocked || selected === null} {onNumber} />
+
+  <Jungle {drops} />
 </section>
 
 <style>
