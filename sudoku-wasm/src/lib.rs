@@ -54,6 +54,29 @@ impl WebGame {
         .to_string())
     }
 
+    /// Liga ou desliga a anotação `value` na célula `index`. Recusa como `place`.
+    #[wasm_bindgen(js_name = toggleNote)]
+    pub fn toggle_note(&mut self, index: usize, value: u8) -> Result<(), String> {
+        self.game
+            .toggle_note(index, value)
+            .map_err(convert::error_name)
+    }
+
+    /// Revela uma célula vazia, sorteada pelo jogo. Recusa com `GameOver`, `Paused` ou
+    /// `NoHintsLeft`.
+    pub fn hint(&mut self, now: f64) -> Result<(), String> {
+        // A célula revelada não precisa voltar: ela aparece no próximo retrato, como `hinted`.
+        self.game
+            .hint(convert::to_ms(now))
+            .map(|_| ())
+            .map_err(convert::error_name)
+    }
+
+    /// Para o relógio no instante `now`.
+    pub fn pause(&mut self, now: f64) {
+        self.game.pause(convert::to_ms(now));
+    }
+
     /// Liga o relógio no instante `now`.
     pub fn resume(&mut self, now: f64) {
         self.game.resume(convert::to_ms(now));
@@ -139,5 +162,60 @@ mod tests {
         let (index, value) = empty_cells_with_answers()[0];
 
         assert_eq!(game.place(index, value, 10.0), Err("Paused".to_string()));
+    }
+
+    #[test]
+    fn anotacao_aparece_no_retrato() {
+        let mut game = WebGame::new("Facil", "42").expect("nível e seed válidos");
+        game.resume(0.0);
+        let (index, _) = empty_cells_with_answers()[0];
+
+        game.toggle_note(index, 3)
+            .expect("célula vazia aceita anotação");
+        game.toggle_note(index, 7)
+            .expect("célula vazia aceita anotação");
+        assert_eq!(
+            view_json(&game, 0.0)["cells"][index]["notes"],
+            serde_json::json!([3, 7])
+        );
+
+        game.toggle_note(index, 3)
+            .expect("célula vazia aceita anotação");
+        assert_eq!(
+            view_json(&game, 0.0)["cells"][index]["notes"],
+            serde_json::json!([7])
+        );
+    }
+
+    #[test]
+    fn dica_revela_uma_celula() {
+        let mut game = WebGame::new("Facil", "42").expect("nível e seed válidos");
+        game.resume(0.0);
+        let hinted = |game: &WebGame| {
+            view_json(game, 0.0)["cells"]
+                .as_array()
+                .expect("cells é um array")
+                .iter()
+                .filter(|c| c["kind"] == "hinted")
+                .count()
+        };
+
+        game.hint(5.0).expect("ainda há dicas");
+        assert_eq!(hinted(&game), 1);
+        assert_eq!(view_json(&game, 5.0)["hintsLeft"], 1);
+
+        game.hint(6.0).expect("ainda há uma dica");
+        assert_eq!(game.hint(7.0), Err("NoHintsLeft".to_string()));
+    }
+
+    #[test]
+    fn pausa_congela_o_tempo() {
+        let mut game = WebGame::new("Facil", "42").expect("nível e seed válidos");
+        game.resume(0.0);
+        game.pause(1000.0);
+
+        let view = view_json(&game, 5000.0);
+        assert_eq!(view["paused"], true);
+        assert_eq!(view["elapsedMs"], 1000);
     }
 }

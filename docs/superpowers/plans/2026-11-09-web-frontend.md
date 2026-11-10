@@ -275,27 +275,27 @@ Rust comuns em `src/session.rs` e deixe o `#[wasm_bindgen]` só delegando; a API
 - Consumes: `Game::{toggle_note, hint, pause}`.
 - Produces: `WebGame::{toggle_note (js toggleNote), hint, pause}`.
 
-- [ ] **Step 1: Esqueleto que compila.** As três assinaturas com corpo errado (`Ok(())` sem
+- [x] **Step 1: Esqueleto que compila.** As três assinaturas com corpo errado (`Ok(())` sem
       chamar a `Game`; `pause` vazio).
-- [ ] **Step 2: Ciclo — anotação aparece no retrato**
+- [x] **Step 2: Ciclo — anotação aparece no retrato**
       `fn anotacao_aparece_no_retrato()`: célula vazia `i`, `toggle_note(i, 3)` e `(i, 7)`:
       `cells[i].notes == [3, 7]`; de novo `(i, 3)`: `[7]`. → FAIL em `[3, 7]` (veio `[]`). → PASS.
-- [ ] **Step 3: Ciclo — dica revela uma célula**
+- [x] **Step 3: Ciclo — dica revela uma célula**
       `fn dica_revela_uma_celula()`: depois de `resume`, `hint(5.0)`: exatamente uma célula a mais
       com `kind == "hinted"` e `hintsLeft == 1`; com as dicas esgotadas, `Err("NoHintsLeft")`.
       → FAIL. → PASS.
-- [ ] **Step 4: Ciclo — pausa congela o tempo**
+- [x] **Step 4: Ciclo — pausa congela o tempo**
       `fn pausa_congela_o_tempo()`: `resume(0.0)`, `pause(1000.0)`: `view(5000.0)` tem
       `paused == true` e `elapsedMs == 1000`. → FAIL (`paused` false). → PASS.
-- [ ] **Step 5: Tela.** Botão `Anotar` alterna o modo (estado só da tela); no modo, o `NumberPad`
+- [x] **Step 5: Tela.** Botão `Anotar` alterna o modo (estado só da tela); no modo, o `NumberPad`
       chama `toggleNote`. Célula vazia mostra as notas numa grade 3×3 pequena. `Dica (n)` chama
       `hint`, desabilitado com `hintsLeft == 0`. Botão de pausa na barra alterna `pause`/`resume`;
       pausado, o tabuleiro é trocado por um aviso "Pausado" e as ferramentas ficam desabilitadas.
       `visibilitychange` para `hidden` chama `pause` (spec, seção 7).
-- [ ] **Step 6: Verificação manual.** Anote, peça as 2 dicas, pause, troque de aba e volte: o tempo
+- [x] **Step 6: Verificação manual.** Anote, peça as 2 dicas, pause, troque de aba e volte: o tempo
       não andou.
-- [ ] **Step 7: Refactor** com tudo verde (comandos Rust e `web/`).
-- [ ] **Step 8: Commit do código** `git commit -m "feat: add notes, hints and pause to the board"`
+- [x] **Step 7: Refactor** com tudo verde (comandos Rust e `web/`).
+- [x] **Step 8: Commit do código** `git commit -m "feat: add notes, hints and pause to the board"`
 - [ ] **Step 9: Wiki 53** (`# 53 — Anotações, dica e pausa: um bitset visto do JS, eventos da
       página e estado só da tela`): `Notes` virando `number[]` na ponte, o que é estado da partida
       (Rust) e o que é estado da tela (modo anotar), `visibilitychange` comparado ao
