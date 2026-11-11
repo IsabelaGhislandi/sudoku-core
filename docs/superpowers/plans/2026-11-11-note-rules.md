@@ -68,7 +68,7 @@ resolve o "limpeza automática de anotações" que estava em aberto na `architec
       `clippy`, `fmt`.
 - [x] **Step 6: Commit do código**
       `git commit -m "feat: clear a placed number from its neighbours' notes"`
-- [ ] **Step 7: Wiki 61** (`# 61 — Limpar anotações dos vizinhos: empréstimo de campos
+- [x] **Step 7: Wiki 61** (`# 61 — Limpar anotações dos vizinhos: empréstimo de campos
       disjuntos, iterar índices e uma regra que muda de ideia`), índice no `README`, seção 10 da
       `architecture.md`. `git commit -m "docs: add wiki page 61 on clearing neighbour notes"`
 

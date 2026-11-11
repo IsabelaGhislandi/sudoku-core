@@ -80,5 +80,6 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [56 — Histórico: filtrar o que vem de fora, `filter_map` e `Intl` no lugar de formatar à mão](56-historico.md)
 - [57 — CI do frontend: um job para o WASM, `npm ci` e o lockfile como contrato](57-ci-do-frontend.md)
 - [58 — Destacar números iguais: estado derivado, `$derived` e uma função pura para a tela](58-destacar-numeros-iguais.md)
+- [61 — Limpar anotações dos vizinhos: captura disjunta em closures, `?` dentro de `find_map` e uma regra que muda de ideia](61-limpar-anotacoes-dos-vizinhos.md)
 
 > Cada nova task ganha uma página aqui.
