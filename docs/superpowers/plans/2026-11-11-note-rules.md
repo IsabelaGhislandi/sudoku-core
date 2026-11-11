@@ -113,6 +113,6 @@ resolve o "limpeza automática de anotações" que estava em aberto na `architec
       `fmt`, `npm run check`, `npm test`, `npm run build`.
 - [x] **Step 8: Commit do código**
       `git commit -m "feat: refuse a note that clashes with its row, column or box"`
-- [ ] **Step 9: Wiki 62** (`# 62 — Anotação em conflito: variante nova num enum público, consulta
+- [x] **Step 9: Wiki 62** (`# 62 — Anotação em conflito: variante nova num enum público, consulta
       separada da ação e animação que respeita o sistema`), índice no `README`.
       `git commit -m "docs: add wiki page 62 on conflicting notes"`
