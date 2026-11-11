@@ -53,7 +53,8 @@ entre parênteses, o nome que aparece na conversa e nos docs em português. O de
 - **Jogada** (`place`): colocar um valor. Certa trava a célula; errada (**erro**, `mistakes`) custa
   uma **vida** e não fica no tabuleiro.
 - **`Notes`** (anotações): os valores que a pessoa marcou a lápis numa célula. Não são candidatos:
-  o jogo não as calcula nem as corrige, só apaga as de uma célula quando ela trava.
+  o jogo não as calcula. Quando um número certo trava, apaga as anotações da célula e a anotação
+  desse número na linha, na coluna e na caixa dela.
 - **Dica** (`hint`): revela o valor certo de uma célula vazia escolhida de forma determinística pela
   seed e pelo número da dica.
 - **`Status`**: `Playing`, `Won` ou `Lost`. Os dois últimos são finais.

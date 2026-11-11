@@ -30,6 +30,11 @@ impl Notes {
     pub(crate) fn toggle(&mut self, value: u8) {
         self.0 ^= 1 << value;
     }
+
+    /// Desliga o dígito, estivesse ligado ou não. Quem chama garante que `value` está em 1..=9.
+    pub(crate) fn remove(&mut self, value: u8) {
+        self.0 &= !(1 << value);
+    }
 }
 
 #[cfg(test)]

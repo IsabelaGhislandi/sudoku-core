@@ -310,8 +310,8 @@ impl Game {
     /// Coloca `value` na célula `index`, conferindo na hora com a solução. `now` é o instante
     /// da jogada: se ela terminar a partida, o relógio para ali.
     ///
-    /// Certo: o número trava, e a partida termina em vitória se era a última célula vazia.
-    /// Errado: perde uma vida, a célula continua vazia, e a partida termina em derrota se as
+    /// Certo: o número trava, a anotação dele some da linha, da coluna e da caixa (ver `lock`), e
+    /// a partida termina em vitória se era a última célula vazia. Errado: perde uma vida, a célula continua vazia, e a partida termina em derrota se as
     /// vidas acabaram. As recusas são conferidas nesta ordem: partida terminada, pausada,
     /// índice, número e célula ocupada.
     pub fn place(&mut self, index: usize, value: u8, now: u64) -> Result<PlaceOutcome, MoveError> {
@@ -415,10 +415,18 @@ impl Game {
         Ok(())
     }
 
-    /// Trava um número certo na célula e apaga as anotações dela (só dela).
+    /// Trava um número certo na célula, apaga todas as anotações dela e apaga a anotação desse
+    /// número nas células que a enxergam. Um número certo nunca mais cabe na linha, na coluna nem
+    /// na caixa dele, então a anotação ali já estava errada; apagar poupa a pessoa de fazer isso à
+    /// mão. Vale para jogada certa e para dica, que também é número certo.
     fn lock(&mut self, index: usize, state: CellState) {
         self.cells[index] = state;
         self.notes[index] = Notes::default();
+        if let Some(value) = state.value() {
+            for i in (0..81).filter(|&i| sees(index, i)) {
+                self.notes[i].remove(value);
+            }
+        }
     }
 
     /// As recusas comuns a toda ação numa célula vazia, na ordem documentada em `place`.
@@ -448,6 +456,13 @@ impl Game {
             self.end(Status::Won, now);
         }
     }
+}
+
+/// `true` se as células `a` e `b` são diferentes e dividem linha, coluna ou caixa.
+fn sees(a: usize, b: usize) -> bool {
+    let (row, col) = (|i: usize| i / 9, |i: usize| i % 9);
+    let block = |i: usize| (row(i) / 3, col(i) / 3);
+    a != b && (row(a) == row(b) || col(a) == col(b) || block(a) == block(b))
 }
 
 #[cfg(test)]
@@ -631,16 +646,96 @@ mod tests {
         assert_eq!(game.notes(i).values(), vec![7]);
     }
 
+    /// Linha, coluna e caixa calculadas aqui, à parte do `sees` que está sendo testado.
+    fn same_house(a: usize, b: usize) -> bool {
+        let (row, col) = (|i: usize| i / 9, |i: usize| i % 9);
+        let block = |i: usize| (row(i) / 3, col(i) / 3);
+        a != b && (row(a) == row(b) || col(a) == col(b) || block(a) == block(b))
+    }
+
+    /// `true` se nenhuma célula com número que enxerga `index` tem `value`: dá para anotar.
+    fn can_note(game: &Game, index: usize, value: u8) -> bool {
+        (0..81).all(|j| !same_house(index, j) || game.cell(j).value() != Some(value))
+    }
+
+    /// Uma célula vazia `a`, o valor certo `v` dela e células vazias onde `v` pode ser anotado:
+    /// uma na linha, uma na coluna, uma só na caixa e uma longe, que não enxerga `a`.
+    struct Spread {
+        a: usize,
+        v: u8,
+        row: usize,
+        col: usize,
+        block: usize,
+        far: usize,
+    }
+
+    fn spread(game: &Game) -> Spread {
+        let empty = empties(game);
+        empty
+            .iter()
+            .find_map(|&a| {
+                let v = solution_value(game, a);
+                let pick = |keep: &dyn Fn(usize) -> bool| {
+                    empty
+                        .iter()
+                        .copied()
+                        .find(|&i| i != a && keep(i) && can_note(game, i, v))
+                };
+                Some(Spread {
+                    a,
+                    v,
+                    row: pick(&|i| i / 9 == a / 9)?,
+                    col: pick(&|i| i % 9 == a % 9)?,
+                    block: pick(&|i| same_house(a, i) && i / 9 != a / 9 && i % 9 != a % 9)?,
+                    far: pick(&|i| !same_house(a, i))?,
+                })
+            })
+            .expect("a seed 42 do Fácil tem uma célula com vizinhos vazios em toda direção")
+    }
+
     #[test]
-    fn numero_certo_limpa_so_as_anotacoes_da_propria_celula() {
+    fn numero_certo_limpa_a_anotacao_dos_vizinhos() {
         let mut game = easy_game();
-        let (a, b) = (empties(&game)[0], empties(&game)[1]);
-        game.toggle_note(a, 5).unwrap();
-        game.toggle_note(b, 5).unwrap();
-        let v = solution_value(&game, a);
-        game.place(a, v, 0).unwrap();
-        assert!(game.notes(a).is_empty());
-        assert_eq!(game.notes(b).values(), vec![5]);
+        let s = spread(&game);
+        for i in [s.a, s.row, s.col, s.block, s.far] {
+            game.toggle_note(i, s.v).unwrap();
+        }
+        game.place(s.a, s.v, 0).unwrap();
+        assert!(game.notes(s.a).is_empty());
+        assert!(!game.notes(s.row).contains(s.v), "vizinho de linha");
+        assert!(!game.notes(s.col).contains(s.v), "vizinho de coluna");
+        assert!(!game.notes(s.block).contains(s.v), "vizinho de caixa");
+        assert_eq!(
+            game.notes(s.far).values(),
+            vec![s.v],
+            "longe fica como estava"
+        );
+    }
+
+    #[test]
+    fn limpeza_so_apaga_o_numero_colocado() {
+        let mut game = easy_game();
+        let s = spread(&game);
+        let other = (1..=9)
+            .find(|&u| u != s.v && can_note(&game, s.row, u))
+            .expect("o vizinho de linha aceita outro número");
+        game.toggle_note(s.row, s.v).unwrap();
+        game.toggle_note(s.row, other).unwrap();
+        game.place(s.a, s.v, 0).unwrap();
+        assert_eq!(game.notes(s.row).values(), vec![other]);
+    }
+
+    #[test]
+    fn dica_limpa_a_anotacao_dos_vizinhos() {
+        // A primeira dica da seed 42 do Fácil revela o 9 na célula 40 (golden logo abaixo).
+        let mut game = easy_game();
+        let neighbour = empties(&game)
+            .into_iter()
+            .find(|&i| same_house(40, i) && can_note(&game, i, 9))
+            .expect("a célula 40 tem um vizinho vazio que aceita o 9");
+        game.toggle_note(neighbour, 9).unwrap();
+        assert_eq!(game.hint(0).map(|h| (h.index, h.value)), Ok((40, 9)));
+        assert!(!game.notes(neighbour).contains(9));
     }
 
     #[test]
