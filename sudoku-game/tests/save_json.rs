@@ -39,7 +39,8 @@ fn foto_vai_e_volta_em_json() {
         solution_value(&game, open[1]) + 1
     };
     game.place(open[1], w, 2_000).unwrap();
-    game.toggle_note(open[2], 6).unwrap();
+    game.toggle_note(open[2], solution_value(&game, open[2]))
+        .unwrap();
     game.hint(3_000).unwrap();
 
     let restored = from_json(&to_json(&game.save(4_000)));
@@ -82,7 +83,7 @@ fn formato_da_foto_versao_1_nao_muda() {
     let open = empties(&game);
     let v = solution_value(&game, open[0]);
     game.place(open[0], v, 1_000).unwrap();
-    game.toggle_note(open[1], 5).unwrap();
+    game.toggle_note(open[1], 2).unwrap();
     game.hint(2_000).unwrap();
     let saved = game.save(3_000);
     assert_eq!(serde_json::to_string(&saved).unwrap(), GOLDEN);
@@ -92,7 +93,7 @@ fn formato_da_foto_versao_1_nao_muda() {
     assert!(Game::restore(&reopened).is_ok());
 }
 
-/// Fácil seed 42: o 8 certo na célula 2, a anotação 5 na célula 5 e a dica (o 9) na célula 12,
+/// Fácil seed 42: o 8 certo na célula 2, a anotação 2 na célula 5 e a dica (o 9) na célula 12,
 /// salvos aos 3 s. JSON compacto, quebrado aqui por campo só para leitura.
 const GOLDEN: &str = concat!(
     r#"{"version":1,"difficulty":"Facil","seed":"42","#,
@@ -101,7 +102,7 @@ const GOLDEN: &str = concat!(
     r#""board":"94835...12..9.7....6..8.2......3...4.....5...6......3.5..1.9.....26..9...1.....68","#,
     r#""hinted":[12],"#,
     // 81 anotações: só a célula 5 tem uma.
-    r#""notes":["","","","","","5","#,
+    r#""notes":["","","","","","2","#,
     r#""","","","","","","","","","","","","","","","","","","","","","","","","","#,
     r#""","","","","","","","","","","","","","","","","","","","","","","","","","#,
     r#""","","","","","","","","","","","","","","","","","","","","","","","",""],"#,

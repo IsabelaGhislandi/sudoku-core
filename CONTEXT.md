@@ -54,7 +54,9 @@ entre parênteses, o nome que aparece na conversa e nos docs em português. O de
   uma **vida** e não fica no tabuleiro.
 - **`Notes`** (anotações): os valores que a pessoa marcou a lápis numa célula. Não são candidatos:
   o jogo não as calcula. Quando um número certo trava, apaga as anotações da célula e a anotação
-  desse número na linha, na coluna e na caixa dela.
+  desse número na linha, na coluna e na caixa dela. Anotar um número que já está na linha, na
+  coluna ou na caixa é recusado (`MoveError::NoteConflict`); `Game::conflicts` diz onde ele está.
+  Apagar uma anotação é sempre aceito.
 - **Dica** (`hint`): revela o valor certo de uma célula vazia escolhida de forma determinística pela
   seed e pelo número da dica.
 - **`Status`**: `Playing`, `Won` ou `Lost`. Os dois últimos são finais.

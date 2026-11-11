@@ -85,33 +85,33 @@ resolve o "limpeza automática de anotações" que estava em aberto na `architec
   de 0..81, como `cell`); no WASM, `conflicts(index, value) -> String` com o array JSON
   (tudo que cruza a ponte é texto); a tela ganha `conflicting: number[]` no `Board`.
 
-- [ ] **Step 1: Esqueleto que compila.** `NoteConflict` na `MoveError`; `conflicts` devolvendo
+- [x] **Step 1: Esqueleto que compila.** `NoteConflict` na `MoveError`; `conflicts` devolvendo
       `Vec::new()`; `WebGame::conflicts` devolvendo `"[]"`.
-- [ ] **Step 2: Ciclo — conflicts acha os números da linha, coluna e caixa**
+- [x] **Step 2: Ciclo — conflicts acha os números da linha, coluna e caixa**
       `fn conflicts_acha_o_numero_nos_vizinhos()`: numa célula vazia `i`, para um número `v`
       que aparece nos vizinhos, o resultado é exatamente o conjunto das células com `v` que
       enxergam `i` (conferido varrendo o tabuleiro no teste). Para o valor certo de `i`, vazio.
       → FAIL (veio vazio). → filtra `0..81` com `sees` e `cell(j).value() == Some(value)`. → PASS.
-- [ ] **Step 3: Ciclo — anotar número em conflito é recusado**
+- [x] **Step 3: Ciclo — anotar número em conflito é recusado**
       `fn anotacao_em_conflito_eh_recusada()`: `toggle_note(i, v)` com `v` em conflito →
       `Err(MoveError::NoteConflict)` e `notes(i)` vazio. → FAIL (veio `Ok`). → no `toggle_note`,
       se o bit está desligado e `conflicts` não é vazio, recusa. → PASS. Ajuste os testes antigos
       que anotavam números fixos (3, 7, 1...) para usar números sem conflito.
-- [ ] **Step 4: Ciclo — apagar anotação nunca é recusado**
+- [x] **Step 4: Ciclo — apagar anotação nunca é recusado**
       `fn apagar_anotacao_em_conflito_eh_permitido()`: foto com a anotação `v` (em conflito) na
       célula `i`, restaurada; `toggle_note(i, v)` → `Ok`, anotação apagada. → passa de primeira;
       prova: tire a condição "bit desligado", veja FAIL, desfaça. → PASS.
-- [ ] **Step 5: Ciclo — a ponte**
+- [x] **Step 5: Ciclo — a ponte**
       `fn conflitos_atravessam_a_ponte()` no `sudoku-wasm`: `toggle_note` em conflito volta
       `Err("NoteConflict")` e `conflicts(i, v)` volta o JSON com as células. → FAIL (`"[]"`).
       → `serde_json::to_string(&self.game.conflicts(..))`. → PASS.
-- [ ] **Step 6: Tela.** No modo anotar, `NoteConflict` → `conflicting = JSON.parse(game.conflicts(i, v))`
+- [x] **Step 6: Tela.** No modo anotar, `NoteConflict` → `conflicting = JSON.parse(game.conflicts(i, v))`
       por 900 ms; o `Board` pisca essas células (animação CSS, `prefers-reduced-motion` só muda o
       fundo). Verificação manual no `npm run dev`: anotar um número da linha pisca e não entra;
       apagar continua funcionando; colocar um número certo some com a anotação dele na linha.
-- [ ] **Step 7: Refactor** com tudo verde. `cargo test --workspace --all-features`, `clippy`,
+- [x] **Step 7: Refactor** com tudo verde. `cargo test --workspace --all-features`, `clippy`,
       `fmt`, `npm run check`, `npm test`, `npm run build`.
-- [ ] **Step 8: Commit do código**
+- [x] **Step 8: Commit do código**
       `git commit -m "feat: refuse a note that clashes with its row, column or box"`
 - [ ] **Step 9: Wiki 62** (`# 62 — Anotação em conflito: variante nova num enum público, consulta
       separada da ação e animação que respeita o sistema`), índice no `README`.

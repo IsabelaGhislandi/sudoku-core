@@ -100,6 +100,9 @@ pub enum MoveError {
     NoHintsLeft,
     /// A partida está pausada (ou ainda não começou): o relógio não está rodando.
     Paused,
+    /// O número já está na linha, na coluna ou na caixa da célula, então não pode ser anotado
+    /// ali. `Game::conflicts` diz em quais células ele está.
+    NoteConflict,
 }
 
 /// O que `Game::restart` devolve. `#[non_exhaustive]` para poder ganhar campos sem quebrar quem
@@ -331,11 +334,30 @@ impl Game {
     }
 
     /// Liga ou desliga a anotação `value` na célula `index`. Só vale em célula vazia, e nada
-    /// muda nas outras células. Recusa as mesmas coisas que `place`, na mesma ordem.
+    /// muda nas outras células. Recusa as mesmas coisas que `place`, na mesma ordem, e depois
+    /// recusa com `NoteConflict` **ligar** um número que já está na linha, na coluna ou na caixa.
+    /// Desligar é sempre aceito: uma foto antiga pode trazer anotação em conflito, e a pessoa
+    /// precisa conseguir apagá-la.
     pub fn toggle_note(&mut self, index: usize, value: u8) -> Result<(), MoveError> {
         self.check_empty_cell(index, value)?;
+        if !self.notes[index].contains(value) && !self.conflicts(index, value).is_empty() {
+            return Err(MoveError::NoteConflict);
+        }
         self.notes[index].toggle(value);
         Ok(())
+    }
+
+    /// As células com o número `value` que enxergam `index` (mesma linha, coluna ou caixa), em
+    /// ordem crescente. Vazio quando `value` pode ser anotado ali. É o que a tela pisca quando
+    /// `toggle_note` recusa com `NoteConflict`.
+    ///
+    /// Entra em pânico fora de 0..81, como `cell`. Sem isso, o 81 seria lido como a coluna 0 da
+    /// linha 9 e devolveria células de verdade, uma resposta errada em silêncio.
+    pub fn conflicts(&self, index: usize, value: u8) -> Vec<usize> {
+        assert!(index < 81, "célula {index} fora do tabuleiro");
+        (0..81)
+            .filter(|&i| sees(index, i) && self.cells[i].value() == Some(value))
+            .collect()
     }
 
     /// Revela o número certo de uma célula vazia, sorteada pelo jogo, e o trava como `Hinted`.
@@ -635,15 +657,24 @@ mod tests {
             .collect()
     }
 
+    /// Os dois menores números que dá para anotar na célula `index`, sem conflito.
+    pub(super) fn two_notable(game: &Game, index: usize) -> (u8, u8) {
+        let mut free = (1..=9).filter(|&v| can_note(game, index, v));
+        let first = free.next().expect("há número livre para anotar");
+        let second = free.next().expect("há dois números livres para anotar");
+        (first, second)
+    }
+
     #[test]
     fn anotacao_liga_e_desliga() {
         let mut game = easy_game();
         let i = first_empty(&game);
-        assert_eq!(game.toggle_note(i, 3), Ok(()));
-        assert_eq!(game.toggle_note(i, 7), Ok(()));
-        assert_eq!(game.notes(i).values(), vec![3, 7]);
-        assert_eq!(game.toggle_note(i, 3), Ok(()));
-        assert_eq!(game.notes(i).values(), vec![7]);
+        let (a, b) = two_notable(&game, i);
+        assert_eq!(game.toggle_note(i, a), Ok(()));
+        assert_eq!(game.toggle_note(i, b), Ok(()));
+        assert_eq!(game.notes(i).values(), vec![a, b]);
+        assert_eq!(game.toggle_note(i, a), Ok(()));
+        assert_eq!(game.notes(i).values(), vec![b]);
     }
 
     /// Linha, coluna e caixa calculadas aqui, à parte do `sees` que está sendo testado.
@@ -726,6 +757,59 @@ mod tests {
     }
 
     #[test]
+    fn conflicts_acha_o_numero_nos_vizinhos() {
+        let game = easy_game();
+        let i = first_empty(&game);
+        let clashing = (1..=9)
+            .find(|&v| !can_note(&game, i, v))
+            .expect("a primeira vazia tem algum número nos vizinhos");
+        let expected: Vec<usize> = (0..81)
+            .filter(|&j| same_house(i, j) && game.cell(j).value() == Some(clashing))
+            .collect();
+        assert!(!expected.is_empty());
+        assert_eq!(game.conflicts(i, clashing), expected);
+        assert_eq!(
+            game.conflicts(i, solution_value(&game, i)),
+            Vec::<usize>::new()
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "fora do tabuleiro")]
+    fn conflicts_fora_do_tabuleiro_entra_em_panico() {
+        easy_game().conflicts(81, 1);
+    }
+
+    #[test]
+    fn anotacao_em_conflito_eh_recusada() {
+        let mut game = easy_game();
+        let i = first_empty(&game);
+        let clashing = (1..=9)
+            .find(|&v| !can_note(&game, i, v))
+            .expect("a primeira vazia tem algum número nos vizinhos");
+        assert_eq!(game.toggle_note(i, clashing), Err(MoveError::NoteConflict));
+        assert!(game.notes(i).is_empty());
+    }
+
+    #[test]
+    fn apagar_anotacao_em_conflito_eh_permitido() {
+        // Uma foto de antes desta regra pode trazer anotação em conflito: ela abre, e dá para
+        // apagar a anotação.
+        let game = easy_game();
+        let i = first_empty(&game);
+        let clashing = (1..=9)
+            .find(|&v| !can_note(&game, i, v))
+            .expect("a primeira vazia tem algum número nos vizinhos");
+        let mut saved = game.save(0);
+        saved.notes[i] = clashing.to_string();
+        let mut old = Game::restore(&saved).expect("foto antiga continua abrindo");
+        old.resume(0);
+        assert_eq!(old.notes(i).values(), vec![clashing]);
+        assert_eq!(old.toggle_note(i, clashing), Ok(()));
+        assert!(old.notes(i).is_empty());
+    }
+
+    #[test]
     fn dica_limpa_a_anotacao_dos_vizinhos() {
         // A primeira dica da seed 42 do Fácil revela o 9 na célula 40 (golden logo abaixo).
         let mut game = easy_game();
@@ -742,11 +826,12 @@ mod tests {
     fn numero_errado_mantem_as_anotacoes() {
         let mut game = easy_game();
         let i = first_empty(&game);
-        game.toggle_note(i, 2).unwrap();
-        game.toggle_note(i, 4).unwrap();
+        let (a, b) = two_notable(&game, i);
+        game.toggle_note(i, a).unwrap();
+        game.toggle_note(i, b).unwrap();
         let w = wrong_value(&game, i);
         game.place(i, w, 0).unwrap();
-        assert_eq!(game.notes(i).values(), vec![2, 4]);
+        assert_eq!(game.notes(i).values(), vec![a, b]);
     }
 
     #[test]
@@ -811,14 +896,20 @@ mod tests {
 
     #[test]
     fn dica_limpa_as_anotacoes_da_celula() {
+        // A primeira dica da seed 42 do Fácil revela a célula 40.
         let mut game = easy_game();
-        for i in empties(&game) {
-            game.toggle_note(i, 1).unwrap();
-        }
-        let h = game.hint(0).unwrap();
-        assert!(game.notes(h.index).is_empty());
-        let other = first_empty(&game);
-        assert_eq!(game.notes(other).values(), vec![1]);
+        let (a, b) = two_notable(&game, 40);
+        game.toggle_note(40, a).unwrap();
+        game.toggle_note(40, b).unwrap();
+        let far = empties(&game)
+            .into_iter()
+            .find(|&i| i != 40 && !same_house(40, i))
+            .expect("há célula vazia longe da 40");
+        let (c, _) = two_notable(&game, far);
+        game.toggle_note(far, c).unwrap();
+        assert_eq!(game.hint(0).map(|h| h.index), Ok(40));
+        assert!(game.notes(40).is_empty());
+        assert_eq!(game.notes(far).values(), vec![c]);
     }
 
     #[test]

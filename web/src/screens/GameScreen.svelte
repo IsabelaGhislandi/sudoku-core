@@ -30,6 +30,11 @@
   // Destacar números iguais também é só da tela. Começa ligado.
   let highlighting = $state(true)
   let wrongTimer: ReturnType<typeof setTimeout> | undefined
+  // As células que piscam quando uma anotação é recusada por conflito. Quem diz quais são é o
+  // WASM (`conflicts`); a tela só pisca.
+  let conflicting: number[] = $state([])
+  let conflictTimer: ReturnType<typeof setTimeout> | undefined
+  let conflictFrame: number | undefined
   // Vira `true` no instante em que o resultado é gravado. Depois disso, nada mais é salvo nem
   // gravado: a partida terminada não volta a ser "partida guardada", nem entra duas vezes no
   // histórico.
@@ -91,6 +96,8 @@
     }
     clearInterval(tick)
     clearTimeout(wrongTimer)
+    clearTimeout(conflictTimer)
+    if (conflictFrame !== undefined) cancelAnimationFrame(conflictFrame)
     document.removeEventListener('visibilitychange', onVisibilityChange)
   })
 
@@ -99,10 +106,32 @@
     const index = selected
     act(() => {
       if (noting) {
-        game.toggleNote(index, value)
+        noteOrFlash(index, value)
       } else if (game.place(index, value, monotonicNow()) === 'wrong') {
         flashWrong(index)
       }
+    })
+  }
+
+  // A anotação recusada por conflito não entra: os números que já ocupam a linha, a coluna ou a
+  // caixa piscam. As outras recusas (pausada, célula ocupada) seguem para o `act`, como antes.
+  function noteOrFlash(index: number, value: number) {
+    try {
+      game.toggleNote(index, value)
+    } catch (error) {
+      if (error !== 'NoteConflict') throw error
+      flashConflicts(JSON.parse(game.conflicts(index, value)))
+    }
+  }
+
+  function flashConflicts(cells: number[]) {
+    // Limpa e marca no quadro seguinte: tentar de novo enquanto ainda pisca recomeça a animação.
+    conflicting = []
+    clearTimeout(conflictTimer)
+    if (conflictFrame !== undefined) cancelAnimationFrame(conflictFrame)
+    conflictFrame = requestAnimationFrame(() => {
+      conflicting = cells
+      conflictTimer = setTimeout(() => (conflicting = []), 900)
     })
   }
 
@@ -156,6 +185,7 @@
       cells={view.cells}
       {selected}
       {wrong}
+      {conflicting}
       {highlighted}
       onSelect={(i) => (selected = i)}
     />

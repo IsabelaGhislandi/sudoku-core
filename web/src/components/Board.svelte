@@ -6,6 +6,7 @@
     cells,
     selected,
     wrong,
+    conflicting,
     highlighted,
     onSelect,
   }: {
@@ -13,6 +14,8 @@
     selected: number | null
     /** A célula que acabou de receber um número errado, para piscar em vermelho. */
     wrong: number | null
+    /** As células cujo número impediu uma anotação: piscam algumas vezes. */
+    conflicting: number[]
     /** O número em destaque: as células com ele ganham outro fundo. */
     highlighted: number | null
     onSelect: (index: number) => void
@@ -28,6 +31,7 @@
       class:highlighted={highlighted !== null && cell.value === highlighted}
       class:selected={selected === i}
       class:wrong={wrong === i}
+      class:conflict={conflicting.includes(i)}
       class:box-right={i % 9 === 2 || i % 9 === 5}
       class:box-bottom={Math.floor(i / 9) === 2 || Math.floor(i / 9) === 5}
       aria-label={`Linha ${Math.floor(i / 9) + 1}, coluna ${(i % 9) + 1}`}
@@ -78,6 +82,26 @@
   }
   .cell.wrong {
     background: var(--wrong);
+  }
+  /* Três piscadas em 900 ms, o mesmo tempo que a tela mantém a classe. */
+  .cell.conflict {
+    animation: blink 300ms steps(1, end) 3;
+    color: var(--wrong-text);
+  }
+  @keyframes blink {
+    0% {
+      background: var(--wrong);
+    }
+    50% {
+      background: transparent;
+    }
+  }
+  /* Quem pediu menos movimento ao sistema vê o fundo vermelho parado, sem piscar. */
+  @media (prefers-reduced-motion: reduce) {
+    .cell.conflict {
+      animation: none;
+      background: var(--wrong);
+    }
   }
   .box-right {
     border-right: 2px solid var(--line-strong);
