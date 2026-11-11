@@ -383,7 +383,8 @@ Aguardando (1 jogador) → Contagem regressiva → Jogando → Finalizada
                                                   ↘ Abandonada (desconexão)
 ```
 
-Em aberto: limpeza automática de anotações (opção do jogador?), tempo de espera por
+Limpeza automática de anotações: decidida no `sudoku-game` (um número certo apaga a anotação dele
+na linha, na coluna e na caixa), então vale igual no solo e no PvP. Em aberto: tempo de espera por
 reconexão antes do W.O. e defesas contra trapaça (quem tem as pistas pode usar um solver).
 
 **Persistência.** A v1 não tem banco de dados: as salas vivem na memória do servidor e somem

@@ -75,6 +75,13 @@ impl WebGame {
             .map_err(convert::error_name)
     }
 
+    /// As células que já têm `value` na linha, na coluna ou na caixa de `index`, como array JSON.
+    /// Serve para a tela piscar essas células quando `toggleNote` volta `"NoteConflict"`.
+    pub fn conflicts(&self, index: usize, value: u8) -> String {
+        serde_json::to_string(&self.game.conflicts(index, value))
+            .expect("uma lista de índices sempre vira JSON")
+    }
+
     /// Revela uma célula vazia, sorteada pelo jogo. Recusa com `GameOver`, `Paused` ou
     /// `NoHintsLeft`.
     pub fn hint(&mut self, now: f64) -> Result<(), String> {
@@ -234,25 +241,47 @@ mod tests {
     }
 
     #[test]
+    fn conflitos_atravessam_a_ponte() {
+        let mut game = WebGame::new("Facil", "42").expect("nível e seed válidos");
+        game.resume(0.0);
+        let (index, _) = empty_cells_with_answers()[0];
+        // A ponte só repassa: o que vale é a resposta da própria `Game`.
+        let (value, cells) = (1..=9)
+            .map(|v| (v, reference().conflicts(index, v)))
+            .find(|(_, cells)| !cells.is_empty())
+            .expect("a primeira vazia tem algum número nos vizinhos");
+
+        assert_eq!(
+            game.toggle_note(index, value),
+            Err("NoteConflict".to_string())
+        );
+        let json: Value = serde_json::from_str(&game.conflicts(index, value))
+            .expect("os conflitos são um array JSON");
+        assert_eq!(json, serde_json::json!(cells));
+    }
+
+    #[test]
     fn anotacao_aparece_no_retrato() {
         let mut game = WebGame::new("Facil", "42").expect("nível e seed válidos");
         game.resume(0.0);
         let (index, _) = empty_cells_with_answers()[0];
 
-        game.toggle_note(index, 3)
-            .expect("célula vazia aceita anotação");
-        game.toggle_note(index, 7)
-            .expect("célula vazia aceita anotação");
+        // Os dois primeiros números sem conflito na célula: os que a partida aceita anotar.
+        let noted: Vec<u8> = (1..=9)
+            .filter(|&v| game.toggle_note(index, v).is_ok())
+            .take(2)
+            .collect();
+        assert_eq!(noted.len(), 2, "a célula aceita dois números");
         assert_eq!(
             view_json(&game, 0.0)["cells"][index]["notes"],
-            serde_json::json!([3, 7])
+            serde_json::json!(noted)
         );
 
-        game.toggle_note(index, 3)
-            .expect("célula vazia aceita anotação");
+        game.toggle_note(index, noted[0])
+            .expect("apagar anotação é sempre aceito");
         assert_eq!(
             view_json(&game, 0.0)["cells"][index]["notes"],
-            serde_json::json!([7])
+            serde_json::json!([noted[1]])
         );
     }
 
@@ -324,15 +353,16 @@ mod tests {
         game.resume(0.0);
         let empties = empty_cells_with_answers();
         let (placed, answer) = empties[0];
-        let (noted, _) = empties[1];
+        // O número certo de uma célula nunca conflita, então serve de anotação.
+        let (noted, note) = empties[1];
         game.place(placed, answer, 10.0).expect("jogada aceita");
-        game.toggle_note(noted, 4).expect("anotação aceita");
+        game.toggle_note(noted, note).expect("anotação aceita");
 
         let restored = WebGame::restore(&game.save(50.0)).expect("a foto acabou de ser tirada");
         let view = view_json(&restored, 0.0);
         assert_eq!(view["cells"][placed]["kind"], "placed");
         assert_eq!(view["cells"][placed]["value"], answer);
-        assert_eq!(view["cells"][noted]["notes"], serde_json::json!([4]));
+        assert_eq!(view["cells"][noted]["notes"], serde_json::json!([note]));
         assert_eq!(view["livesLeft"], 3);
         assert_eq!(view["elapsedMs"], 50);
         assert_eq!(view["paused"], true);

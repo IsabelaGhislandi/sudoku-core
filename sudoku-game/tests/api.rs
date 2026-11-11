@@ -42,7 +42,7 @@ fn partida_completa_ate_a_derrota() {
     let mut game = Game::new(Difficulty::Dificil, 7, GameConfig::default());
     game.resume(0);
     let i = empties(&game)[0];
-    game.toggle_note(i, 4).unwrap();
+    game.toggle_note(i, solution_value(&game, i)).unwrap();
     let right = solution_value(&game, i);
     let wrong = if right == 9 { 1 } else { right + 1 };
     for lives in [2, 1, 0] {
@@ -56,7 +56,7 @@ fn partida_completa_ate_a_derrota() {
         assert_eq!(game.lives_left(), lives);
     }
     assert_eq!(game.status(), Status::Lost);
-    assert_eq!(game.notes(i).values(), vec![4]);
+    assert_eq!(game.notes(i).values(), vec![right]);
     assert_eq!(game.place(i, right, 0), Err(MoveError::GameOver));
     assert_eq!(game.hint(0), Err(MoveError::GameOver));
     assert_eq!(game.toggle_note(i, 5), Err(MoveError::GameOver));
@@ -72,7 +72,8 @@ fn partida_sai_e_volta_sem_perder_nada() {
         let v = solution_value(&game, i);
         game.place(i, v, 5_000).unwrap();
     }
-    game.toggle_note(open[half], 3).unwrap();
+    let noted = solution_value(&game, open[half]);
+    game.toggle_note(open[half], noted).unwrap();
     // O app vai para o fundo: pausa e grava a foto.
     game.pause(6_000);
     let saved: SavedGame = game.save(6_000);
@@ -80,7 +81,7 @@ fn partida_sai_e_volta_sem_perder_nada() {
     // Dias depois, outro processo: o relógio monotônico recomeçou do zero.
     let mut restored = Game::restore(&saved).unwrap();
     assert!(restored.is_paused());
-    assert_eq!(restored.notes(open[half]).values(), vec![3]);
+    assert_eq!(restored.notes(open[half]).values(), vec![noted]);
     restored.resume(100);
     for &i in &open[half..] {
         let v = solution_value(&restored, i);
