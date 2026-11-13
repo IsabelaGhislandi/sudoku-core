@@ -21,6 +21,10 @@ The first release (`0.1.0`) will be tagged together with the first browser versi
   stored in `localStorage`.
 - **Destacar** toggle on the game screen (on by default): tapping a filled cell highlights every
   cell with the same number.
+- **Jungle scene** below the number pad: an animated pixel-art forest where two young orangutans,
+  Beni and Valentino, wander, climb the tree, wave, yawn and dance. Whenever a move completes a row
+  or a column, a banana falls for each of them and they eat it. With reduced motion on, the scene
+  stays still and the banana appears in their hands.
 - **`sudoku-wasm` crate**: the WebAssembly bridge (`wasm-bindgen`) that exposes a `sudoku-game` match
   to JavaScript as `WebGame`, with a JSON view of the board, the existing `SavedGame` and
   `SavedResult` JSON formats, and `historyEntries` to check and sort the stored history.

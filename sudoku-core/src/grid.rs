@@ -90,11 +90,11 @@ impl Grid {
     /// True se colocar `value` em `index` não viola linha/coluna/box.
     pub fn can_place(&self, index: usize, value: u8) -> bool {
         let (r, c, b) = (row_of(index), col_of(index), box_of(index));
-        for i in 0..81 {
+        for (i, &cell) in self.cells.iter().enumerate() {
             if i == index {
                 continue;
             }
-            if let Cell::Filled(v) = self.cells[i]
+            if let Cell::Filled(v) = cell
                 && v == value
                 && (row_of(i) == r || col_of(i) == c || box_of(i) == b)
             {

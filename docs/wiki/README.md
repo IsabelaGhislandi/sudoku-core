@@ -19,6 +19,7 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [Fundamentos de Rust — Tarefas 41 a 45](fundamentos/rust-base-tarefas-41-a-45.md)
 - [Fundamentos de Rust — Tarefas 46 a 50](fundamentos/rust-base-tarefas-46-a-50.md)
 - [Fundamentos de Rust — Tarefas 51 a 55](fundamentos/rust-base-tarefas-51-a-55.md)
+- [Fundamentos — Tarefas 56 a 60](fundamentos/rust-base-tarefas-56-a-60.md)
 
 ## Índice por task
 
@@ -80,6 +81,8 @@ Documentos **intensivos por conceito** (desde a base do Rust), gerados **a cada 
 - [56 — Histórico: filtrar o que vem de fora, `filter_map` e `Intl` no lugar de formatar à mão](56-historico.md)
 - [57 — CI do frontend: um job para o WASM, `npm ci` e o lockfile como contrato](57-ci-do-frontend.md)
 - [58 — Destacar números iguais: estado derivado, `$derived` e uma função pura para a tela](58-destacar-numeros-iguais.md)
+- [59 — Selva e bananas: comparar antes e depois, `{#key}` para reiniciar animação e pixel art com SVG](59-selva-e-bananas.md)
+- [60 — Selva viva: simulação separada do desenho, sorteio injetado e laço de animação no canvas](60-selva-viva.md)
 - [61 — Limpar anotações dos vizinhos: captura disjunta em closures, `?` dentro de `find_map` e uma regra que muda de ideia](61-limpar-anotacoes-dos-vizinhos.md)
 - [62 — Anotação em conflito: variante nova num enum público, consulta separada da ação e iteradores preguiçosos](62-anotacao-em-conflito.md)
 
