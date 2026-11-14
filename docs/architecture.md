@@ -213,6 +213,11 @@ web/                        Svelte 5 + TypeScript + Vite; Vitest para a lógica 
 - **Tempo de geração no WASM** (V8, 20 seeds): mediana de 154 ms e pior caso de 676 ms no Muito
   Difícil, então a geração fica na thread principal, atrás de um "Gerando...". Acima de 1 s de
   mediana, iria para um Web Worker.
+- **Selva (enfeite, sem spec):** embaixo do teclado, uma cena em pixel art (SVG) com dois
+  orangotangos que andam pela selva e ganham uma banana quando uma jogada fecha linha ou coluna.
+  É estado só da tela: "fechou uma linha?" sai da comparação entre o retrato de antes e o de
+  depois (`closesLine`), sem evento novo do WASM, e o `sudoku-game` não sabe que a selva existe.
+  Detalhes nas wikis 59 e 60.
 - **Limitação conhecida:** duas abas na mesma partida guardada podem sobrescrever uma à outra.
 
 ## 5. Mapeamento dificuldade → técnica
